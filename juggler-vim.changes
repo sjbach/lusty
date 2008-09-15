@@ -1,0 +1,3 @@
+- Colouring for path elements.
+- Added :JugglePrevious, a smarter version of the :b# command.
+- Refactoring.

@@ -1,0 +1,31 @@
+LustyExplorer is a fast and responsive way to manage files and buffers in Vim.  It includes both a filesystem explorer (for opening new files) and a buffer explorer (for switching between currently open files) through a mostly common interface.
+
+Here's an animated gif showing it in action:
+
+      http://viewglob.sourceforge.net/lusty-explorer-animated.gif
+
+Annotated snapshot progression:
+
+      http://viewglob.sourceforge.net/lusty-explorer-annotated.png
+
+Instructions for use:
+
+      <Leader>lf  - Opens the filesystem explorer.
+      <Leader>lr  - Opens the filesystem explorer at the directory of the current file.
+      <Leader>lb  - Opens the buffer explorer.
+
+When one of the explorers is launched, a new window appears at bottom presenting a list of files/dirs or buffers, and in the status bar is a prompt:
+
+      >>
+
+As you type or tab-complete a name, the list updates for possible matches.  When there is enough input to match an entry uniquely, press <ENTER> to open it in your last used window, or press <ESC> or <Ctrl-c> to cancel.
+
+If you like LustyExplorer, you may also like LustyJuggler: vimscript #2050
+
+See the "Usage:" section of the script for other tricks and features.
+
+install details
+Copy the script into your $HOME/.vim/plugin directory so that it will be sourced on startup.  If you have previously installed dynamic-explorer.vim (the old name), remove it.
+
+NOTE: This plugin requires Vim be compiled with Ruby interpretation.  If you do not currently have this functionality, see the "Install Details:" section of the script for directions on adding it.
+

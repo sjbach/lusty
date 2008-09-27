@@ -10,9 +10,10 @@
 " Name Of File: lusty-juggler.vim
 "  Description: Dynamic Buffer Switcher Vim Plugin
 "   Maintainer: Stephen Bach <sjbach@users.sourceforge.net>
+" Contributors: Juan Frias
 "
-" Release Date: Monday, August 25, 2008
-"      Version: 1.0.2
+" Release Date: Monday, September 27, 2008
+"      Version: 1.0.3
 "
 "        Usage: To launch the juggler:
 "
@@ -44,6 +45,12 @@
 "               If you want to switch to that buffer, press "f" or "4" again
 "               or press "<ENTER>".  Alternatively, press one of the other
 "               mapped keys to highlight another buffer.
+"
+"               To display the key before the name of the buffer, add one of
+"               the following lines to your .vimrc:
+"
+"                 let g:LustyJugglerShowKeys = 'a'   (for alpha characters)
+"                 let g:LustyJugglerShowKeys = 1     (for digits)
 "
 "               To cancel the juggler, press any of "q", "<ESC>", "<C-c",
 "               "<BS>", "<Del>", or "<C-h>".
@@ -177,28 +184,28 @@ ruby << EOF
 
 class LustyJuggler
   private
-    @@KEYS = Hash["a" => 1,
-                  "s" => 2,
-                  "d" => 3,
-                  "f" => 4,
-                  "g" => 5,
-                  "h" => 6,
-                  "j" => 7,
-                  "k" => 8,
-                  "l" => 9,
-                  ";" => 10,
-                  "1" => 1,
-                  "2" => 2,
-                  "3" => 3,
-                  "4" => 4,
-                  "5" => 5,
-                  "6" => 6,
-                  "7" => 7,
-                  "8" => 8,
-                  "9" => 9,
-                  "0" => 10,
-                  #"TAB" => 100,
-                  "ENTER" => 100]
+    @@KEYS = { "a" => 1,
+               "s" => 2,
+               "d" => 3,
+               "f" => 4,
+               "g" => 5,
+               "h" => 6,
+               "j" => 7,
+               "k" => 8,
+               "l" => 9,
+               ";" => 10,
+               "1" => 1,
+               "2" => 2,
+               "3" => 3,
+               "4" => 4,
+               "5" => 5,
+               "6" => 6,
+               "7" => 7,
+               "8" => 8,
+               "9" => 9,
+               "0" => 10,
+               #"TAB" => 100,
+               "ENTER" => 100 }
 
   public
     def initialize
@@ -368,7 +375,7 @@ class Buffer < BarItem
 
       pieces = @str.split(File::SEPARATOR, -1) 
 
-      @array = Array.new
+      @array = []
       @array << dir_color
       @array << pieces.shift
       pieces.each { |piece|
@@ -401,7 +408,7 @@ class LeftContinuer < BarItem
       super(@@TEXT, @@COLOR)
     end
 
-    def LeftContinuer.length
+    def self.length
       @@TEXT.length
     end
 
@@ -416,7 +423,7 @@ class RightContinuer < BarItem
       super(@@TEXT, @@COLOR)
     end
 
-    def RightContinuer.length
+    def self.length
       @@TEXT.length
     end
 
@@ -445,11 +452,24 @@ class NameBar
     end
 
   private
+    @@LETTERS = ["a", "s", "d", "f", "g", "h", "j", "k", "l", ";"]
+
+
     def create_items
       names = $buffer_stack.names
 
-      items = names.inject(Array.new) { |array, name|
-        array << Buffer.new(name, (@active and name == names[@active]))
+      items = names.inject([]) { |array, name|
+        key = case eva("g:LustyJugglerShowKeys")
+              when /[[:alpha:]]/
+                @@LETTERS[array.size / 2] + ":"
+              when /[[:digit:]]/
+                "#{((array.size / 2) + 1) % 10}:"
+              else
+                ""
+              end
+
+        array << Buffer.new("#{key}#{name}",
+                            (@active and name == names[@active]))
         array << Separator.new
       }
       items.pop   # Remove last separator.
@@ -510,7 +530,7 @@ class NameBar
 
     # Clip the given array of items to the given space, counting downwards.
     def layout_left(items, space)
-      trimmed = Array.new
+      trimmed = []
 
       i = @active - 1
       while i >= 0
@@ -534,7 +554,7 @@ class NameBar
 
     # Clip the given array of items to the given space, counting upwards.
     def layout_right(items, space)
-      trimmed = Array.new
+      trimmed = []
 
       i = @active
       while i < items.length
@@ -556,7 +576,7 @@ class NameBar
     end
 
     def NameBar.do_pretty_print(items)
-      args = items.inject(Array.new) { |array, item|
+      args = items.inject([]) { |array, item|
         array = array + item.pretty_print_input
       }
 
@@ -571,7 +591,7 @@ end
 class BufferStack
   public
     def initialize
-      @stack = Array.new
+      @stack = []
 
       (0..VIM::Buffer.count-1).each do |i|
         @stack << VIM::Buffer[i].number

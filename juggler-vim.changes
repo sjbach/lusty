@@ -1,3 +1,1 @@
-- Colouring for path elements.
-- Added :JugglePrevious, a smarter version of the :b# command.
-- Refactoring.
+Added g:LustyJugglerShowKeys for buffer name prefixes.  Thanks to Juan Frias for the original patch.

@@ -1,1 +1,2 @@
-Added g:LustyJugglerShowKeys for buffer name prefixes.  Thanks to Juan Frias for the original patch.
+The g:LustyJugglerShowKeys option should not be required to be set.
+

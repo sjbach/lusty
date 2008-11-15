@@ -12,8 +12,8 @@
 "   Maintainer: Stephen Bach <sjbach@users.sourceforge.net>
 " Contributors: Juan Frias
 "
-" Release Date: Monday, September 27, 2008
-"      Version: 1.0.3
+" Release Date: Friday, November 14, 2008
+"      Version: 1.0.4
 "
 "        Usage: To launch the juggler:
 "
@@ -459,11 +459,15 @@ class NameBar
       names = $buffer_stack.names
 
       items = names.inject([]) { |array, name|
-        key = case eva("g:LustyJugglerShowKeys")
-              when /[[:alpha:]]/
-                @@LETTERS[array.size / 2] + ":"
-              when /[[:digit:]]/
-                "#{((array.size / 2) + 1) % 10}:"
+        key = if exists?("g:LustyJugglerShowKeys")
+                case eva("g:LustyJugglerShowKeys")
+                when /[[:alpha:]]/
+                  @@LETTERS[array.size / 2] + ":"
+                when /[[:digit:]]/
+                  "#{((array.size / 2) + 1) % 10}:"
+                else
+                  ""
+                end
               else
                 ""
               end
@@ -658,6 +662,10 @@ end
 
 def msg(s)
   VIM.message s
+end
+
+def exists?(s)
+  VIM.evaluate("exists('#{s}')") != "0"
 end
 
 def columns

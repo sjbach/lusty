@@ -322,7 +322,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   (let* ((max-possibly-displayable-entries
           (* (- (frame-height) 3)
              (/ (window-width)
-                (1+ (length lusty-completion-separator)))))
+                (1+ (length lusty-column-separator)))))
          (cut-off (nthcdr max-possibly-displayable-entries entries))
          (truncate-p (consp cut-off)))
 
@@ -348,7 +348,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
           for columns = (lusty-columnize entries column-count)
           for widths = (mapcar 'lusty-longest-length columns)
           for full-width = (+ (reduce '+ widths)
-                              (* (length lusty-completion-separator)
+                              (* (length lusty-column-separator)
                                  (1- column-count)))
           until (or (<= column-count 1)
                     (< full-width (window-width)))
@@ -382,26 +382,24 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                                                 (length entry)))
                                       ?\ )
             until (null entry)
-            do (setq row (concat row entry spacer lusty-completion-separator))
+            do (setq row (concat row entry spacer lusty-column-separator))
             finally (insert
                      (substring row 0
                                 (- (length row)
-                                   (length lusty-completion-separator)))
+                                   (length lusty-column-separator)))
                             "\n")))))
 
 ;; Get a starting upperbound on the number of columns.
 (defun lusty-column-count-upperbound (strings)
-  (let ((sorted (sort (copy-seq strings)
-                      (lambda (a b) (> (length a) (length b)))))
-        (max-width (window-width)))
-    (do* ((column-count 0)
-          (list-iter sorted (cdr list-iter))
-          (str (car list-iter) (car list-iter))
-          (len 0 (+ len (length str))))
-         ((or (>= len max-width)
-              (null list-iter))
-          column-count)
-      (incf column-count))))
+  (let ((sorted (sort* (copy-list strings) '< :key 'length))
+        (max-width (window-width))
+        (sep-len (length lusty-column-separator)))
+    (loop for column-count from 0
+          for str in sorted
+          summing (length str) into length-so-far
+          while (< length-so-far max-width)
+          do (incf length-so-far sep-len)
+          finally (return column-count))))
 
 ;; Break entries into sublists representing columns.
 (defun lusty-columnize (entries column-count)

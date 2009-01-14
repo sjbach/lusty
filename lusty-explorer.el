@@ -35,10 +35,16 @@
 
 ;;; Code:
 
-(require 'font-lock)
 (require 'advice)
+(require 'cl)
+
+;; Used only for the completion algorithms in these functions:
+;; - iswitchb-get-matched-buffers
+;; - iswitchb-set-common-completion
 (require 'iswitchb)
-(eval-when-compile (require 'cl))
+
+;; Used only for its faces (for color-theme).
+(require 'font-lock)
 
 (defvar lusty-match-face font-lock-function-name-face)
 (defvar lusty-directory-face font-lock-type-face)
@@ -46,7 +52,7 @@
 (defvar lusty-file-face font-lock-string-face)
 
 (defvar lusty-completions-buffer " *Lusty-Completions*")
-(defvar lusty-completion-separator "    ")
+(defvar lusty-column-separator "    ")
 (defvar lusty-no-entries-string
   (propertize "-- NO ENTRIES --" 'face 'font-lock-warning-face))
 (defvar lusty-truncated-string
@@ -141,6 +147,7 @@ does not begin with '.'."
   (apply 'insert args))
 
 (defadvice minibuffer-complete (around lusty-completion-wrapper activate)
+  "Circumvent default completion in *Completions* window."
   (ecase lusty--active-mode
     (:file-explorer (lusty-file-explorer-minibuffer-tab-complete))
     (:buffer-explorer (lusty-buffer-explorer-minibuffer-tab-complete))
@@ -307,53 +314,52 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   (loop for item in lst
         maximizing (length item)))
 
-(defun lusty-display-completion-list (entries match)
-  (block :lusty-display-completion-list
-    (when (endp entries)
-      (lusty-print-no-entries)
-      (return-from :lusty-display-completion-list))
+(defun* lusty-display-completion-list (entries match)
+  (when (endp entries)
+    (lusty-print-no-entries)
+    (return-from lusty-display-completion-list))
 
-    (let* ((max-possibly-displayable-entries
-            (* (- (frame-height) 3)
-               (/ (window-width)
-                  (1+ (length lusty-completion-separator)))))
-           (cut-off (nthcdr max-possibly-displayable-entries entries))
-           (truncate-p (consp cut-off)))
+  (let* ((max-possibly-displayable-entries
+          (* (- (frame-height) 3)
+             (/ (window-width)
+                (1+ (length lusty-completion-separator)))))
+         (cut-off (nthcdr max-possibly-displayable-entries entries))
+         (truncate-p (consp cut-off)))
 
-      (when truncate-p
-        (setf (cdr cut-off) nil))
+    (when truncate-p
+      (setf (cdr cut-off) nil))
 
-      (setq entries
-            (mapcar
-             (cond ((endp (cdr entries))
-                    (lambda (e) (propertize e 'face lusty-match-face)))
-                   (match
-                    (lambda (e)
-                      (if (eq match e)
-                          (propertize e 'face lusty-match-face)
-                        (lusty-propertize-path e))))
-                   (t
-                    'lusty-propertize-path))
-             entries))
+    (setq entries
+          (mapcar
+           (cond ((endp (cdr entries))
+                  (lambda (e) (propertize e 'face lusty-match-face)))
+                 (match
+                  (lambda (e)
+                    (if (eq match e)
+                        (propertize e 'face lusty-match-face)
+                      (lusty-propertize-path e))))
+                 (t
+                  'lusty-propertize-path))
+           entries))
 
-      (loop for column-count downfrom (lusty-column-count-upperbound entries)
-            ;; FIXME this is calculated one too many times in the degenerate
-            ;; case.
-            for columns = (lusty-columnize entries column-count)
-            for widths = (mapcar 'lusty-longest-length columns)
-            for full-width = (+ (reduce '+ widths)
-                                (* (length lusty-completion-separator)
-                                   (1- column-count)))
-            until (or (<= column-count 1)
-                      (< full-width (window-width)))
-            finally
-            (when (<= column-count 1)
-              (setq columns (list entries)
-                    widths (list 0)))
-            (lusty-print-columns columns widths))
+    (loop for column-count downfrom (lusty-column-count-upperbound entries)
+          ;; FIXME this is calculated one too many times in the degenerate
+          ;; case.
+          for columns = (lusty-columnize entries column-count)
+          for widths = (mapcar 'lusty-longest-length columns)
+          for full-width = (+ (reduce '+ widths)
+                              (* (length lusty-completion-separator)
+                                 (1- column-count)))
+          until (or (<= column-count 1)
+                    (< full-width (window-width)))
+          finally
+          (when (<= column-count 1)
+            (setq columns (list entries)
+                  widths (list 0)))
+          (lusty-print-columns columns widths))
 
-      (when truncate-p
-        (lusty-print-truncated)))))
+    (when truncate-p
+      (lusty-print-truncated))))
   
 (defun lusty-print-no-entries ()
   (insert lusty-no-entries-string)

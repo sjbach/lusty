@@ -32,6 +32,12 @@
 ;;  shows the *Lusty-Completions* buffer, which updates dynamically as you
 ;;  type.
 ;;
+;;  Respects these variables:
+;;    completion-ignored-extensions
+;;    completion-ignore-case TODO
+;;    read-file-name-completion-ignore-case TODO
+;;    read-buffer-completion-ignore-case TODO
+;;
 
 ;;; Code:
 
@@ -64,7 +70,7 @@
 
 ;;;###autoload
 (defun lusty-file-explorer ()
-  "Launch the file/directory mode of Lusty Explorer"
+  "Launch the file/directory mode of LustyExplorer"
   (interactive)
   (let* ((lusty--active-mode :file-explorer)
          (file (lusty--run 'read-file-name)))
@@ -75,7 +81,7 @@
 
 ;;;###autoload
 (defun lusty-buffer-explorer ()
-  "Launch the buffer mode of Lusty Explorer"
+  "Launch the buffer mode of LustyExplorer"
   (interactive)
   (let* ((lusty--active-mode :buffer-explorer)
          (buffer (lusty--run 'read-buffer)))
@@ -245,7 +251,7 @@ does not begin with '.'."
             (goto-char (point-min))
 
             ;; If only our completions window is open,
-            (unless (consp (car (window-tree)))
+            (when (one-window-p t)
               ;; Restore original window configuration before fitting the
               ;; window so the minibuffer won't grow and look silly.
               (set-window-configuration lusty--initial-window-config))
@@ -403,13 +409,13 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 
 ;; Break entries into sublists representing columns.
 (defun lusty-columnize (entries column-count)
-  (let ((rows (ceiling (/ (length entries)
-                          (float column-count)))))
+  (let ((nrows (ceiling (/ (length entries)
+                           (float column-count)))))
     (nreverse
      (mapcar 'nreverse
              (reduce (lambda (lst e)
                        (if (< (length (car lst))
-                              rows)
+                              nrows)
                            (push e (car lst))
                          (push (list e) lst))
                        lst)

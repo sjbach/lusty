@@ -38,6 +38,9 @@
 ;;    read-file-name-completion-ignore-case TODO
 ;;    read-buffer-completion-ignore-case TODO
 ;;
+;;  Latest release: <http://www.emacswiki.org/cgi-bin/wiki/LustyExplorer>
+;;  Development:    <http://github.com/sjbach/lusty/tree/master>
+;;
 
 ;;; Code:
 
@@ -57,7 +60,7 @@
 (defvar lusty-slash-face font-lock-keyword-face)
 (defvar lusty-file-face font-lock-string-face)
 
-(defvar lusty-completions-buffer " *Lusty-Completions*")
+(defvar lusty-buffer-name " *Lusty-Completions*")
 (defvar lusty-column-separator "    ")
 (defvar lusty-no-entries-string
   (propertize "-- NO ENTRIES --" 'face 'font-lock-warning-face))
@@ -209,7 +212,10 @@ does not begin with '.'."
                  (not (string= lusty--previous-contents
                                (minibuffer-contents-no-properties)))))
     (unless lusty--initial-window-config
-      ;; This may be restored intermittently.
+      ;; (Only run when the explorer function is initially executed.)
+      (lusty-setup-completion-window)
+      ;;
+      ;; Window configuration may be restored intermittently.
       (setq lusty--initial-window-config (current-window-configuration)))
 
     ;; TODO: check that last 'element' in minibuffer string is valid
@@ -224,6 +230,45 @@ does not begin with '.'."
     ;;   
     (setq lusty--previous-contents (minibuffer-contents-no-properties))
     (lusty-update-completion-buffer)))
+
+;; Cribbed with modification from tail-select-lowest-window.
+(defun lusty-lowest-window ()
+  "Return the lowest window on the frame."
+  (let* ((current-window (if (minibufferp)
+                             (next-window (selected-window) :skip-mini)
+                           (selected-window)))
+         (lowest-window current-window)
+         (bottom-edge (car (cdr (cdr (cdr (window-edges current-window))))))
+         (last-window (previous-window current-window :skip-mini))
+         (window-search t))
+    (while window-search
+      (let* ((this-window (next-window current-window :skip-mini))
+             (next-bottom-edge (cadr (cddr (window-edges this-window)))))
+        (when (< bottom-edge next-bottom-edge)
+          (setq bottom-edge next-bottom-edge)
+          (setq lowest-window this-window))
+        (setq current-window this-window)
+        (when (eq last-window this-window)
+          (setq window-search nil))))
+    lowest-window))
+
+(defun lusty-setup-completion-window ()
+  (let ((lowest-window (lusty-lowest-window))
+        (lusty-buffer (get-buffer-create lusty-buffer-name)))
+    (save-selected-window
+      (select-window lowest-window)
+      (let ((new-lowest
+             ;; Create the window for lusty-buffer
+             (split-window-vertically)))
+        (select-window new-lowest)
+        ;; Try to get a window covering the full frame.  Sometimes
+        ;; this takes more than one try, but we don't want to do it
+        ;; infinitely in case of weird setups.
+        (loop repeat 3
+              while (< (window-width) (frame-width))
+              do (enlarge-window-horizontally (- (frame-width)
+                                                 (window-width))))
+        (set-window-buffer new-lowest lusty-buffer)))))
 
 (defun lusty-update-completion-buffer (&optional tab-pressed-p)
   (assert (minibufferp))
@@ -242,7 +287,7 @@ does not begin with '.'."
           (minibuffer-complete-and-exit))
       ;;
       ;; Update the completion window.
-      (let ((lusty-buffer (get-buffer-create lusty-completions-buffer)))
+      (let ((lusty-buffer (get-buffer-create lusty-buffer-name)))
         (with-current-buffer lusty-buffer
           (setq buffer-read-only t)
           (let ((buffer-read-only nil))

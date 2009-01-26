@@ -2,8 +2,8 @@
 ;;
 ;; Copyright (C) 2008 Stephen Bach <this-file@sjbach.com>
 ;;
-;; Version: 1.0
-;; Created: September 6, 2008
+;; Version: 1.0.1
+;; Created: January 25, 2009
 ;; Keywords: convenience, files, matching
 ;; Compatibility: GNU Emacs 22 and 23
 ;;
@@ -34,12 +34,13 @@
 ;;
 ;;  Respects these variables:
 ;;    completion-ignored-extensions
-;;    completion-ignore-case TODO
-;;    read-file-name-completion-ignore-case TODO
-;;    read-buffer-completion-ignore-case TODO
 ;;
 ;;  Latest release: <http://www.emacswiki.org/cgi-bin/wiki/LustyExplorer>
 ;;  Development:    <http://github.com/sjbach/lusty/tree/master>
+;;
+
+;;; Contributors
+;; Jan Rehders
 ;;
 
 ;;; Code:

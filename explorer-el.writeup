@@ -17,6 +17,10 @@ Lisp:lusty-explorer.el
 
 '''LustyExplorer''' is based on the [http://www.vim.org/scripts/script.php?script_id=1890 Vim plugin] of the same name.
 
+Version 1.0.1:
+- Make the completion window more useable in multi-window configurations.
+- Fixed two bugs in computing optimal completion content layout.
+
 ----
 CategoryBufferSwitching CategoryFiles CategoryCompletion
 

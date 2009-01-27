@@ -13,13 +13,20 @@ Launch the explorer with one of these commands:
     M-x lusty-file-explorer
     M-x lusty-buffer-explorer
 
-Lisp:lusty-explorer.el
-
 '''LustyExplorer''' is based on the [http://www.vim.org/scripts/script.php?script_id=1890 Vim plugin] of the same name.
 
+= Download =
+Lisp:lusty-explorer.el
+
+
+= Changelist =
+
+Version 1.0.2:
+* Fixed a bug in completion-ignored-extensions matching.  Thanks to Hugo Schmitt.
+
 Version 1.0.1:
-- Make the completion window more useable in multi-window configurations.
-- Fixed two bugs in computing optimal completion content layout.
+* Made the completion window more useable in multi-window configurations.  Thanks to Jan Rehders.
+* Fixed two bugs in computing optimal completion content layout.
 
 ----
 CategoryBufferSwitching CategoryFiles CategoryCompletion

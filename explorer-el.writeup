@@ -1,6 +1,6 @@
 '''LustyExplorer''' is a fast and responsive way to manage files and buffers.  It includes both a filesystem explorer and a buffer switcher through a common interface.
 
-It's like <code>find-file</code> crossed with <code>iswitchb</code> or InteractivelyDoThings, but with a flashy dedicated window for completions instead of the minibuffer.
+It's like <code>find-file</code> crossed with <code>iswitchb</code> or InteractivelyDoThings, but with a larger and more easily readable dedicated window for completions instead of the minibuffer.
 
 [http://viewglob.sourceforge.net/lusty-explorer.el.animated.gif Here's a 3.4 MB animated gif showing it in action]
 
@@ -18,6 +18,7 @@ Launch the explorer with one of these commands:
 = Download =
 Lisp:lusty-explorer.el
 
+[http://github.com/sjbach/lusty/tree/master Development repository]
 
 = Changelist =
 

@@ -1,6 +1,6 @@
 ;;; lusty-explorer.el --- Dynamic filesystem explorer and buffer switcher
 ;;
-;; Copyright (C) 2008 Stephen Bach <this-file@sjbach.com>
+;; Copyright (C) 2008, 2009 Stephen Bach <this-file@sjbach.com>
 ;;
 ;; Version: 1.0.2
 ;; Created: January 26, 2009
@@ -11,8 +11,8 @@
 ;; without modifications, provided that this copyright notice is copied with
 ;; it. Like anything else that's free, lusty-explorer.el is provided *as is*
 ;; and comes with no warranty of any kind, either expressed or implied. In no
-;; event will the copyright holder be liable for any damages resulting from the
-;; use of this software.
+;; event will the copyright holder be liable for any damages resulting from
+;; the use of this software.
 
 ;;; Commentary:
 ;;
@@ -26,20 +26,21 @@
 ;;    M-x lusty-file-explorer
 ;;    M-x lusty-buffer-explorer
 ;;
-;;  And then use as you would `find-file' or `switch-to-buffer'.  (There are
-;;  minor differences in entry selection, e.g. tab-completing when there is a
-;;  only a single completion will select that completion.)  A split window
-;;  shows the *Lusty-Completions* buffer, which updates dynamically as you
-;;  type.
+;; And then use as you would `find-file' or `switch-to-buffer'.  (There are
+;; minor differences in entry selection, e.g. tab-completing when there is a
+;; only a single completion will select that completion.)  A split window
+;; shows the *Lusty-Completions* buffer, which updates dynamically as you
+;; type.
 ;;
-;;  Respects these variables:
-;;    completion-ignored-extensions
+;; Respects these variables:
+;;   completion-ignored-extensions
 ;;
-;;  Latest release: <http://www.emacswiki.org/cgi-bin/wiki/LustyExplorer>
-;;  Development:    <http://github.com/sjbach/lusty/tree/master>
+;; Latest release: <http://www.emacswiki.org/cgi-bin/wiki/LustyExplorer>
+;; Development:    <http://github.com/sjbach/lusty/tree/master>
 ;;
 
-;;; Contributors
+;;; Contributors:
+;;
 ;; Jan Rehders
 ;; Hugo Schmitt
 ;;

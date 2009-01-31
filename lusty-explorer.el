@@ -148,7 +148,7 @@ does not begin with '.'."
            (string= (directory-file-name str) "."))
          (ignored-p (name)
            (some (lambda (ext) (string-match ext name))
-                 lusty--completion-ignored-extensions )))
+                 lusty--completion-ignored-extensions)))
     (remove-if 'ignored-p
                (if (hidden-p file-portion)
                    (remove-if 'pwd-p files)

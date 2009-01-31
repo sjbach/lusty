@@ -1,1 +1,2 @@
-- Restore the unnamed (default) register after using the explorer.  Thanks to cho45.
+- Definitively fix the bug of overwritten delete registers.
+- Respect the 'wildignore' variable; g:LustyExplorerFileMasks still works, but is deprecated.

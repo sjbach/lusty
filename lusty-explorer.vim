@@ -1,4 +1,4 @@
-"    Copyright: Copyright (C) 2008 Stephen Bach
+"    Copyright: Copyright (C) 2007-2009 Stephen Bach
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
 "               notice is copied with it. Like anything else that's free,
@@ -13,8 +13,8 @@
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45
 "
-" Release Date: Thursday, August 25, 2008
-"      Version: 1.4.2
+" Release Date: January 30, 2009
+"      Version: 1.4.3
 "               Inspired by Viewglob, Emacs, and by Jeff Lanzarotta's Buffer
 "               Explorer plugin.
 "
@@ -69,11 +69,13 @@
 "  You can prevent certain files from appearing in the directory listings with
 "  the following variable:
 "
-"    let g:LustyExplorerFileMasks = "*.o,*.fasl,CVS"
+"    set wildignore=*.o,*.fasl,CVS
 "
 "  The above example will mask all object files, compiled lisp files, and
 "  files/directories named CVS from appearing in the filesystem explorer.
 "  Note that they can still be opened by being named explicitly.
+"
+"  See :help 'wildignore' for more information.
 "
 "
 " Install Details:
@@ -560,6 +562,11 @@ class FilesystemExplorer < LustyExplorer
       @prompt = FilesystemPrompt.new
     end
 
+    def run
+      FileMasks.create_glob_masks()
+      super
+    end
+
     def run_from_here
       unless $curbuf.name.nil?
         # Cache the current directory.
@@ -660,7 +667,7 @@ class FilesystemExplorer < LustyExplorer
         next if name == "."   # Skip pwd
 
         # Hide masked files.
-        next if FileMask.masked?(name)
+        next if FileMasks.masked?(name)
 
         # Don't show hidden files unless the user has typed a leading "." in
         # the current view_path.
@@ -1070,18 +1077,6 @@ class SavedSettings
     @report = eva "&report"
     @sidescroll = eva "&sidescroll"
     @sidescrolloff = eva "&sidescrolloff"
-
-    @reg_unnamed = vim_single_quote_escape(eva('@"'))
-    @reg0 = vim_single_quote_escape(eva("@0"))
-    @reg1 = vim_single_quote_escape(eva("@1"))
-    @reg2 = vim_single_quote_escape(eva("@2"))
-    @reg3 = vim_single_quote_escape(eva("@3"))
-    @reg4 = vim_single_quote_escape(eva("@4"))
-    @reg5 = vim_single_quote_escape(eva("@5"))
-    @reg6 = vim_single_quote_escape(eva("@6"))
-    @reg7 = vim_single_quote_escape(eva("@7"))
-    @reg8 = vim_single_quote_escape(eva("@8"))
-    @reg9 = vim_single_quote_escape(eva("@9"))
   end
 
   def restore
@@ -1114,20 +1109,6 @@ class SavedSettings
     exe "set report=#{@report}"
     exe "set sidescroll=#{@sidescroll}"
     exe "set sidescrolloff=#{@sidescrolloff}"
-
-    exe "let @\" = '#{@reg_unnamed}'"
-
-    # FIXME: Setting register 0 overwrites @", so skip it for now.
-    #exe "let @0 = '#{@reg0}'"
-    exe "let @1 = '#{@reg1}'"
-    exe "let @2 = '#{@reg2}'"
-    exe "let @3 = '#{@reg3}'"
-    exe "let @4 = '#{@reg4}'"
-    exe "let @5 = '#{@reg5}'"
-    exe "let @6 = '#{@reg6}'"
-    exe "let @7 = '#{@reg7}'"
-    exe "let @8 = '#{@reg8}'"
-    exe "let @9 = '#{@reg9}'"
   end
 
   def sync_pwd
@@ -1341,8 +1322,8 @@ class Displayer
     def unlock_and_clear
       exe "setlocal modifiable"
 
-      # Clear the explorer
-      exe "silent %d"
+      # Clear the explorer (black hole register)
+      exe "silent %d _"
     end
 
     def lock
@@ -1388,30 +1369,28 @@ class Displayer
 end
 
 
-class FileMask
+class FileMasks
   private
-    @@glob_masks = nil
+    @@glob_masks = []
 
   public
-    def FileMask.init
-      create_glob_masks()
+    def FileMasks.create_glob_masks
+      @@glob_masks = if eva('exists("g:LustyExplorerFileMasks")') != "0"
+                       # Note: this variable deprecated.
+                       eva("g:LustyExplorerFileMasks").split(',')
+                     elsif eva('exists("&wildignore")') != "0"
+                       eva("&wildignore").split(',')
+                     else
+                       []
+                     end
     end
 
-    def FileMask.masked?(str)
-      @@glob_masks and @@glob_masks.each do |mask|
+    def FileMasks.masked?(str)
+      @@glob_masks.each do |mask|
         return true if File.fnmatch(mask, str)
       end
 
       return false
-    end
-
-  private
-    # Maybe this should be called more often for the case where the variable
-    # is set during a Vim session?
-    def FileMask.create_glob_masks
-      if eva('exists("g:LustyExplorerFileMasks")') != "0"
-        @@glob_masks = eva("g:LustyExplorerFileMasks").split(',')
-      end
     end
 end
 
@@ -1476,7 +1455,6 @@ end
 
 
 Window.init
-FileMask.init
 $buffer_explorer = BufferExplorer.new
 $filesystem_explorer = FilesystemExplorer.new
 

@@ -71,6 +71,7 @@
   (propertize "-- TRUNCATED --" 'face 'font-lock-comment-face))
 
 (defvar lusty--active-mode nil)
+(defvar lusty--wrapping-ido-p nil)
 (defvar lusty--previous-contents nil)
 (defvar lusty--initial-window-config nil)
 (defvar lusty--completion-ignored-extensions nil)
@@ -218,10 +219,7 @@ does not begin with '.'."
                                (minibuffer-contents-no-properties)))))
     (unless lusty--initial-window-config
       ;; (Only run when the explorer function is initially executed.)
-      (lusty-setup-completion-window)
-      ;;
-      ;; Window configuration may be restored intermittently.
-      (setq lusty--initial-window-config (current-window-configuration)))
+      (lusty-setup-completion-window))
 
     ;; TODO: check that last 'element' in minibuffer string is valid
     ;; if last char is a '/'
@@ -273,7 +271,10 @@ does not begin with '.'."
               while (< (window-width) (frame-width))
               do (enlarge-window-horizontally (- (frame-width)
                                                  (window-width))))
-        (set-window-buffer new-lowest lusty-buffer)))))
+        (set-window-buffer new-lowest lusty-buffer))))
+  ;;
+  ;; Window configuration may be restored intermittently.
+  (setq lusty--initial-window-config (current-window-configuration)))
 
 (defun lusty-update-completion-buffer (&optional tab-pressed-p)
   (assert (minibufferp))
@@ -311,7 +312,9 @@ does not begin with '.'."
           (set-buffer-modified-p nil))))))
 
 (defun lusty-buffer-explorer-completions ()
-  (let* ((contents (minibuffer-contents-no-properties))
+  (let* ((contents (if lusty--wrapping-ido-p
+                       ido-text
+                     (minibuffer-contents-no-properties)))
          (buffers (lusty-filter-buffers (buffer-list)))
          (completions (let ((iswitchb-text contents))
                         (iswitchb-get-matched-buffers contents nil buffers)))

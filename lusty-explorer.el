@@ -267,10 +267,14 @@ does not begin with '.'."
         ;; Try to get a window covering the full frame.  Sometimes
         ;; this takes more than one try, but we don't want to do it
         ;; infinitely in case of weird setups.
-        (loop repeat 3
+        (loop repeat 5
               while (< (window-width) (frame-width))
-              do (enlarge-window-horizontally (- (frame-width)
-                                                 (window-width))))
+              do
+              (condition-case nil
+                  (enlarge-window-horizontally (- (frame-width)
+                                                  (window-width)))
+                (error
+                 (return))))
         (set-window-buffer new-lowest lusty-buffer))))
   ;;
   ;; Window configuration may be restored intermittently.

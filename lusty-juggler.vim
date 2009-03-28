@@ -69,6 +69,7 @@
 "               
 "
 " Install Details:
+"
 " Copy this file into your $HOME/.vim/plugin directory so that it will be
 " sourced on startup automatically.
 "
@@ -87,6 +88,8 @@
 " like this (in .vimrc):
 "
 "   let g:LustyJugglerSuppressRubyWarning = 1
+"
+" GetLatestVimScripts: 2050 9507 lusty-juggler.vim
 "
 " TODO:
 " - save and restore mappings

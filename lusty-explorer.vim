@@ -99,6 +99,7 @@
 "
 "   let g:LustyExplorerSuppressRubyWarning = 1
 "
+" GetLatestVimScripts: 1890 9903 lusty-explorer.vim
 "
 " TODO:
 " - when an edited file is in nowrap mode and the explorer is called while the

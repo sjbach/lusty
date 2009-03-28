@@ -227,7 +227,7 @@ class String
 end
 
 
-class Vim::Buffer
+class VIM::Buffer
   # On Windows, name() returns paths with backslashes instead of the Ruby
   # standard forward slashes, so we need to fix that for portability.
   def name_p

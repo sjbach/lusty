@@ -43,6 +43,7 @@
 ;;
 ;; Jan Rehders
 ;; Hugo Schmitt
+;; Volkan Yazici
 ;;
 
 ;;; Code:
@@ -464,20 +465,15 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
           do (incf length-so-far sep-len)
           finally (return column-count))))
 
-;; Break entries into sublists representing columns.
-(defun lusty-columnize (entries column-count)
-  (let ((nrows (ceiling (/ (length entries)
-                           (float column-count)))))
-    (nreverse
-     (mapcar 'nreverse
-             (reduce (lambda (lst e)
-                       (if (< (length (car lst))
-                              nrows)
-                           (push e (car lst))
-                         (push (list e) lst))
-                       lst)
-                     entries
-                     :initial-value (list (list)))))))
+(defun lusty-columnize (entries n-columns)
+  "Split ENTRIES into N-COLUMNS sublists."
+  (let ((n-rows (ceiling (length entries) n-columns))
+        (sublists))
+    (while entries
+      (push (subseq entries 0 (min n-rows (length entries)))
+            sublists)
+      (setq entries (nthcdr n-rows entries)))
+    (nreverse sublists)))
 
 (defun lusty--run (read-fn)
   (add-hook 'post-command-hook 'lusty--post-command-function t)

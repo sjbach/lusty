@@ -11,7 +11,7 @@
 "  Description: Dynamic Filesystem and Buffer Explorer Vim Plugin
 "   Maintainer: Stephen Bach <this-file@sjbach.com>
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
-"               Rajendra Badapanda, cho45
+"               Rajendra Badapanda, cho45, Sami Samhuri
 "
 " Release Date: January 30, 2009
 "      Version: 1.4.3
@@ -1352,19 +1352,14 @@ class Displayer
       return column_count
     end
 
-    def columnize(strings, column_count)
-      rows = (strings.length / Float(column_count)).ceil
+    def columnize(strings, n_cols)
+      n_rows = (strings.length.to_f / n_cols).ceil
 
       # Break the array into sub arrays representing columns
-      cols = strings.inject([[]]) { |array, e|
-        if array.last.size < rows
-          array.last << e
-        else
-          array << [e]
-        end
-        array
-      }
-
+      cols = []
+      0.step(strings.size-1, n_rows) do |i|
+        cols << strings[i..(i + n_rows - 1)]
+      end
       return cols
     end
 end

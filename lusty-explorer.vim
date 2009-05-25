@@ -9,12 +9,13 @@
 "
 " Name Of File: lusty-explorer.vim
 "  Description: Dynamic Filesystem and Buffer Explorer Vim Plugin
-"   Maintainer: Stephen Bach <this-file@sjbach.com>
+"  Maintainers: Stephen Bach <this-file@sjbach.com>
+"               Matt Tolton
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45, Sami Samhuri, Matt Tolton
 "
-" Release Date: January 30, 2009
-"      Version: 1.4.3
+" Release Date: May XX, 2009
+"      Version: 2.0
 "               Inspired by Viewglob, Emacs, and by Jeff Lanzarotta's Buffer
 "               Explorer plugin.
 "
@@ -52,6 +53,8 @@
 "
 " Buffer Explorer:
 "  - The currently active buffer is highlighted.
+"  - Buffers are listed without their full path unless needed to
+"    differentiate buffers with the same name.
 "
 " Filesystem Explorer:
 "  - All opened files are highlighted.
@@ -65,9 +68,10 @@
 "    (in gvim only -- <C-a> can be used in terminal mode).
 "  - <C-e> will create a file in the currently viewed directory with the name
 "    specified at the prompt.
-"  - Entries which begin with a dot can be hidden with:
-"       let g:LustyExplorerHideDotFiles = 1
-"    Note: these entries are always shown if the current search term begins with a .
+"  - Dotfiles are hidden by default, but are shown if the current search term
+"    begins with a '.'.  To show these file at all times, set this option:
+"
+"       let g:LustyExplorerAlwaysShowDotFiles = 1
 "
 "  You can prevent certain files from appearing in the directory listings with
 "  the following variable:
@@ -142,7 +146,7 @@ if !has("ruby") || version < 700
     echo "    1. Download and install Ruby from here:"
     echo "       http://www.ruby-lang.org/"
     echo "    2. Install a Vim binary with Ruby support:"
-    echo "       http://hasno.info/2007/5/18/windows-vim-7-1-2\n"
+    echo "       http://segfault.hasno.info/vim/gvim72.zip\n"
 
     echo "Manually (including Cygwin):"
     echo "    1. Install Ruby."
@@ -213,7 +217,6 @@ endfunction
 ruby << EOF
 require 'pathname'
 require 'profiler'
-require 'stringio'
 
 class String
   def ends_with?(s)
@@ -227,6 +230,16 @@ class String
   end
 end
 
+class Float
+  # Taken from Ruby Cookbook by Leonard Richardson
+  def approx(other, relative_epsilon=Float::EPSILON, epsilon=Float::EPSILON)
+    difference = other - self
+    return true if difference.abs <= epsilon
+    relative_error = (difference / (self > other ? self : other)).abs
+    return relative_error <= relative_epsilon
+  end
+end
+  
 
 class VIM::Buffer
   # On Windows, name() returns paths with backslashes instead of the Ruby
@@ -240,8 +253,8 @@ class VIM::Buffer
   end
 end
 
-# Port of the LiquidMetal fuzzy matching algorithm found at
-# http://github.com/rmm5t/liquidmetal/tree/master.
+# Port of Ryan McGeary's LiquidMetal fuzzy matching algorithm found at:
+#   http://github.com/rmm5t/liquidmetal/tree/master.
 class LiquidMetal
   @@SCORE_NO_MATCH = 0.0
   @@SCORE_MATCH = 1.0
@@ -366,7 +379,6 @@ class LustyExplorer
       return if not @running
 
       on_refresh()
-      #@displayer.print ordered_matching_entries().map! { |x| "#{x} : #{qs_score(x, current_abbreviation())}" }
       @displayer.print ordered_matching_entries()
       @prompt.refresh
     end
@@ -406,7 +418,6 @@ class LustyExplorer
       exe "#{map_command} <C-c>    :call #{self.class}Cancel()<CR>"
       exe "#{map_command} <C-g>    :call #{self.class}Cancel()<CR>"
 
-      # Added by mtolton
       exe "#{map_command} <C-w>    :call #{self.class}KeyPressed(200)<CR>"
       exe "#{map_command} <C-n>    :call #{self.class}KeyPressed(201)<CR>"
       exe "#{map_command} <C-p>    :call #{self.class}KeyPressed(202)<CR>"
@@ -438,15 +449,24 @@ class LustyExplorer
       if abbrev.length == 0
         unordered.sort!()
       else
+        # Sort by score, then name.
         unordered.sort! do |x, y|
-          LiquidMetal.score(y, abbrev) <=> LiquidMetal.score(x, abbrev)
+          x_score = LiquidMetal.score(x.sub(/\/$/,''), abbrev)
+          y_score = LiquidMetal.score(y.sub(/\/$/,''), abbrev)
+#y_score <=> x_score
+          if x_score.approx(y_score)
+            x <=> y
+          else
+            y_score <=> x_score
+          end
         end
       end
     end
 
     def matching_entries
-      entries = all_entries()
-      return entries.select { |x| LiquidMetal.score(x, current_abbreviation()) != 0 }
+      all_entries().select { |entry|
+        LiquidMetal.score(entry, current_abbreviation()) != 0
+      }
     end
 
     def choose(in_new_tab)
@@ -472,13 +492,14 @@ class BufferExplorer < LustyExplorer
     def initialize
       super
       @prompt = Prompt.new
-      @buffers = Hash.new
+      @buffers = {}
+      @basename_prefixes = {}
     end
 
     def run
       unless @running
         @prompt.clear!
-        @curbuf = VIM::Buffer.current
+        @curbuf_at_start = VIM::Buffer.current
         fill_buffers()
         super
       end
@@ -507,14 +528,16 @@ class BufferExplorer < LustyExplorer
                end
              end
 
+      # Disabled: show buffer number next to name
       #name += ' ' + buffer.number.to_s
+
       name += modified?(buffer.number) ? " [+]" : ""
 
       return name
     end
 
-    def buffer_match_string
-      Displayer.vim_match_string(entry_for_buffer(@curbuf),
+    def curbuf_match_string
+      Displayer.vim_match_string(entry_for_buffer(@curbuf_at_start),
                                  @prompt.insensitive?)
     end
 
@@ -522,14 +545,14 @@ class BufferExplorer < LustyExplorer
       # Highlighting for the current buffer name.
       if has_syntax?
         exe 'syn clear LustyExpCurrentBuffer'
-        exe "syn match LustyExpCurrentBuffer \"#{buffer_match_string()}\" " \
+        exe "syn match LustyExpCurrentBuffer \"#{curbuf_match_string()}\" " \
             'contains=LustyExpModified'
       end
       super
     end
 
     def fill_basename_prefixes
-      prefixes = Hash.new { |hash, key| hash[key] = Array.new }
+      prefixes = Hash.new { |hash, key| hash[key] = [] }
       (0..VIM::Buffer.count-1).each do |i|
           name = VIM::Buffer[i].name_p
           next if name.nil?
@@ -541,8 +564,10 @@ class BufferExplorer < LustyExplorer
 
       prefixes.reject! { |k, v| v.length <= 1 }
 
-      @basename_prefixes = Hash.new
-      prefixes.each { |k, v| @basename_prefixes[k] = common_prefix(v) }
+      @basename_prefixes.clear
+      prefixes.each do |k, v|
+        @basename_prefixes[k] = common_prefix(v)
+      end
     end
 
     def common_prefix(paths)
@@ -560,11 +585,11 @@ class BufferExplorer < LustyExplorer
     end
 
     def fill_buffers
-      @buffers.clear
 
       fill_basename_prefixes()
 
       # Generate a hash of the buffers.
+      @buffers.clear
       (0..VIM::Buffer.count-1).each do |i|
         buffer = VIM::Buffer[i]
         name = entry_for_buffer(buffer)
@@ -628,9 +653,6 @@ class FilesystemExplorer < LustyExplorer
       if $curbuf.name.nil?
         @prompt.set!(vimwd() + File::SEPARATOR)
       else
-        # Cache the current directory.
-        #@pwd = Dir.pwd
-        #exe "cd #{vim_file_escape(File.dirname($curbuf.name_p))}"
         @prompt.set!(eva("expand('%:p:h')") + File::SEPARATOR)
       end
 
@@ -683,15 +705,7 @@ class FilesystemExplorer < LustyExplorer
     def on_refresh
       # Highlighting for all open buffers located in the viewed directory.
 
-      #view_dir = \
-      #  if @prompt.at_dir?
-      #    # The last element in the path is a directory + '/' and we want to
-      #    # see what's in it instead of its parent directory.
-      #    File.expand_path @prompt.input
-      #  else
-      #    File.expand_path @prompt.dirname
-      #  end
-
+      # TODO: restore highlighting for all open buffers?
       super
     end
 
@@ -719,6 +733,7 @@ class FilesystemExplorer < LustyExplorer
           input_path.dirname
         end
 
+      # TODO: determine why this is commented
       #return path.realpath()
       return path
     end
@@ -732,7 +747,7 @@ class FilesystemExplorer < LustyExplorer
         return @memoized_entries[view_path()]
       end
 
-      entries = Array.new
+      entries = []
       # Generate an array of the files
       view_path().each_entry do |file|
         name = file.basename.to_s
@@ -753,9 +768,10 @@ class FilesystemExplorer < LustyExplorer
 
     def matching_entries
       matching = super
-      if option_is_set("HideDotFiles") and not current_abbreviation().starts_with?(".")
-        # Filter out files that start with . if the current abbreviation doesn't
-        # start with .
+      unless lusty_option_set?("AlwaysShowDotFiles") or \
+             current_abbreviation().starts_with?(".")
+        # Filter out dotfiles if the current abbreviation doesn't start with
+        # '.'.
         matching = matching.select { |x| not x.starts_with?(".") }
       end
       return matching
@@ -764,6 +780,7 @@ class FilesystemExplorer < LustyExplorer
     def open_entry(name, in_new_tab)
       path = view_path() + name
 
+      # FIXME: is this needed anymore?
       # Remove duplicate separators (for Windows).
       #path.gsub!(/\/\/+/, "/")
 
@@ -783,9 +800,8 @@ class FilesystemExplorer < LustyExplorer
     def load_file(path, in_new_tab=false)
       assert($curwin == @calling_window)
       # Escape for Vim and remove leading ./ for files in pwd.
-      sanitized = vim_file_escape(path).sub(/^\.\//,"")
-      # Added by mtolton -- resolve entire path before opening
-      sanitized = eva "fnamemodify('#{sanitized}', ':p')"
+      escaped = vim_file_escape(path).sub(/^\.\//,"")
+      sanitized = eva "fnamemodify('#{escaped}', ':p')"
       cmd = in_new_tab ? "tabe" : "e"
       exe "silent #{cmd} #{sanitized}"
     end
@@ -1310,7 +1326,7 @@ def eva(s)
   VIM.evaluate s
 end
 
-def option_is_set(opt_name)
+def lusty_option_set?(opt_name)
   opt_name = "g:LustyExplorer" + opt_name
   eva("exists('#{opt_name}') && #{opt_name} != '0'") != "0"
 end

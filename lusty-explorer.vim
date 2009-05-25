@@ -52,10 +52,8 @@
 "
 " Buffer Explorer:
 "  - The currently active buffer is highlighted.
-"  - Buffer numbers are shown next to buffer names.
 "
 " Filesystem Explorer:
-"  - Entries are listed in alphabetical order.
 "  - All opened files are highlighted.
 "  - Directory contents are memoized.  Use <C-r> to refresh the contents of a
 "    directory.
@@ -67,6 +65,10 @@
 "    (in gvim only -- <C-a> can be used in terminal mode).
 "  - <C-e> will create a file in the currently viewed directory with the name
 "    specified at the prompt.
+"  - Entries which begin with a dot can be hidden with:
+"       let g:LustyExplorerHideDotFiles = 1
+"    Note: these entries are always shown if the current search term begins with a .
+"
 "  You can prevent certain files from appearing in the directory listings with
 "  the following variable:
 "
@@ -119,7 +121,7 @@ if !has("ruby") || version < 700
   if !exists("g:LustyExplorerSuppressRubyWarning") ||
      \ g:LustyExplorerSuppressRubyWarning == "0"
   if !exists("g:LustyJugglerSuppressRubyWarning") ||
-      \ g:LustyJugglerSuppressRubyWarning == "0" 
+      \ g:LustyJugglerSuppressRubyWarning == "0"
     echohl ErrorMsg
     echon "Sorry, LustyExplorer requires ruby.  "
     echon "Here are some tips for adding it:\n"
@@ -238,47 +240,8 @@ class VIM::Buffer
   end
 end
 
-def qs_score(entry, abbrev)
-    return 0.9 if abbrev.length == 0
-    return 0.0 if abbrev.length > entry.length
-
-    abbrev.length.downto(1) do |i|
-        sub_abbrev = abbrev[0...i]
-        index = entry.index(sub_abbrev)
-
-        next if index.nil?
-        next if index + sub_abbrev.length > entry.length
-
-        next_entry = entry[index+sub_abbrev.length..-1]
-
-        next_abbrev = i >= abbrev.length ? "" : abbrev[i..-1]
-
-        remaining_score = qs_score(next_entry, next_abbrev)
-
-        if remaining_score > 0
-            score = entry.length - next_entry.length
-
-            if index != 0
-                c = entry[index - 1]
-                word_boundaries = " \t/._"
-                if word_boundaries.include?(c)
-                    for j in 0...(index-1)
-                        c = entry[j]
-                        score -= word_boundaries.include?(c) ? 1 : 0.15
-                    end
-                else
-                    score -= index
-                end
-            end
-
-            score += remaining_score * next_entry.length
-            score /= entry.length
-            return score
-        end
-    end
-    return 0.0
-end
-
+# Port of the LiquidMetal fuzzy matching algorithm found at
+# http://github.com/rmm5t/liquidmetal/tree/master.
 class LiquidMetal
   @@SCORE_NO_MATCH = 0.0
   @@SCORE_MATCH = 1.0
@@ -391,8 +354,9 @@ class LustyExplorer
         cleanup()
         # fix alternate file
         if @saved_alternate_buffer != nil
+          cur = $curbuf
           exe "silent b #{@saved_alternate_buffer}"
-          exe "silent b #"
+          exe "silent b " + cur.number.to_s
         end
       end
     end
@@ -401,7 +365,6 @@ class LustyExplorer
     def refresh
       return if not @running
 
-      #@settings.sync_pwd()
       on_refresh()
       #@displayer.print ordered_matching_entries().map! { |x| "#{x} : #{qs_score(x, current_abbreviation())}" }
       @displayer.print ordered_matching_entries()
@@ -483,14 +446,7 @@ class LustyExplorer
 
     def matching_entries
       entries = all_entries()
-      regex = ""
-      current_abbreviation().split(//).each do |i|
-        regex << Regexp.escape(i) << ".*"
-      end
-
-      regex = Regexp.new(regex, true)
-
-      return entries.select { |x| x =~ regex }
+      return entries.select { |x| LiquidMetal.score(x, current_abbreviation()) != 0 }
     end
 
     def choose(in_new_tab)
@@ -551,7 +507,7 @@ class BufferExplorer < LustyExplorer
                end
              end
 
-      name += ' ' + buffer.number.to_s
+      #name += ' ' + buffer.number.to_s
       name += modified?(buffer.number) ? " [+]" : ""
 
       return name
@@ -644,7 +600,12 @@ end
 
 def time
   #Profiler__.start_profile()
-  yield
+  begin
+    yield
+  rescue Exception => e
+    print e
+    print e.backtrace
+  end
   #Profiler__.stop_profile()
   #f = File.new('rbprof.txt', 'a')
   #Profiler__.print_profile(f)
@@ -722,14 +683,14 @@ class FilesystemExplorer < LustyExplorer
     def on_refresh
       # Highlighting for all open buffers located in the viewed directory.
 
-      view_dir = \
-        if @prompt.at_dir?
-          # The last element in the path is a directory + '/' and we want to
-          # see what's in it instead of its parent directory.
-          File.expand_path @prompt.input
-        else
-          File.expand_path @prompt.dirname
-        end
+      #view_dir = \
+      #  if @prompt.at_dir?
+      #    # The last element in the path is a directory + '/' and we want to
+      #    # see what's in it instead of its parent directory.
+      #    File.expand_path @prompt.input
+      #  else
+      #    File.expand_path @prompt.dirname
+      #  end
 
       super
     end
@@ -758,12 +719,17 @@ class FilesystemExplorer < LustyExplorer
           input_path.dirname
         end
 
-      return path.realpath()
+      #return path.realpath()
+      return path
     end
 
     def all_entries
+      if not view_path().exist?
+        return []
+      end
+
       if @memoized_entries.has_key?(view_path())
-       return @memoized_entries[view_path()]
+        return @memoized_entries[view_path()]
       end
 
       entries = Array.new
@@ -783,6 +749,16 @@ class FilesystemExplorer < LustyExplorer
 
       @memoized_entries[view_path()] = entries
       return entries
+    end
+
+    def matching_entries
+      matching = super
+      if option_is_set("HideDotFiles") and not current_abbreviation().starts_with?(".")
+        # Filter out files that start with . if the current abbreviation doesn't
+        # start with .
+        matching = matching.select { |x| not x.starts_with?(".") }
+      end
+      return matching
     end
 
     def open_entry(name, in_new_tab)
@@ -1045,15 +1021,6 @@ class SavedSettings
     exe "set sidescroll=#{@sidescroll}"
     exe "set sidescrolloff=#{@sidescrolloff}"
   end
-
-  #def sync_pwd
-  #  vim_pwd = eva("getcwd()")
-  #  ruby_pwd = Dir.pwd
-
-  #  if ruby_pwd != vim_pwd
-  #    Dir.chdir vim_pwd
-  #  end
-  #end
 end
 
 # Manage the explorer buffer.
@@ -1341,6 +1308,11 @@ end
 
 def eva(s)
   VIM.evaluate s
+end
+
+def option_is_set(opt_name)
+  opt_name = "g:LustyExplorer" + opt_name
+  eva("exists('#{opt_name}') && #{opt_name} != '0'") != "0"
 end
 
 def vimwd()

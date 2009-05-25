@@ -12,7 +12,8 @@
 "  Maintainers: Stephen Bach <this-file@sjbach.com>
 "               Matt Tolton
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
-"               Rajendra Badapanda, cho45, Sami Samhuri, Matt Tolton
+"               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
+"               Matt Tolton
 "
 " Release Date: May XX, 2009
 "      Version: 2.0
@@ -41,33 +42,37 @@
 "                 >>
 "
 "               As you type, the list updates for possible matches using a
-"               fuzzy matching algorithm.  The currently selected match may be
-"               opened with <Tab> or <Enter>.  To cancel, use <Esc>, <C-c>, or
-"               <C-g>.  Other handy shortcuts include:
+"               fuzzy matching algorithm.  Special keys include:
 "
-"                 <C-t> opens the currently selected item in a new tab
-"                 <C-n> selects the next matching item
-"                 <C-p> selects the previous matching item
-"                 <C-w> deletes one "directory" backwards at the prompt
-"                 <C-u> clears the prompt
+"                 <Enter>  open the selected match
+"                 <Tab>    open the selected match
+"                 <Esc>    cancel
+"                 <C-c>    cancel
+"                 <C-g>    cancel
+"
+"                 <C-t>    open the selected match in a new tab
+"                 <C-n>    select the next match
+"                 <C-p>    select the previous match
+"                 <C-w>    ascend one directory at prompt
+"                 <C-u>    clear the prompt
+"
+"               Additional shortcuts for the filesystem explorer:
+"
+"                 <C-r>    refresh directory contents
+"                 <C-a>    open all files in the current list
+"                 <C-e>    create a new file with the given name
 "
 " Buffer Explorer:
 "  - The currently active buffer is highlighted.
-"  - Buffers are listed without their full path unless needed to
-"    differentiate buffers with the same name.
+"  - Buffers are listed without path unless needed to differentiate buffers of
+"    the same name.
 "
 " Filesystem Explorer:
-"  - All opened files are highlighted.
-"  - Directory contents are memoized.  Use <C-r> to refresh the contents of a
-"    directory.
+"  - Directory contents are memoized.
 "  - You can recurse into and out of directories by typing the directory name
 "    and a slash, e.g. "stuff/" or "../".
 "  - Variable expansion, e.g. "$D" -> "/long/dir/path/".
 "  - Tilde (~) expansion, e.g. "~/" -> "/home/steve/".
-"  - <Shift-Enter> will load all files appearing in the current list
-"    (in gvim only -- <C-a> can be used in terminal mode).
-"  - <C-e> will create a file in the currently viewed directory with the name
-"    specified at the prompt.
 "  - Dotfiles are hidden by default, but are shown if the current search term
 "    begins with a '.'.  To show these file at all times, set this option:
 "

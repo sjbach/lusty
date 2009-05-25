@@ -27,5 +27,5 @@ See the "Usage:" section of the script for other tricks and features.
 install details
 Copy the script into your $HOME/.vim/plugin directory so that it will be sourced on startup.  If you have previously installed dynamic-explorer.vim (the old name), remove it.
 
-NOTE: This plugin requires Vim be compiled with Ruby interpretation.  If you do not currently have this functionality, see the "Install Details:" section of the script for directions on adding it.
+NOTE: This plugin requires Vim be compiled with Ruby interpretation.  If you do not currently have this functionality, see the "Install Details:" section of the script for directions to add it.
 

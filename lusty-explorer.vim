@@ -336,20 +336,20 @@ class LustyExplorer
         when 8                # Backspace/Del/C-h
           @prompt.backspace!
           @selected_index = 0
-        when 9, 13                # Tab and Enter
+        when 9, 13            # Tab and Enter
           choose(false)
           @selected_index = 0
-        when 200            # C-w (delete 1 dir backward)
+        when 23               # C-w (delete 1 dir backward)
           @prompt.up_one_dir!
           @selected_index = 0
-        when 201            # C-n (select next)
+        when 14               # C-n (select next)
           @selected_index = (@selected_index + 1) % matching_entries().size
-        when 202            # C-p (select previous)
+        when 16               # C-p (select previous)
           @selected_index = (@selected_index - 1) % matching_entries().size
-        when 203            # C-t choose in new tab
+        when 20               # C-t choose in new tab
           choose(true)
           @selected_index = 0
-        when 206            # C-u clear prompt
+        when 21               # C-u clear prompt
           @prompt.clear!
       end
 
@@ -412,13 +412,13 @@ class LustyExplorer
       exe "#{map_command} <C-c>    :call #{self.class}Cancel()<CR>"
       exe "#{map_command} <C-g>    :call #{self.class}Cancel()<CR>"
 
-      exe "#{map_command} <C-w>    :call #{self.class}KeyPressed(200)<CR>"
-      exe "#{map_command} <C-n>    :call #{self.class}KeyPressed(201)<CR>"
-      exe "#{map_command} <C-p>    :call #{self.class}KeyPressed(202)<CR>"
-      exe "#{map_command} <C-t>    :call #{self.class}KeyPressed(203)<CR>"
-      exe "#{map_command} <C-e>    :call #{self.class}KeyPressed(204)<CR>"
-      exe "#{map_command} <C-r>    :call #{self.class}KeyPressed(205)<CR>"
-      exe "#{map_command} <C-u>    :call #{self.class}KeyPressed(206)<CR>"
+      exe "#{map_command} <C-w>    :call #{self.class}KeyPressed(23)<CR>"
+      exe "#{map_command} <C-n>    :call #{self.class}KeyPressed(14)<CR>"
+      exe "#{map_command} <C-p>    :call #{self.class}KeyPressed(16)<CR>"
+      exe "#{map_command} <C-t>    :call #{self.class}KeyPressed(20)<CR>"
+      exe "#{map_command} <C-e>    :call #{self.class}KeyPressed(5)<CR>"
+      exe "#{map_command} <C-r>    :call #{self.class}KeyPressed(18)<CR>"
+      exe "#{map_command} <C-u>    :call #{self.class}KeyPressed(21)<CR>"
     end
 
     def on_refresh
@@ -675,14 +675,14 @@ class FilesystemExplorer < LustyExplorer
 
           load_file(path) unless File.directory?(path)
         end
-      elsif (i == 204)  # <C-e> edit file, create it if necessary
+      elsif (i == 5)    # <C-e> edit file, create it if necessary
         if not @prompt.at_dir?
           cleanup()
           # Force a refresh of this directory.
           @memoized_entries.delete(view_path())
           load_file(@prompt.input)
         end
-      elsif (i == 205)  # <C-r> refresh
+      elsif (i == 18)   # <C-r> refresh
         @memoized_entries.delete(view_path())
         refresh()
       else

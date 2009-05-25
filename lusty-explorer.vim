@@ -242,12 +242,6 @@ end
   
 
 class VIM::Buffer
-  # On Windows, name() returns paths with backslashes instead of the Ruby
-  # standard forward slashes, so we need to fix that for portability.
-  def name_p
-    name ? name.gsub('\\', '/') : nil
-  end
-
   def modified?
     eva("getbufvar(#{number()}, '&modified')") != "0"
   end
@@ -320,7 +314,7 @@ class LustyExplorer
       @settings.save
       @running = true
       @calling_window = $curwin
-      @saved_alternate_buffer = if eva("expand('#')").empty?
+      @saved_alternate_bufnum = if eva("expand('#')").empty?
                                   nil
                                 else
                                   eva("bufnr(expand('#'))")
@@ -366,10 +360,10 @@ class LustyExplorer
       if @running
         cleanup()
         # fix alternate file
-        if @saved_alternate_buffer != nil
+        if @saved_alternate_bufnum
           cur = $curbuf
-          exe "silent b #{@saved_alternate_buffer}"
-          exe "silent b " + cur.number.to_s
+          exe "silent b #{@saved_alternate_bufnum}"
+          exe "silent b #{cur.number}"
         end
       end
     end
@@ -453,7 +447,6 @@ class LustyExplorer
         unordered.sort! do |x, y|
           x_score = LiquidMetal.score(x.sub(/\/$/,''), abbrev)
           y_score = LiquidMetal.score(y.sub(/\/$/,''), abbrev)
-#y_score <=> x_score
           if x_score.approx(y_score)
             x <=> y
           else
@@ -518,7 +511,7 @@ class BufferExplorer < LustyExplorer
              elsif name.starts_with?("scp://")
                name
              else
-               basename = Pathname.new(buffer.name_p).basename().to_s
+               basename = Pathname.new(buffer.name).basename().to_s
                prefix = @basename_prefixes[basename]
 
                if prefix.nil?
@@ -554,7 +547,7 @@ class BufferExplorer < LustyExplorer
     def fill_basename_prefixes
       prefixes = Hash.new { |hash, key| hash[key] = [] }
       (0..VIM::Buffer.count-1).each do |i|
-          name = VIM::Buffer[i].name_p
+          name = VIM::Buffer[i].name
           next if name.nil?
 
           path = Pathname.new name
@@ -650,12 +643,13 @@ class FilesystemExplorer < LustyExplorer
     end
 
     def run_from_here
-      if $curbuf.name.nil?
-        @prompt.set!(vimwd() + File::SEPARATOR)
-      else
-        @prompt.set!(eva("expand('%:p:h')") + File::SEPARATOR)
-      end
+      start_path = if $curbuf.name.nil?
+                     vimwd()
+                   else
+                     eva("expand('%:p:h')")
+                   end
 
+      @prompt.set!(start_path + File::SEPARATOR)
       run()
     end
 
@@ -780,10 +774,6 @@ class FilesystemExplorer < LustyExplorer
     def open_entry(name, in_new_tab)
       path = view_path() + name
 
-      # FIXME: is this needed anymore?
-      # Remove duplicate separators (for Windows).
-      #path.gsub!(/\/\/+/, "/")
-
       if File.directory?(path)
         # Recurse into the directory instead of opening it.
         @prompt.set!(path.to_s)
@@ -872,7 +862,9 @@ class FilesystemPrompt < Prompt
 
   def set!(s)
     @dirty = true
-    super(s)
+    # On Windows, Vim will return paths with a '\' separator, but
+    # we want to use '/'.
+    super(s.gsub('\\', '/'))
   end
 
   def backspace!
@@ -1175,8 +1167,7 @@ class Displayer
       # Only wipe the buffer if we're *sure* it's the explorer.
       if Window.select @window and \
          $curbuf == @buffer and \
-         $curbuf.name and \
-         $curbuf.name_p =~ /#{Regexp.escape(@title)}$/
+         $curbuf.name =~ /#{Regexp.escape(@title)}$/
           exe "bwipeout!"
           @window = nil
           @buffer = nil

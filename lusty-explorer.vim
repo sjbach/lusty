@@ -1305,8 +1305,8 @@ def vim_single_quote_escape(s)
 end
 
 def vim_file_escape(s)
-  # Escape slashes, open square braces, spaces, and double quotes.
-  s.gsub(/\\/, '\\\\\\').gsub('[', '\[').gsub(' ', '\ ').gsub('"', '\"')
+  # Escape slashes, open square braces, spaces, sharps, and double quotes.
+  s.gsub(/\\/, '\\\\\\').gsub(/[\[ #"]/, '\\\\\0')
 end
 
 def vim_regex_escape(s)

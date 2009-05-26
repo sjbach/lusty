@@ -750,7 +750,8 @@ class FilesystemExplorer < LustyExplorer
       # Generate an array of the files
       view_path().each_entry do |file|
         name = file.basename.to_s
-        next if name == "." or name == ".."   # Skip pwd
+        next if name == "."   # Skip pwd
+        next if name == ".." and lusty_option_set?("AlwaysShowDotFiles")
 
         # Hide masked files.
         next if FileMasks.masked?(name)

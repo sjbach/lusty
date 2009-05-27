@@ -160,6 +160,9 @@ if !has("ruby") || version < 700
     echo "         # tar -xvjf vim-7.0.tar.bz2"
     echo "         # ./configure --enable-rubyinterp"
     echo "         # make && make install"
+
+    echo "(If you just wish to stifle this message, set the following option:"
+    echo "  let g:LustyJugglerSuppressRubyWarning = 1)"
     echohl none
   endif
   endif

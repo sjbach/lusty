@@ -12,8 +12,8 @@
 "   Maintainer: Stephen Bach <this-file@sjbach.com>
 " Contributors: Juan Frias
 "
-" Release Date: Friday, November 14, 2008
-"      Version: 1.0.4
+" Release Date: May 26, 2009
+"      Version: 1.1.0
 "
 "        Usage: To launch the juggler:
 "
@@ -130,7 +130,7 @@ if !has("ruby")
     echo "    1. Download and install Ruby from here:"
     echo "       http://www.ruby-lang.org/"
     echo "    2. Install a Vim binary with Ruby support:"
-    echo "       http://hasno.info/2007/5/18/windows-vim-7-1-2\n"
+    echo "       http://segfault.hasno.info/vim/gvim72.zip\n"
 
     echo "Manually (including Cygwin):"
     echo "    1. Install Ruby."
@@ -138,7 +138,10 @@ if !has("ruby")
     echo "    3. Build and install:"
     echo "         # tar -xvjf vim-7.0.tar.bz2"
     echo "         # ./configure --enable-rubyinterp"
-    echo "         # make && make install"
+    echo "         # make && make install\n"
+
+    echo "(If you just wish to stifle this message, set the following option:"
+    echo "  let g:LustyJugglerSuppressRubyWarning = 1)"
     echohl none
   endif
   endif

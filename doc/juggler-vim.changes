@@ -1,2 +1,3 @@
-The g:LustyJugglerShowKeys option should not be required to be set.
+- Substantially shorten displayed buffer names; usually only the basename is shown.  Thanks to Matt Tolton for the idea.
+- Add GetLatestVimScripts compatibility.
 

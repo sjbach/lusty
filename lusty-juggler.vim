@@ -89,7 +89,7 @@
 "
 "   let g:LustyJugglerSuppressRubyWarning = 1
 "
-" GetLatestVimScripts: 2050 9507 lusty-juggler.vim
+" GetLatestVimScripts: 2050 1 :AutoInstall: lusty-juggler.vim
 "
 " TODO:
 " - save and restore mappings

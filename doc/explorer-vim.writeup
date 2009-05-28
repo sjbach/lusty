@@ -3,10 +3,12 @@ LustyExplorer is a fast and responsive way to manage files and buffers in Vim.  
 Here's an animated gif showing it in action:
 
       http://viewglob.sourceforge.net/lusty-explorer-animated.gif
+      (from 1.x)
 
 Annotated snapshot progression:
 
       http://viewglob.sourceforge.net/lusty-explorer-annotated.png
+      (from 1.x)
 
 Instructions for use:
 
@@ -18,7 +20,7 @@ When one of the explorers is launched, a new window appears at bottom presenting
 
       >>
 
-As you type or tab-complete a name, the list updates for possible matches.  When there is enough input to match an entry uniquely, press <ENTER> to open it in your last used window, or press <ESC> or <Ctrl-c> to cancel.
+As you type a name, the list updates using a fuzzy matching algorithm.  Press enter to open the selected match, <C-n>/<C-p> to select the next/previous match, or press <ESC> or <Ctrl-c> to cancel.
 
 If you like LustyExplorer, you may also like LustyJuggler: vimscript #2050
 

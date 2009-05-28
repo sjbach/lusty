@@ -455,7 +455,7 @@ class LustyExplorer
       else
         # Sort by score, then name.
         unordered.sort! do |x, y|
-          LiquidMetal.score(x, abbrev) <=> LiquidMetal.score(y, abbrev)
+          LiquidMetal.score(y, abbrev) <=> LiquidMetal.score(x, abbrev)
         end
       end
     end

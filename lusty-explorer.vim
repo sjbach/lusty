@@ -448,18 +448,14 @@ class LustyExplorer
       abbrev = current_abbreviation()
       unordered = matching_entries()
 
-      if abbrev.length == 0
+      # Sort alphabetically if there's just a dot or we have no abbreviation,
+      # otherwise it just looks weird.
+      if abbrev.length == 0 or abbrev == '.'
         unordered.sort!()
       else
         # Sort by score, then name.
         unordered.sort! do |x, y|
-          x_score = LiquidMetal.score(x.sub(/\/$/,''), abbrev)
-          y_score = LiquidMetal.score(y.sub(/\/$/,''), abbrev)
-          if x_score.approx(y_score)
-            x <=> y
-          else
-            y_score <=> x_score
-          end
+          LiquidMetal.score(x, abbrev) <=> LiquidMetal.score(y, abbrev)
         end
       end
     end

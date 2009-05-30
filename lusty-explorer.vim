@@ -248,11 +248,48 @@ class Float
   end
 end
 
-
-class VIM::Buffer
-  def modified?
-    eva("getbufvar(#{number()}, '&modified')") != "0"
+module VIM
+  def self.has_syntax?
+    eva('has("syntax")') != "0"
   end
+
+  def self.columns
+    eva("&columns").to_i
+  end
+
+  def self.lines
+    eva("&lines").to_i
+  end
+
+  def self.getcwd
+    eva("getcwd()")
+  end
+
+  def self.single_quote_escape(s)
+    # Everything in a Vim single quoted string is literal, except single quotes.
+    # Single quotes are escaped by doubling them.
+    s.gsub("'", "''")
+  end
+
+  def self.filename_escape(s)
+    # Escape slashes, open square braces, spaces, sharps, and double quotes.
+    s.gsub(/\\/, '\\\\\\').gsub(/[\[ #"]/, '\\\\\0')
+  end
+
+  def self.regex_escape(s)
+    s.gsub(/[\]\[.~"^$\\*]/,'\\\\\0')
+  end
+
+  class Buffer
+    def modified?
+      eva("getbufvar(#{number()}, '&modified')") != "0"
+    end
+  end
+end
+
+def lusty_option_set?(opt_name)
+  opt_name = "g:LustyExplorer" + opt_name
+  eva("exists('#{opt_name}') && #{opt_name} != '0'") != "0"
 end
 
 # Port of Ryan McGeary's LiquidMetal fuzzy matching algorithm found at:
@@ -434,7 +471,7 @@ class LustyExplorer
     end
 
     def highlight_selected_index
-      return unless has_syntax?
+      return unless VIM::has_syntax?
 
       entry = ordered_matching_entries()[@selected_index]
       return if entry.nil?
@@ -528,7 +565,7 @@ class BufferExplorer < LustyExplorer
       # Disabled: show buffer number next to name
       #name += ' ' + buffer.number.to_s
 
-      name += modified?(buffer.number) ? " [+]" : ""
+      name += buffer.modified? ? " [+]" : ""
 
       return name
     end
@@ -540,7 +577,7 @@ class BufferExplorer < LustyExplorer
 
     def on_refresh
       # Highlighting for the current buffer name.
-      if has_syntax?
+      if VIM::has_syntax?
         exe 'syn clear LustyExpCurrentBuffer'
         exe "syn match LustyExpCurrentBuffer \"#{curbuf_match_string()}\" " \
             'contains=LustyExpModified'
@@ -602,10 +639,6 @@ class BufferExplorer < LustyExplorer
       @buffers.keys
     end
 
-    def modified?(b)
-      eva("getbufvar(#{b}, '&modified')") != "0"
-    end
-
     def open_entry(name, in_new_tab)
       cleanup()
       assert($curwin == @calling_window)
@@ -648,7 +681,7 @@ class FilesystemExplorer < LustyExplorer
 
     def run_from_here
       start_path = if $curbuf.name.nil?
-                     vimwd()
+                     VIM::getcwd()
                    else
                      eva("expand('%:p:h')")
                    end
@@ -658,7 +691,7 @@ class FilesystemExplorer < LustyExplorer
     end
 
     def run_from_wd
-      @prompt.set!(vimwd() + File::SEPARATOR)
+      @prompt.set!(VIM::getcwd() + File::SEPARATOR)
       run()
     end
 
@@ -795,7 +828,7 @@ class FilesystemExplorer < LustyExplorer
     def load_file(path, in_new_tab=false)
       assert($curwin == @calling_window)
       # Escape for Vim and remove leading ./ for files in pwd.
-      escaped = vim_file_escape(path).sub(/^\.\//,"")
+      escaped = VIM::filename_escape(path).sub(/^\.\//,"")
       sanitized = eva "fnamemodify('#{escaped}', ':p')"
       cmd = in_new_tab ? "tabe" : "e"
       exe "silent #{cmd} #{sanitized}"
@@ -1049,7 +1082,7 @@ class Displayer
       # not for a Ruby regex.
 
       str = '\%(^\|' + @@COLUMN_SEPARATOR + '\)' \
-            '\zs' + vim_regex_escape(s) + '\%( \[+\]\)\?' + '\ze' \
+            '\zs' + VIM::regex_escape(s) + '\%( \[+\]\)\?' + '\ze' \
             '\%(\s*$\|' + @@COLUMN_SEPARATOR + '\)'
 
       str += '\c' if case_insensitive
@@ -1094,7 +1127,7 @@ class Displayer
 
       # TODO -- cpoptions?
 
-      if has_syntax?
+      if VIM::has_syntax?
         exe 'syn match LustyExpSlash "/" contained'
         exe 'syn match LustyExpDir "\zs\%(\S\+ \)*\S\+/\ze" ' \
                                    'contains=LustyExpSlash'
@@ -1130,7 +1163,7 @@ class Displayer
 
       # Perhaps truncate the results to just over the upper bound of
       # displayable entries.  This isn't exact, but it's close enough.
-      max = lines() * (columns() / (1 + @@COLUMN_SEPARATOR.length))
+      max = VIM::lines * (VIM::columns / (1 + @@COLUMN_SEPARATOR.length))
       if entries.length > max
         entries.slice!(max, entries.length - max)
       end
@@ -1298,21 +1331,6 @@ class FileMasks
 end
 
 
-def vim_single_quote_escape(s)
-  # Everything in a Vim single quoted string is literal, except single quotes.
-  # Single quotes are escaped by doubling them.
-  s.gsub("'", "''")
-end
-
-def vim_file_escape(s)
-  # Escape slashes, open square braces, spaces, sharps, and double quotes.
-  s.gsub(/\\/, '\\\\\\').gsub(/[\[ #"]/, '\\\\\0')
-end
-
-def vim_regex_escape(s)
-  s.gsub(/[\]\[.~"^$\\*]/,'\\\\\0')
-end
-
 # Simple mappings to decrease typing.
 def exe(s)
   VIM.command s
@@ -1322,29 +1340,12 @@ def eva(s)
   VIM.evaluate s
 end
 
-def lusty_option_set?(opt_name)
-  opt_name = "g:LustyExplorer" + opt_name
-  eva("exists('#{opt_name}') && #{opt_name} != '0'") != "0"
-end
-
-def vimwd()
-  eva("getcwd()")
-end
-
 def set(s)
   VIM.set_option s
 end
 
 def msg(s)
   VIM.message s
-end
-
-def columns
-  eva("&columns").to_i
-end
-
-def lines
-  eva("&lines").to_i
 end
 
 def pretty_msg(*rest)
@@ -1367,10 +1368,6 @@ end
 
 def assert(condition, message = 'assertion failure')
   raise AssertionError.new(message) unless condition
-end
-
-def has_syntax?
-  eva('has("syntax")') != "0"
 end
 
 

@@ -224,7 +224,10 @@ endfunction
 
 ruby << EOF
 require 'pathname'
-require 'profiler'
+
+# PROFILING
+#require 'rubygems'
+#require 'ruby-prof'
 
 class String
   def ends_with?(s)
@@ -238,13 +241,29 @@ class String
   end
 end
 
-class Float
-  # Taken from Ruby Cookbook by Leonard Richardson
-  def approx(other, relative_epsilon=Float::EPSILON, epsilon=Float::EPSILON)
-    difference = other - self
-    return true if difference.abs <= epsilon
-    relative_error = (difference / (self > other ? self : other)).abs
-    return relative_error <= relative_epsilon
+class IO
+  def ready_for_read?
+    result = IO.select([self], nil, nil, 0)
+    result && (result.first.first == self)
+  end
+end
+
+class File
+  def self.simplify_path(s)
+    begin
+      if s[0] == '~'[0]
+        s = File.expand_path(s.sub(/\/.*/,'')) + \
+            s.sub(/^[^\/]+/,'')
+      end
+
+      if s.ends_with?(File::SEPARATOR)
+        File.expand_path(s) + File::SEPARATOR
+      else
+        File.expand_path(File.dirname(s)) + File::SEPARATOR + File.basename(s)
+      end
+    rescue ArgumentError
+      s
+    end
   end
 end
 
@@ -303,7 +322,7 @@ class LiquidMetal
 
   def self.score(string, abbrev)
 
-    return @@SCORE_TRAILING if abbrev.length == 0
+    return @@SCORE_TRAILING if abbrev.empty?
     return @@SCORE_NO_MATCH if abbrev.length > string.length
 
     scores = buildScoreArray(string, abbrev)
@@ -410,6 +429,10 @@ class LustyExplorer
           exe "silent b #{@saved_alternate_bufnum}"
           exe "silent b #{cur.number}"
         end
+
+        # PROFILING
+        #outfile = File.new('rbprof.txt', 'a')
+        #RubyProf::CallTreePrinter.new(RubyProf.stop).print(outfile)
       end
     end
 
@@ -451,7 +474,7 @@ class LustyExplorer
 
       exe "#{map_command} <CR>     :call #{self.class}KeyPressed(13)<CR>"
       exe "#{map_command} <S-CR>   :call #{self.class}KeyPressed(10)<CR>"
-      exe "#{map_command} <C-a>    :call #{self.class}KeyPressed(10)<CR>"
+      exe "#{map_command} <C-a>    :call #{self.class}KeyPressed(1)<CR>"
 
       exe "#{map_command} <Esc>    :call #{self.class}Cancel()<CR>"
       exe "#{map_command} <C-c>    :call #{self.class}Cancel()<CR>"
@@ -490,7 +513,7 @@ class LustyExplorer
       if abbrev.length == 0 or abbrev == '.'
         unordered.sort!()
       else
-        # Sort by score, then name.
+        # Sort by score.
         unordered.sort! do |x, y|
           LiquidMetal.score(y, abbrev) <=> LiquidMetal.score(x, abbrev)
         end
@@ -499,7 +522,8 @@ class LustyExplorer
 
     def matching_entries
       all_entries().select { |entry|
-        LiquidMetal.score(entry, current_abbreviation()) != 0
+        # TODO: cache this score so we don't repeat it above ^^^
+        LiquidMetal.score(entry, current_abbreviation()) != 0.0
       }
     end
 
@@ -654,16 +678,15 @@ class BufferExplorer < LustyExplorer
 end
 
 def time
-  #Profiler__.start_profile()
+  # PROFILING
+  #RubyProf.resume
   begin
     yield
   rescue Exception => e
-    print e
-    print e.backtrace
+    puts e
+    puts e.backtrace
   end
-  #Profiler__.stop_profile()
-  #f = File.new('rbprof.txt', 'a')
-  #Profiler__.print_profile(f)
+  #RubyProf.pause
 end
 
 class FilesystemExplorer < LustyExplorer
@@ -676,6 +699,7 @@ class FilesystemExplorer < LustyExplorer
 
     def run
       FileMasks.create_glob_masks()
+      @vim_swaps = VimSwaps.new
       super
     end
 
@@ -699,7 +723,8 @@ class FilesystemExplorer < LustyExplorer
       time do
       i = eva("a:code_arg").to_i
 
-      if (i == 10)    # Shift + Enter
+      case i
+      when 1, 10  # <C-a>, <Shift-Enter>
         cleanup()
         # Open all non-directories currently in view.
         matching_entries().each do |e|
@@ -712,14 +737,14 @@ class FilesystemExplorer < LustyExplorer
 
           load_file(path) unless File.directory?(path)
         end
-      elsif (i == 5)    # <C-e> edit file, create it if necessary
+      when 5      # <C-e> edit file, create it if necessary
         if not @prompt.at_dir?
           cleanup()
           # Force a refresh of this directory.
           @memoized_entries.delete(view_path())
           load_file(@prompt.input)
         end
-      elsif (i == 18)   # <C-r> refresh
+      when 18     # <C-r> refresh
         @memoized_entries.delete(view_path())
         refresh()
       else
@@ -734,9 +759,21 @@ class FilesystemExplorer < LustyExplorer
     end
 
     def on_refresh
-      # Highlighting for all open buffers located in the viewed directory.
+      if VIM::has_syntax?
+        exe 'syn clear LustyExpFileWithSwap'
 
-      # TODO: restore highlighting for all open buffers?
+        view = view_path()
+        @vim_swaps.file_names.each do |file_with_swap|
+          if file_with_swap.dirname == view
+            base = file_with_swap.basename
+            match_str = Displayer.vim_match_string(base.to_s, false)
+            exe "syn match LustyExpFileWithSwap \"#{match_str}\""
+          end
+        end
+
+      end
+
+      # TODO: restore highlighting for open buffers?
       super
     end
 
@@ -753,60 +790,62 @@ class FilesystemExplorer < LustyExplorer
     end
 
     def view_path
-      input_path = Pathname.new @prompt.input
+      input = @prompt.input
 
       path = \
-        if @prompt.at_dir?
+        if @prompt.at_dir? and \
+           input.length > 1         # Not root
           # The last element in the path is a directory + '/' and we want to
-          # see what's in it instead of its parent directory.
-          input_path
+          # see what's in it instead of what's in its parent directory.
+
+          Pathname.new(input[0..-2])  # Canonicalize by removing trailing '/'
         else
-          input_path.dirname
+          Pathname.new(input).dirname
         end
 
-      # TODO: determine why this is commented
-      #return path.realpath()
       return path
     end
 
     def all_entries
-      if not view_path().exist?
+      view = view_path()
+
+      if not view.exist?
+        return []
+      elsif not view.readable?
+        # TODO: show "-- PERMISSION DENIED --"
         return []
       end
 
-      if @memoized_entries.has_key?(view_path())
-        return @memoized_entries[view_path()]
-      end
+      unless @memoized_entries.has_key?(view)
+        # Generate an array of the files
+        entries = []
+        view.each_entry do |file|
+          name = file.basename.to_s
+          next if name == "."   # Skip pwd
+          next if name == ".." and lusty_option_set?("AlwaysShowDotFiles")
 
-      entries = []
-      # Generate an array of the files
-      view_path().each_entry do |file|
-        name = file.basename.to_s
-        next if name == "."   # Skip pwd
-        next if name == ".." and lusty_option_set?("AlwaysShowDotFiles")
+          # Hide masked files.
+          next if FileMasks.masked?(name)
 
-        # Hide masked files.
-        next if FileMasks.masked?(name)
-
-        if (view_path() + file).directory?   # (Bug in Pathname.each_entry)
-          name += File::SEPARATOR
+          if (view + file).directory?
+            # ^^ bug in Pathname.each_entry -- block variable has no dir.
+            name += File::SEPARATOR
+          end
+          entries << name
         end
-        entries << name
+        @memoized_entries[view] = entries
       end
 
-      @memoized_entries[view_path()] = entries
-      return entries
-    end
+      all = @memoized_entries[view]
 
-    def matching_entries
-      matching = super
-      unless lusty_option_set?("AlwaysShowDotFiles") or \
-             current_abbreviation().starts_with?(".")
+      if lusty_option_set?("AlwaysShowDotFiles") or \
+         current_abbreviation()[0] == '.'[0]
+        all
+      else
         # Filter out dotfiles if the current abbreviation doesn't start with
         # '.'.
-        matching = matching.select { |x| not x.starts_with?(".") }
+        all.select { |x| x[0] != '.'[0] }
       end
-      return matching
     end
 
     def open_entry(name, in_new_tab)
@@ -937,7 +976,7 @@ class FilesystemPrompt < Prompt
 
   def input
     if @dirty
-      @memoized = variable_expansion(tilde_expansion(@input))
+      @memoized = variable_expansion(File.simplify_path(@input))
       @dirty = false
     end
 
@@ -952,32 +991,9 @@ class FilesystemPrompt < Prompt
     File.dirname input()
   end
 
-  def pruning_regex
-    if at_dir?
-      # Nothing has been typed for this directory yet, so accept everything.
-      Regexp.new(".")
-    else
-      Regexp.new("^" + Regexp.escape(basename()), insensitive?)
-    end
-  end
-
   private
-    def tilde_expansion (input_str)
-      # File.expand_path() gives loud errors if the path is not valid, so we
-      # do this expansion manually.
-
-      if input_str[0,1] == "~"
-        if input_str.length == 1
-          return ENV['HOME']
-        elsif input_str[1,1] == File::SEPARATOR
-          return input_str.sub('~', ENV['HOME'])
-        end
-      end
-
-      return input_str
-    end
-
     def variable_expansion (input_str)
+      # FIXME does this still work?
       strings = input_str.split('$', -1)
       return "" if strings.nil? or strings.length == 0
 
@@ -1010,8 +1026,8 @@ class Window
         return true
       else
         # Failed -- re-select the starting window.
-        iterate() while $curwin != start
-        pretty_msg("ErrorMsg", "Can't find the correct window!")
+        exe("wincmd w") while $curwin != start
+        pretty_msg("ErrorMsg", "Cannot find the correct window!")
         return false
       end
     end
@@ -1148,6 +1164,7 @@ class Displayer
         exe 'highlight link LustyExpModified Special'
         exe 'highlight link LustyExpCurrentBuffer Constant'
         exe 'highlight link LustyExpOpenedFile PreProc'
+        exe 'highlight link LustyExpFileWithSwap WarningMsg'
         exe 'highlight link LustyExpNoEntries ErrorMsg'
         exe 'highlight link LustyExpTruncated Visual'
       end
@@ -1156,7 +1173,7 @@ class Displayer
     def print(entries)
       Window.select(@window) || return
 
-      if entries.length == 0
+      if entries.empty?
         print_no_entries()
         return
       end
@@ -1328,6 +1345,37 @@ class FileMasks
 
       return false
     end
+end
+
+class VimSwaps
+  def initialize
+    if VIM::has_syntax?
+# FIXME: vvv disabled
+#      @vim_r = IO.popen("vim -r 2>&1")
+#      @files_with_swaps = nil
+      @files_with_swaps = []
+    else
+      @files_with_swaps = []
+    end
+  end
+
+  def file_names
+    if @files_with_swaps.nil?
+      if @vim_r.ready_for_read?
+        @files_with_swaps = []
+        @vim_r.each_line do |line|
+          if line =~ /^ +file name: (.*)$/
+            file = $1.chomp
+            @files_with_swaps << Pathname.new(File.simplify_path(file))
+          end
+        end
+      else
+        return []
+      end
+    end
+
+    @files_with_swaps
+  end
 end
 
 

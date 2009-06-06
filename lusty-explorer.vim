@@ -363,6 +363,26 @@ class LiquidMetal
   end
 end
 
+# Used in FilesystemExplorer
+class Entry
+  attr_accessor :name, :current_score
+  def initialize(name)
+    @name = name
+    @current_score = 0.0
+  end
+end
+
+# Used in BufferExplorer
+class BufferEntry < Entry
+  attr_accessor :full_name, :vim_buffer
+  def initialize(vim_buffer)
+    @full_name = vim_buffer.name
+    @name = "::UNSET::"
+    @vim_buffer = vim_buffer
+    @current_score = 0.0
+  end
+end
+
 class LustyExplorer
   public
     def initialize
@@ -407,14 +427,17 @@ class LustyExplorer
           @prompt.up_one_dir!
           @selected_index = 0
         when 14               # C-n (select next)
+          # STEVE cache matching_entries().size so C-n and C-p are quicker
           @selected_index = (@selected_index + 1) % matching_entries().size
         when 16               # C-p (select previous)
+          # STEVE cache matching_entries().size so C-n and C-p are quicker
           @selected_index = (@selected_index - 1) % matching_entries().size
         when 20               # C-t choose in new tab
           choose(true)
           @selected_index = 0
         when 21               # C-u clear prompt
           @prompt.clear!
+          @selected_index = 0
       end
 
       refresh()
@@ -441,7 +464,7 @@ class LustyExplorer
       return if not @running
 
       on_refresh()
-      @displayer.print ordered_matching_entries()
+      @displayer.print ordered_matching_entries().map { |x| x.name }
       @prompt.refresh
     end
 
@@ -496,12 +519,13 @@ class LustyExplorer
     def highlight_selected_index
       return unless VIM::has_syntax?
 
+      # STEVE try to avoid recalculating ordered_matching_entries here
       entry = ordered_matching_entries()[@selected_index]
       return if entry.nil?
 
       exe "syn clear LustyExpSelected"
       exe "syn match LustyExpSelected " \
-	  "\"#{Displayer.vim_match_string(entry, false)}\" "
+	  "\"#{Displayer.vim_match_string(entry.name, false)}\" "
     end
 
     def ordered_matching_entries
@@ -511,23 +535,22 @@ class LustyExplorer
       # Sort alphabetically if there's just a dot or we have no abbreviation,
       # otherwise it just looks weird.
       if abbrev.length == 0 or abbrev == '.'
-        unordered.sort!()
+        unordered.sort! { |x, y| x.name <=> y.name }
       else
         # Sort by score.
-        unordered.sort! do |x, y|
-          LiquidMetal.score(y, abbrev) <=> LiquidMetal.score(x, abbrev)
-        end
+        unordered.sort! { |x, y| y.current_score <=> x.current_score }
       end
     end
 
     def matching_entries
-      all_entries().select { |entry|
-        # TODO: cache this score so we don't repeat it above ^^^
-        LiquidMetal.score(entry, current_abbreviation()) != 0.0
+      all_entries().select { |x|
+        x.current_score = LiquidMetal.score(x.name, current_abbreviation())
+        x.current_score != 0.0
       }
     end
 
     def choose(in_new_tab)
+      # STEVE try to avoid recalculating ordered_matching_entries here
       entry = ordered_matching_entries()[@selected_index]
       return if entry.nil?
       @selected_index = 0
@@ -550,15 +573,14 @@ class BufferExplorer < LustyExplorer
     def initialize
       super
       @prompt = Prompt.new
-      @buffers = {}
-      @basename_prefixes = {}
+      @buffer_entries = []
     end
 
     def run
       unless @running
         @prompt.clear!
         @curbuf_at_start = VIM::Buffer.current
-        fill_buffers()
+        fill_buffer_entries()
         super
       end
     end
@@ -568,35 +590,13 @@ class BufferExplorer < LustyExplorer
       '[LustyExplorer-Buffers]'
     end
 
-    def entry_for_buffer(buffer)
-      name = buffer.name
-
-      name = if name.nil?
-               '[No Name]'
-             elsif name.starts_with?("scp://")
-               name
-             else
-               basename = Pathname.new(buffer.name).basename().to_s
-               prefix = @basename_prefixes[basename]
-
-               if prefix.nil?
-                 basename
-               else
-                 name[prefix.length..-1]
-               end
-             end
-
-      # Disabled: show buffer number next to name
-      #name += ' ' + buffer.number.to_s
-
-      name += buffer.modified? ? " [+]" : ""
-
-      return name
-    end
-
     def curbuf_match_string
-      Displayer.vim_match_string(entry_for_buffer(@curbuf_at_start),
-                                 @prompt.insensitive?)
+      curbuf = @buffer_entries.find { |x| x.vim_buffer == @curbuf_at_start }
+      if curbuf
+        Displayer.vim_match_string(curbuf.name, @prompt.insensitive?)
+      else
+        ""
+      end
     end
 
     def on_refresh
@@ -609,30 +609,12 @@ class BufferExplorer < LustyExplorer
       super
     end
 
-    def fill_basename_prefixes
-      prefixes = Hash.new { |hash, key| hash[key] = [] }
-      (0..VIM::Buffer.count-1).each do |i|
-          name = VIM::Buffer[i].name
-          next if name.nil?
-
-          path = Pathname.new name
-          basename = path.basename().to_s
-          prefixes[basename] << name
-      end
-
-      prefixes.reject! { |k, v| v.length <= 1 }
-
-      @basename_prefixes.clear
-      prefixes.each do |k, v|
-        @basename_prefixes[k] = common_prefix(v)
-      end
-    end
-
-    def common_prefix(paths)
-      prefix = paths[0]
-      for path in paths
+    def common_prefix(entries)
+      prefix = entries[0].full_name
+      entries.each do |entry|
+        full_name = entry.full_name
         for i in 0...prefix.length
-          if path.length <= i or prefix[i] != path[i]
+          if full_name.length <= i or prefix[i] != full_name[i]
             prefix = prefix[0...i]
             prefix = prefix[0..(prefix.rindex('/') or -1)]
             break
@@ -642,16 +624,57 @@ class BufferExplorer < LustyExplorer
       return prefix
     end
 
-    def fill_buffers
-
-      fill_basename_prefixes()
-
-      # Generate a hash of the buffers.
-      @buffers.clear
+    def fill_buffer_entries
+      @buffer_entries.clear
       (0..VIM::Buffer.count-1).each do |i|
-        buffer = VIM::Buffer[i]
-        name = entry_for_buffer(buffer)
-        @buffers[name] = buffer.number
+        @buffer_entries << BufferEntry.new(VIM::Buffer[i])
+      end
+
+      # Shorten each buffer name by removing all path elements which are not
+      # needed to differentiate a given name from other names.  This usually
+      # results in only the basename shown, but if several buffers of the
+      # same basename are opened, there will be more.
+
+      # Group the buffers by common basename
+      common_base = Hash.new { |hash, k| hash[k] = [] }
+      @buffer_entries.each do |entry|
+        if entry.full_name
+          basename = Pathname.new(entry.full_name).basename.to_s
+          common_base[basename] << entry
+        end
+      end
+
+      # Determine the longest common prefix for each basename group.
+      basename_to_prefix = {}
+      common_base.each do |base, entries|
+        if entries.length > 1
+          basename_to_prefix[base] = common_prefix(entries)
+        end
+      end
+
+      # Compute shortened buffer names by removing prefix, if possible.
+      @buffer_entries.each do |entry|
+        full_name = entry.full_name
+
+        short_name = if full_name.nil?
+                       '[No Name]'
+                     elsif full_name.starts_with?("scp://")
+                       full_name
+                     else
+                       base = Pathname.new(full_name).basename.to_s
+                       prefix = basename_to_prefix[base]
+
+                       prefix ? full_name[prefix.length..-1] \
+                              : base
+                     end
+
+        # Disabled: show buffer number next to name
+        #short_name += ' ' + buffer.number.to_s
+
+        # Show modification indicator
+        short_name += entry.vim_buffer.modified? ? " [+]" : ""
+
+        entry.name = short_name
       end
     end
 
@@ -660,14 +683,14 @@ class BufferExplorer < LustyExplorer
     end
 
     def all_entries
-      @buffers.keys
+      @buffer_entries
     end
 
-    def open_entry(name, in_new_tab)
+    def open_entry(entry, in_new_tab)
       cleanup()
       assert($curwin == @calling_window)
 
-      number = @buffers[name]
+      number = entry.vim_buffer.number
       assert(number)
 
       # For some reason just using tabe or e gives an error when the
@@ -727,20 +750,22 @@ class FilesystemExplorer < LustyExplorer
       when 1, 10  # <C-a>, <Shift-Enter>
         cleanup()
         # Open all non-directories currently in view.
+        # STEVE if cache ordered_matching_entries, use that here instead
         matching_entries().each do |e|
-          path = \
+          path_str = \
             if @prompt.at_dir?
-              @prompt.input + e
+              @prompt.input + e.name
             else
-              @prompt.dirname + File::SEPARATOR + e
+              @prompt.dirname + File::SEPARATOR + e.name
             end
 
-          load_file(path) unless File.directory?(path)
+          load_file(path_str) unless File.directory?(path_str)
         end
       when 5      # <C-e> edit file, create it if necessary
         if not @prompt.at_dir?
           cleanup()
-          # Force a refresh of this directory.
+          # Force a refresh of this directory so that the new file will
+          # show up (as long as it is saved before the next run).
           @memoized_entries.delete(view_path())
           load_file(@prompt.input)
         end
@@ -777,15 +802,11 @@ class FilesystemExplorer < LustyExplorer
       super
     end
 
-    def entry_match_string(entry)
-      Displayer.vim_match_string(entry, false)
-    end
-
     def current_abbreviation
       if @prompt.at_dir?
         ""
       else
-        Pathname.new(@prompt.input).basename().to_s
+        File.basename(@prompt.input)
       end
     end
 
@@ -831,7 +852,7 @@ class FilesystemExplorer < LustyExplorer
             # ^^ bug in Pathname.each_entry -- block variable has no dir.
             name += File::SEPARATOR
           end
-          entries << name
+          entries << Entry.new(name)
         end
         @memoized_entries[view] = entries
       end
@@ -844,18 +865,18 @@ class FilesystemExplorer < LustyExplorer
       else
         # Filter out dotfiles if the current abbreviation doesn't start with
         # '.'.
-        all.select { |x| x[0] != '.'[0] }
+        all.select { |x| x.name[0] != '.'[0] }
       end
     end
 
-    def open_entry(name, in_new_tab)
-      path = view_path() + name
+    def open_entry(entry, in_new_tab)
+      path = view_path() + entry.name
 
       if File.directory?(path)
         # Recurse into the directory instead of opening it.
         @prompt.set!(path.to_s)
         refresh()
-      elsif name.include?(File::SEPARATOR)
+      elsif entry.name.include?(File::SEPARATOR)
         # Don't open a fake file/buffer with "/" in its name.
         return
       else
@@ -864,10 +885,10 @@ class FilesystemExplorer < LustyExplorer
       end
     end
 
-    def load_file(path, in_new_tab=false)
+    def load_file(path_str, in_new_tab=false)
       assert($curwin == @calling_window)
       # Escape for Vim and remove leading ./ for files in pwd.
-      escaped = VIM::filename_escape(path).sub(/^\.\//,"")
+      escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
       sanitized = eva "fnamemodify('#{escaped}', ':p')"
       cmd = in_new_tab ? "tabe" : "e"
       exe "silent #{cmd} #{sanitized}"
@@ -1170,31 +1191,31 @@ class Displayer
       end
     end
 
-    def print(entries)
+    def print(strings)
       Window.select(@window) || return
 
-      if entries.empty?
+      if strings.empty?
         print_no_entries()
         return
       end
 
       # Perhaps truncate the results to just over the upper bound of
-      # displayable entries.  This isn't exact, but it's close enough.
+      # displayable strings.  This isn't exact, but it's close enough.
       max = VIM::lines * (VIM::columns / (1 + @@COLUMN_SEPARATOR.length))
-      if entries.length > max
-        entries.slice!(max, entries.length - max)
+      if strings.length > max
+        strings.slice!(max, strings.length - max)
       end
 
       # Get a high upper bound on the number of columns to display to optimize
       # the following algorithm a little.
-      col_count = column_count_upper_bound(entries)
+      col_count = column_count_upper_bound(strings)
 
       # Figure out the actual number of columns to use (yuck)
       cols = nil
       widths = nil
       while col_count > 1 do
 
-        cols = columnize(entries, col_count);
+        cols = columnize(strings, col_count);
 
         widths = cols.map { |col|
           col.max { |a, b| a.length <=> b.length }.length
@@ -1211,7 +1232,7 @@ class Displayer
       end
 
       if col_count <= 1
-        cols = [entries]
+        cols = [strings]
         widths = [0]
       end
 

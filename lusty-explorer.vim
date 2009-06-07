@@ -389,6 +389,7 @@ class LustyExplorer
       @settings = SavedSettings.new
       @displayer = Displayer.new title()
       @prompt = nil
+      @ordered_matching_entries = []
       @running = false
     end
 
@@ -427,11 +428,13 @@ class LustyExplorer
           @prompt.up_one_dir!
           @selected_index = 0
         when 14               # C-n (select next)
-          # STEVE cache matching_entries().size so C-n and C-p are quicker
-          @selected_index = (@selected_index + 1) % matching_entries().size
+          # STEVE should call refresh() after, but without recomputation
+          @selected_index = \
+            (@selected_index + 1) % @ordered_matching_entries.size
         when 16               # C-p (select previous)
-          # STEVE cache matching_entries().size so C-n and C-p are quicker
-          @selected_index = (@selected_index - 1) % matching_entries().size
+          # STEVE should call refresh() after, but without recomputation
+          @selected_index = \
+            (@selected_index - 1) % @ordered_matching_entries.size
         when 20               # C-t choose in new tab
           choose(true)
           @selected_index = 0
@@ -463,8 +466,11 @@ class LustyExplorer
     def refresh
       return if not @running
 
+      @ordered_matching_entries = compute_ordered_matching_entries()
+
+      highlight_selected_index()
       on_refresh()
-      @displayer.print ordered_matching_entries().map { |x| x.name }
+      @displayer.print @ordered_matching_entries.map { |x| x.name }
       @prompt.refresh
     end
 
@@ -512,15 +518,10 @@ class LustyExplorer
       exe "#{map_command} <C-u>    :call #{self.class}KeyPressed(21)<CR>"
     end
 
-    def on_refresh
-      highlight_selected_index()
-    end
-
     def highlight_selected_index
       return unless VIM::has_syntax?
 
-      # STEVE try to avoid recalculating ordered_matching_entries here
-      entry = ordered_matching_entries()[@selected_index]
+      entry = @ordered_matching_entries[@selected_index]
       return if entry.nil?
 
       exe "syn clear LustyExpSelected"
@@ -528,7 +529,7 @@ class LustyExplorer
 	  "\"#{Displayer.vim_match_string(entry.name, false)}\" "
     end
 
-    def ordered_matching_entries
+    def compute_ordered_matching_entries
       abbrev = current_abbreviation()
       unordered = matching_entries()
 
@@ -550,8 +551,7 @@ class LustyExplorer
     end
 
     def choose(in_new_tab)
-      # STEVE try to avoid recalculating ordered_matching_entries here
-      entry = ordered_matching_entries()[@selected_index]
+      entry = @ordered_matching_entries[@selected_index]
       return if entry.nil?
       @selected_index = 0
       open_entry(entry, in_new_tab)
@@ -606,7 +606,6 @@ class BufferExplorer < LustyExplorer
         exe "syn match LustyExpCurrentBuffer \"#{curbuf_match_string()}\" " \
             'contains=LustyExpModified'
       end
-      super
     end
 
     def common_prefix(entries)
@@ -750,8 +749,7 @@ class FilesystemExplorer < LustyExplorer
       when 1, 10  # <C-a>, <Shift-Enter>
         cleanup()
         # Open all non-directories currently in view.
-        # STEVE if cache ordered_matching_entries, use that here instead
-        matching_entries().each do |e|
+        @ordered_matching_entries.each do |e|
           path_str = \
             if @prompt.at_dir?
               @prompt.input + e.name
@@ -764,7 +762,7 @@ class FilesystemExplorer < LustyExplorer
       when 5      # <C-e> edit file, create it if necessary
         if not @prompt.at_dir?
           cleanup()
-          # Force a refresh of this directory so that the new file will
+          # Force a reread of this directory so that the new file will
           # show up (as long as it is saved before the next run).
           @memoized_entries.delete(view_path())
           load_file(@prompt.input)
@@ -795,11 +793,9 @@ class FilesystemExplorer < LustyExplorer
             exe "syn match LustyExpFileWithSwap \"#{match_str}\""
           end
         end
-
       end
 
       # TODO: restore highlighting for open buffers?
-      super
     end
 
     def current_abbreviation
@@ -875,7 +871,6 @@ class FilesystemExplorer < LustyExplorer
       if File.directory?(path)
         # Recurse into the directory instead of opening it.
         @prompt.set!(path.to_s)
-        refresh()
       elsif entry.name.include?(File::SEPARATOR)
         # Don't open a fake file/buffer with "/" in its name.
         return

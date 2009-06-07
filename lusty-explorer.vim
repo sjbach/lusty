@@ -422,7 +422,7 @@ class LustyExplorer
           @prompt.backspace!
           @selected_index = 0
         when 9, 13            # Tab and Enter
-          choose(false)
+          choose(:current_tab)
           @selected_index = 0
         when 23               # C-w (delete 1 dir backward)
           @prompt.up_one_dir!
@@ -436,7 +436,7 @@ class LustyExplorer
           @selected_index = \
             (@selected_index - 1) % @ordered_matching_entries.size
         when 20               # C-t choose in new tab
-          choose(true)
+          choose(:new_tab)
           @selected_index = 0
         when 21               # C-u clear prompt
           @prompt.clear!
@@ -550,11 +550,11 @@ class LustyExplorer
       }
     end
 
-    def choose(in_new_tab)
+    def choose(open_mode)
       entry = @ordered_matching_entries[@selected_index]
       return if entry.nil?
       @selected_index = 0
-      open_entry(entry, in_new_tab)
+      open_entry(entry, open_mode)
     end
 
     def cleanup
@@ -685,16 +685,24 @@ class BufferExplorer < LustyExplorer
       @buffer_entries
     end
 
-    def open_entry(entry, in_new_tab)
+    def open_entry(entry, open_mode)
       cleanup()
       assert($curwin == @calling_window)
 
       number = entry.vim_buffer.number
       assert(number)
 
-      # For some reason just using tabe or e gives an error when the
-      # alternate-file isn't set.
-      cmd = in_new_tab ? "tab split | b" : "b"
+      cmd = case open_mode
+            when :current_tab
+              "b"
+            when :new_tab
+              # For some reason just using tabe or e gives an error when
+              # the alternate-file isn't set.
+              "tab split | b"
+            else
+              assert(false)
+            end
+
       exe "silent #{cmd} #{number}"
     end
 end
@@ -757,7 +765,7 @@ class FilesystemExplorer < LustyExplorer
               @prompt.dirname + File::SEPARATOR + e.name
             end
 
-          load_file(path_str) unless File.directory?(path_str)
+          load_file(path_str, :current_tab) unless File.directory?(path_str)
         end
       when 5      # <C-e> edit file, create it if necessary
         if not @prompt.at_dir?
@@ -765,7 +773,7 @@ class FilesystemExplorer < LustyExplorer
           # Force a reread of this directory so that the new file will
           # show up (as long as it is saved before the next run).
           @memoized_entries.delete(view_path())
-          load_file(@prompt.input)
+          load_file(@prompt.input, :current_tab)
         end
       when 18     # <C-r> refresh
         @memoized_entries.delete(view_path())
@@ -865,7 +873,7 @@ class FilesystemExplorer < LustyExplorer
       end
     end
 
-    def open_entry(entry, in_new_tab)
+    def open_entry(entry, open_mode)
       path = view_path() + entry.name
 
       if File.directory?(path)
@@ -876,16 +884,24 @@ class FilesystemExplorer < LustyExplorer
         return
       else
         cleanup()
-        load_file(path.to_s, in_new_tab)
+        load_file(path.to_s, open_mode)
       end
     end
 
-    def load_file(path_str, in_new_tab=false)
+    def load_file(path_str, open_mode)
       assert($curwin == @calling_window)
       # Escape for Vim and remove leading ./ for files in pwd.
       escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
       sanitized = eva "fnamemodify('#{escaped}', ':p')"
-      cmd = in_new_tab ? "tabe" : "e"
+      cmd = case open_mode
+            when :current_tab
+              "e"
+            when :new_tab
+              "tabe"
+            else
+              assert(false)
+            end
+
       exe "silent #{cmd} #{sanitized}"
     end
 end

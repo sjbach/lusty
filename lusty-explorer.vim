@@ -406,12 +406,13 @@ class LustyExplorer
                                 end
       @selected_index = 0
       create_explorer_window()
-      refresh()
+      refresh(:full)
     end
 
     def key_pressed()
       # Grab argument from the Vim function.
       i = eva("a:code_arg").to_i
+      refresh_mode = :full
 
       case i
         when 32..126          # Printable characters
@@ -428,13 +429,13 @@ class LustyExplorer
           @prompt.up_one_dir!
           @selected_index = 0
         when 14               # C-n (select next)
-          # STEVE should call refresh() after, but without recomputation
           @selected_index = \
             (@selected_index + 1) % @ordered_matching_entries.size
+          refresh_mode = :no_recompute
         when 16               # C-p (select previous)
-          # STEVE should call refresh() after, but without recomputation
           @selected_index = \
             (@selected_index - 1) % @ordered_matching_entries.size
+          refresh_mode = :no_recompute
         when 20               # C-t choose in new tab
           choose(:new_tab)
           @selected_index = 0
@@ -443,7 +444,7 @@ class LustyExplorer
           @selected_index = 0
       end
 
-      refresh()
+      refresh(refresh_mode)
     end
 
     def cancel
@@ -463,15 +464,17 @@ class LustyExplorer
     end
 
   private
-    def refresh
+    def refresh(mode)
       return if not @running
 
-      @ordered_matching_entries = compute_ordered_matching_entries()
+      if mode == :full
+        @ordered_matching_entries = compute_ordered_matching_entries()
+      end
 
       highlight_selected_index()
       on_refresh()
       @displayer.print @ordered_matching_entries.map { |x| x.name }
-      @prompt.refresh
+      @prompt.print
     end
 
     def create_explorer_window
@@ -777,7 +780,7 @@ class FilesystemExplorer < LustyExplorer
         end
       when 18     # <C-r> refresh
         @memoized_entries.delete(view_path())
-        refresh()
+        refresh(:full)
       else
         super
       end
@@ -920,7 +923,7 @@ class Prompt
       @input = ""
     end
 
-    def refresh
+    def print
       pretty_msg("Comment", @@PROMPT, "None", @input, "Underlined", " ")
     end
 

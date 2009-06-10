@@ -1,3 +1,6 @@
+- Significant performance increase for directories with many files
+- Lower memory usage in directory memoization
+
 The vast majority of these changes were contributed by Matt Tolton:
 
 - Flex/fuzzy matching using the LiquidMetal algorithm:

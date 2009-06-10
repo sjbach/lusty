@@ -15,8 +15,8 @@
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
 "               Matt Tolton
 "
-" Release Date: May 28, 2009
-"      Version: 2.0
+" Release Date: June 8, 2009
+"      Version: 2.1.0
 "               Inspired by Viewglob, Emacs, and by Jeff Lanzarotta's Buffer
 "               Explorer plugin.
 "
@@ -377,8 +377,8 @@ class BufferEntry < Entry
   attr_accessor :full_name, :vim_buffer
   def initialize(vim_buffer)
     @full_name = vim_buffer.name
-    @name = "::UNSET::"
     @vim_buffer = vim_buffer
+    @name = "::UNSET::"
     @current_score = 0.0
   end
 end
@@ -703,7 +703,7 @@ class BufferExplorer < LustyExplorer
               # the alternate-file isn't set.
               "tab split | b"
             else
-              assert(false)
+              assert(false, "bad open mode")
             end
 
       exe "silent #{cmd} #{number}"
@@ -902,7 +902,7 @@ class FilesystemExplorer < LustyExplorer
             when :new_tab
               "tabe"
             else
-              assert(false)
+              assert(false, "bad open mode")
             end
 
       exe "silent #{cmd} #{sanitized}"

@@ -471,8 +471,8 @@ class LustyExplorer
         @ordered_matching_entries = compute_ordered_matching_entries()
       end
 
-      highlight_selected_index()
       on_refresh()
+      highlight_selected_index()
       @displayer.print @ordered_matching_entries.map { |x| x.name }
       @prompt.print
     end

@@ -125,6 +125,13 @@ if exists("g:loaded_lustyexplorer")
   finish
 endif
 
+if exists("g:FuzzyFinderMode.TextMate")
+  echohl WarningMsg
+  echo "Warning: LustyExplorer detects the presence of fuzzyfinder_textmate;"
+  echo "that plugin sometimes interacts poorly with other Ruby plugins."
+  echohl none
+endif
+
 " Check for Ruby functionality.
 if !has("ruby") || version < 700
   if !exists("g:LustyExplorerSuppressRubyWarning") ||

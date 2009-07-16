@@ -1,3 +1,2 @@
-- Substantially shorten displayed buffer names; usually only the basename is shown.  Thanks to Matt Tolton for the idea.
-- Add GetLatestVimScripts compatibility.
+Fix a startup bug in OS X and Windows.  Thanks to Bartosz Leper.
 

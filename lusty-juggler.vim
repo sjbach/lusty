@@ -12,8 +12,8 @@
 "   Maintainer: Stephen Bach <this-file@sjbach.com>
 " Contributors: Juan Frias, Bartosz Leper
 "
-" Release Date: July 15, 2009
-"      Version: 1.1.1
+" Release Date: July 16, 2009
+"      Version: 1.1.2
 "
 "        Usage: To launch the juggler:
 "
@@ -210,9 +210,7 @@ class LustyJuggler
                "7" => 7,
                "8" => 8,
                "9" => 9,
-               "0" => 10,
-               #"TAB" => 100,
-               "ENTER" => 100 }
+               "0" => 10 }
 
   public
     def initialize
@@ -262,18 +260,15 @@ class LustyJuggler
 
     def key_pressed()
       c = eva("a:code_arg")
-      i = @@KEYS[c]
 
       if (c == @last_pressed) or \
-         (@last_pressed and i == 100)
-        choose(i)
+         (@last_pressed and c == 'ENTER')
+        choose(@@KEYS[@last_pressed])
         cleanup()
-        return
+      else
+        print_buffer_list(@@KEYS[c])
+        @last_pressed = c
       end
-
-      print_buffer_list(i)
-
-      @last_pressed = c
     end
 
     # Restore settings, mostly.

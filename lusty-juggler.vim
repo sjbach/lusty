@@ -187,6 +187,7 @@ augroup End
 
 ruby << EOF
 
+require 'pathname'
 
 class LustyJuggler
   private

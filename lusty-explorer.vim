@@ -902,7 +902,7 @@ class FilesystemExplorer < LustyExplorer
       assert($curwin == @calling_window)
       # Escape for Vim and remove leading ./ for files in pwd.
       escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
-      sanitized = eva "fnamemodify('#{escaped}', ':p')"
+      sanitized = eva "fnamemodify('#{escaped}', ':.')"
       cmd = case open_mode
             when :current_tab
               "e"

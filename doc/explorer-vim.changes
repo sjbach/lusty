@@ -1,28 +1,3 @@
-- Significant performance increase for directories with many files
-- Lower memory usage in directory memoization
-
-The vast majority of these changes were contributed by Matt Tolton:
-
-- Flex/fuzzy matching using the LiquidMetal algorithm:
-  <http://github.com/rmm5t/liquidmetal/tree/master>
-- Buffer explorer: paths are hidden except to differentiate buffers of
-  the same basename.
-- New option:
-    g:LustyExplorerAlwaysShowDotFiles
-- Filesystem explorer: directory contents are memoized
-- New keys for the prompt:
-    C-t: open selected entry in new tab
-    C-n: select the next entry
-    C-p: select the previous entry
-    C-w: move one directory upward at prompt
-    C-u: clear the prompt
-- New keys specific to the filesystem explorer:
-    C-r: refresh directory contents
-    C-a: open all files in the current list
-    C-e: create a new file with the given name
-- Cursor will "hide" correctly when a filename includes a two-column
-  character.
-- GetLatestVimScripts compatibility.
-- Faster implentation of columnize().  Thanks to Sami Samhuri.
-- Fixed a declaration typo.  Thanks to Simo Salminen.
-
+- Open files using relative paths for better readability in e.g. :ls.
+- Warn when fuzzyfinder_textmate is detected -- this plugin interacts poorly with LustyExplorer.
+- Fix a minor highlighting bug.

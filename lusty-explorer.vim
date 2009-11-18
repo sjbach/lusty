@@ -232,9 +232,12 @@ endfunction
 ruby << EOF
 require 'pathname'
 
-# PROFILING
-#require 'rubygems'
-#require 'ruby-prof'
+$PROFILING = false
+
+if $PROFILING
+  require 'rubygems'
+  require 'ruby-prof'
+end
 
 class String
   def ends_with?(s)
@@ -403,6 +406,10 @@ class LustyExplorer
     def run
       return if @running
 
+      if $PROFILING
+        RubyProf.measure_mode = RubyProf::WALL_TIME
+      end
+
       @settings.save
       @running = true
       @calling_window = $curwin
@@ -464,9 +471,12 @@ class LustyExplorer
           exe "silent b #{cur.number}"
         end
 
-        # PROFILING
-        #outfile = File.new('rbprof.txt', 'a')
-        #RubyProf::CallTreePrinter.new(RubyProf.stop).print(outfile)
+        if $PROFILING
+          #outfile = File.new('rbprof.txt', 'a')
+          #RubyProf::CallTreePrinter.new(RubyProf.stop).print(outfile)
+          outfile = File.new('rbprof.html', 'a')
+          RubyProf::GraphHtmlPrinter.new(RubyProf.stop).print(outfile)
+        end
       end
     end
 
@@ -718,15 +728,18 @@ class BufferExplorer < LustyExplorer
 end
 
 def time
-  # PROFILING
-  #RubyProf.resume
+  if $PROFILING
+    RubyProf.resume
+  end
   begin
     yield
   rescue Exception => e
     puts e
     puts e.backtrace
   end
-  #RubyProf.pause
+  if $PROFILING
+    RubyProf.pause
+  end
 end
 
 class FilesystemExplorer < LustyExplorer
@@ -1000,8 +1013,10 @@ class FilesystemPrompt < Prompt
     # We have not typed anything yet or have just typed the final '/' on a
     # directory name in pwd.  This check is interspersed throughout
     # FilesystemExplorer because of the conventions of basename and dirname.
-    input().empty? or \
-    (File.directory?(input()) and input().ends_with?(File::SEPARATOR))
+    input().empty? or input().ends_with?(File::SEPARATOR)
+    # Don't think the File.directory? call is necessary, but leaving this
+    # here as a reminder.
+    #(File.directory?(input()) and input().ends_with?(File::SEPARATOR))
   end
 
   def insensitive?

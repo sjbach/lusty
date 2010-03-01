@@ -278,8 +278,25 @@ class File
 end
 
 module VIM
+  def self.zero?(var)
+    # In Vim 7.2 and older, VIM::evaluate returns Strings for boolean
+    # expressions; in later versions, Fixnums.
+    case var
+    when String
+      var == "0"
+    when Fixnum
+      var == 0
+    else
+      assert(false, "unexpected type: #{var.class}")
+    end
+  end
+
+  def self.nonzero?(var)
+    not(self.zero? var)
+  end
+
   def self.has_syntax?
-    eva('has("syntax")') != "0"
+    VIM::nonzero? eva('has("syntax")')
   end
 
   def self.columns
@@ -311,14 +328,14 @@ module VIM
 
   class Buffer
     def modified?
-      eva("getbufvar(#{number()}, '&modified')") != "0"
+      VIM::nonzero? eva("getbufvar(#{number()}, '&modified')")
     end
   end
 end
 
 def lusty_option_set?(opt_name)
   opt_name = "g:LustyExplorer" + opt_name
-  eva("exists('#{opt_name}') && #{opt_name} != '0'") != "0"
+  VIM::nonzero? eva("exists('#{opt_name}') && #{opt_name} != '0'")
 end
 
 # Port of Ryan McGeary's LiquidMetal fuzzy matching algorithm found at:
@@ -413,7 +430,7 @@ class LustyExplorer
       @settings.save
       @running = true
       @calling_window = $curwin
-      @saved_alternate_bufnum = if eva("expand('#')").empty?
+      @saved_alternate_bufnum = if VIM::nonzero? eva("expand('#') == ''")
                                   nil
                                 else
                                   eva("bufnr(expand('#'))")
@@ -1099,10 +1116,10 @@ class SavedSettings
   def save
     @timeoutlen = eva "&timeoutlen"
 
-    @splitbelow = eva("&splitbelow") == "1"
-    @insertmode = eva("&insertmode") == "1"
-    @showcmd = eva("&showcmd") == "1"
-    @list = eva("&list") == "1"
+    @splitbelow = VIM::nonzero? eva("&splitbelow")
+    @insertmode = VIM::nonzero? eva("&insertmode")
+    @showcmd = VIM::nonzero? eva("&showcmd")
+    @list = VIM::nonzero? eva("&list")
 
     @report = eva "&report"
     @sidescroll = eva "&sidescroll"
@@ -1385,14 +1402,15 @@ class FileMasks
 
   public
     def FileMasks.create_glob_masks
-      @@glob_masks = if eva('exists("g:LustyExplorerFileMasks")') != "0"
-                       # Note: this variable deprecated.
-                       eva("g:LustyExplorerFileMasks").split(',')
-                     elsif eva('exists("&wildignore")') != "0"
-                       eva("&wildignore").split(',')
-                     else
-                       []
-                     end
+      @@glob_masks = \
+        if VIM::nonzero? eva('exists("g:LustyExplorerFileMasks")')
+          # Note: this variable deprecated.
+          eva("g:LustyExplorerFileMasks").split(',')
+        elsif VIM::nonzero? eva('exists("&wildignore")')
+          eva("&wildignore").split(',')
+        else
+          []
+        end
     end
 
     def FileMasks.masked?(str)
@@ -1435,6 +1453,11 @@ class VimSwaps
   end
 end
 
+
+def d(s)
+  # (Debug print)
+  $stderr.puts s
+end
 
 # Simple mappings to decrease typing.
 def exe(s)

@@ -366,7 +366,7 @@ class LiquidMetal
     lastIndex = -1
     started = false
 
-    abbrev.downcase().each_byte do |c|
+    abbrev.downcase().each_char do |c|
       index = lower.index(c, lastIndex + 1)
       return scores.fill(@@SCORE_NO_MATCH, 0..-1) if index.nil?
       started = true if index == 0

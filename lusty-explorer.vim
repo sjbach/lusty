@@ -1,4 +1,4 @@
-"    Copyright: Copyright (C) 2007-2009 Stephen Bach
+"    Copyright: Copyright (C) 2007-2010 Stephen Bach
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
 "               notice is copied with it. Like anything else that's free,
@@ -13,10 +13,10 @@
 "               Matt Tolton <matt-lusty-explorer@tolton.com>
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
-"               Matt Tolton
+"               Matt Tolton, Björn Winckler
 "
-" Release Date: October 10, 2009
-"      Version: 2.1.1
+" Release Date: March 3, 2010
+"      Version: 2.1.2
 "               Inspired by Viewglob, Emacs, and by Jeff Lanzarotta's Buffer
 "               Explorer plugin.
 "

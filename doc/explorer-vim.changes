@@ -1,3 +1,4 @@
-- Open files using relative paths for better readability in e.g. :ls.
-- Warn when fuzzyfinder_textmate is detected -- this plugin interacts poorly with LustyExplorer.
-- Fix a minor highlighting bug.
+- Fix performance over NFS.
+- Fix portability with the updated Vim->Ruby data type conversion in devhead Vim.  Thanks to Björn Winckler.
+- Fix portability with Ruby 1.9.
+

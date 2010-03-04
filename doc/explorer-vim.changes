@@ -1,4 +1,1 @@
-- Fix performance over NFS.
-- Fix portability with the updated Vim->Ruby data type conversion in devhead Vim.  Thanks to Björn Winckler.
-- Fix portability with Ruby 1.9.
-
+Fix an error message in Windows introduced in the previous release.  (Thanks to sowill)

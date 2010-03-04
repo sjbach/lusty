@@ -13,10 +13,10 @@
 "               Matt Tolton <matt-lusty-explorer@tolton.com>
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
-"               Matt Tolton, Björn Winckler
+"               Matt Tolton, Björn Winckler, sowill
 "
 " Release Date: March 3, 2010
-"      Version: 2.1.2
+"      Version: 2.1.3
 "               Inspired by Viewglob, Emacs, and by Jeff Lanzarotta's Buffer
 "               Explorer plugin.
 "
@@ -231,6 +231,8 @@ endfunction
 
 ruby << EOF
 require 'pathname'
+# Needed for String#each_char in Ruby 1.8 on some platforms
+require 'jcode' unless "".respond_to? :each_char
 
 $PROFILING = false
 

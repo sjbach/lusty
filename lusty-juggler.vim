@@ -1,4 +1,4 @@
-"    Copyright: Copyright (C) 2008 Stephen Bach
+"    Copyright: Copyright (C) 2008-2010 Stephen Bach
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
 "               notice is copied with it. Like anything else that's free,
@@ -12,8 +12,8 @@
 "   Maintainer: Stephen Bach <this-file@sjbach.com>
 " Contributors: Juan Frias, Bartosz Leper
 "
-" Release Date: July 16, 2009
-"      Version: 1.1.2
+" Release Date: March 4, 2010
+"      Version: 1.1.3
 "
 "        Usage: To launch the juggler:
 "
@@ -189,6 +189,37 @@ ruby << EOF
 
 require 'pathname'
 
+class AssertionError < StandardError
+end
+
+def assert(condition, message = 'assertion failure')
+  raise AssertionError.new(message) unless condition
+end
+
+module VIM
+  def self.zero?(var)
+    # In Vim 7.2 and older, VIM::evaluate returns Strings for boolean
+    # expressions; in later versions, Fixnums.
+    case var
+    when String
+      var == "0"
+    when Fixnum
+      var == 0
+    else
+      assert(false, "unexpected type: #{var.class}")
+    end
+  end
+
+  def self.nonzero?(var)
+    not(self.zero? var)
+  end
+
+  def self.exists?(s)
+    self.nonzero? eva("exists('#{s}')")
+  end
+end
+
+
 class LustyJuggler
   private
     @@KEYS = { "a" => 1,
@@ -230,10 +261,10 @@ class LustyJuggler
       @running = true
 
       # Need to zero the timeout length or pressing 'g' will hang.
-      @ruler = (eva("&ruler") != "0")
-      @showcmd = (eva("&showcmd") != "0")
-      @showmode = (eva("&showmode") != "0")
-      @timeoutlen = eva "&timeoutlen"
+      @ruler = VIM::nonzero? eva("&ruler")
+      @showcmd = VIM::nonzero? eva("&showcmd")
+      @showmode = VIM::nonzero? eva("&showmode")
+      @timeoutlen = eva("&timeoutlen")
       set 'timeoutlen=0'
       set 'noruler'
       set 'noshowcmd'
@@ -461,8 +492,8 @@ class NameBar
       names = $buffer_stack.names
 
       items = names.inject([]) { |array, name|
-        key = if exists?("g:LustyJugglerShowKeys")
-                case eva("g:LustyJugglerShowKeys")
+        key = if VIM::exists?("g:LustyJugglerShowKeys")
+                case eva("g:LustyJugglerShowKeys").to_s
                 when /[[:alpha:]]/
                   @@LETTERS[array.size / 2] + ":"
                 when /[[:digit:]]/
@@ -636,7 +667,7 @@ class BufferStack
   private
     def cull!
       # Remove empty buffers.
-      @stack.delete_if { |x| eva("bufexists(#{x})") == "0" }
+      @stack.delete_if { |x| VIM::zero? eva("bufexists(#{x})") }
     end
 
     def buf_name(i)
@@ -712,10 +743,6 @@ end
 
 def msg(s)
   VIM.message s
-end
-
-def exists?(s)
-  VIM.evaluate("exists('#{s}')") != "0"
 end
 
 def columns

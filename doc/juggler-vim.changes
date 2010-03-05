@@ -1,1 +1,2 @@
-Fix ENTER key to select the active buffer.  Thanks to Bartosz Leper.
+- Fix portability with the updated Vim->Ruby data type conversion in devhead Vim.
+- Fix portability with Ruby 1.9.

@@ -297,8 +297,12 @@ module VIM
     not(self.zero? var)
   end
 
+  def self.exists?(s)
+    self.nonzero? eva("exists('#{s}')")
+  end
+
   def self.has_syntax?
-    VIM::nonzero? eva('has("syntax")')
+    self.nonzero? eva('has("syntax")')
   end
 
   def self.columns
@@ -1405,10 +1409,10 @@ class FileMasks
   public
     def FileMasks.create_glob_masks
       @@glob_masks = \
-        if VIM::nonzero? eva('exists("g:LustyExplorerFileMasks")')
+        if VIM::exists? "g:LustyExplorerFileMasks"
           # Note: this variable deprecated.
           eva("g:LustyExplorerFileMasks").split(',')
-        elsif VIM::nonzero? eva('exists("&wildignore")')
+        elsif VIM::exists? "&wildignore"
           eva("&wildignore").split(',')
         else
           []

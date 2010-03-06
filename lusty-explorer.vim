@@ -194,31 +194,31 @@ nmap <silent> <Leader>db :BufferExplorer<CR>
 
 " Vim-to-ruby function calls.
 function! s:FilesystemExplorerStart()
-  ruby $filesystem_explorer.run_from_wd
+  ruby profile() { $filesystem_explorer.run_from_wd }
 endfunction
 
 function! s:FilesystemExplorerStartFromHere()
-  ruby $filesystem_explorer.run_from_here
+  ruby profile() { $filesystem_explorer.run_from_here }
 endfunction
 
 function! s:BufferExplorerStart()
-  ruby $buffer_explorer.run
+  ruby profile() { $buffer_explorer.run }
 endfunction
 
 function! FilesystemExplorerCancel()
-  ruby $filesystem_explorer.cancel
+  ruby profile() { $filesystem_explorer.cancel }
 endfunction
 
 function! BufferExplorerCancel()
-  ruby $buffer_explorer.cancel
+  ruby profile() { $buffer_explorer.cancel }
 endfunction
 
 function! FilesystemExplorerKeyPressed(code_arg)
-  ruby $filesystem_explorer.key_pressed
+  ruby profile() { $filesystem_explorer.key_pressed }
 endfunction
 
 function! BufferExplorerKeyPressed(code_arg)
-  ruby $buffer_explorer.key_pressed
+  ruby profile() { $buffer_explorer.key_pressed }
 endfunction
 
 ruby << EOF
@@ -602,7 +602,7 @@ class BufferExplorer < LustyExplorer
       unless @running
         @prompt.clear!
         @curbuf_at_start = VIM::Buffer.current
-        fill_buffer_entries()
+        @buffer_entries = compute_buffer_entries()
         super
       end
     end
@@ -645,10 +645,10 @@ class BufferExplorer < LustyExplorer
       return prefix
     end
 
-    def fill_buffer_entries
-      @buffer_entries.clear
+    def compute_buffer_entries
+      buffer_entries = []
       (0..VIM::Buffer.count-1).each do |i|
-        @buffer_entries << BufferEntry.new(VIM::Buffer[i])
+        buffer_entries << BufferEntry.new(VIM::Buffer[i])
       end
 
       # Shorten each buffer name by removing all path elements which are not
@@ -658,7 +658,7 @@ class BufferExplorer < LustyExplorer
 
       # Group the buffers by common basename
       common_base = Hash.new { |hash, k| hash[k] = [] }
-      @buffer_entries.each do |entry|
+      buffer_entries.each do |entry|
         if entry.full_name
           basename = Pathname.new(entry.full_name).basename.to_s
           common_base[basename] << entry
@@ -674,7 +674,7 @@ class BufferExplorer < LustyExplorer
       end
 
       # Compute shortened buffer names by removing prefix, if possible.
-      @buffer_entries.each do |entry|
+      buffer_entries.each do |entry|
         full_name = entry.full_name
 
         short_name = if full_name.nil?
@@ -697,6 +697,8 @@ class BufferExplorer < LustyExplorer
 
         entry.name = short_name
       end
+
+      buffer_entries
     end
 
     def current_abbreviation
@@ -729,20 +731,6 @@ class BufferExplorer < LustyExplorer
     end
 end
 
-def time
-  if $PROFILING
-    RubyProf.resume
-  end
-  begin
-    yield
-  rescue Exception => e
-    puts e
-    puts e.backtrace
-  end
-  if $PROFILING
-    RubyProf.pause
-  end
-end
 
 class FilesystemExplorer < LustyExplorer
   public
@@ -775,7 +763,6 @@ class FilesystemExplorer < LustyExplorer
     end
 
     def key_pressed()
-      time do
       i = eva("a:code_arg").to_i
 
       case i
@@ -805,7 +792,6 @@ class FilesystemExplorer < LustyExplorer
         refresh(:full)
       else
         super
-      end
       end
     end
 
@@ -1439,11 +1425,6 @@ class VimSwaps
 end
 
 
-def d(s)
-  # (Debug print)
-  $stderr.puts s
-end
-
 # Simple mappings to decrease typing.
 def exe(s)
   VIM.command s
@@ -1476,11 +1457,31 @@ def pretty_msg(*rest)
   exe 'echohl None'
 end
 
-class AssertionError < StandardError
+def profile
+  # Profile (if enabled) and provide better
+  # backtraces when there's an error.
+
+  RubyProf.resume if $PROFILING
+
+  begin
+    yield
+  rescue Exception => e
+    puts e
+    puts e.backtrace
+  end
+
+  RubyProf.pause if $PROFILING
 end
+
+class AssertionError < StandardError ; end
 
 def assert(condition, message = 'assertion failure')
   raise AssertionError.new(message) unless condition
+end
+
+def d(s)
+  # (Debug print)
+  $stderr.puts s
 end
 
 

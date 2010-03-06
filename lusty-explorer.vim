@@ -221,16 +221,9 @@ function! BufferExplorerKeyPressed(code_arg)
   ruby $buffer_explorer.key_pressed
 endfunction
 
-" Setup the autocommands that handle buffer MRU ordering.
-"augroup LustyExplorer
-"  autocmd!
-"  autocmd BufEnter * ruby Window.buffer_stack.push
-"  autocmd BufDelete * ruby Window.buffer_stack.pop
-"  autocmd BufWipeout * ruby Window.buffer_stack.pop
-"augroup End
-
 ruby << EOF
 require 'pathname'
+require 'io/wait'  # for IO#ready
 # Needed for String#each_char in Ruby 1.8 on some platforms
 require 'jcode' unless "".respond_to? :each_char
 
@@ -250,13 +243,6 @@ class String
   def starts_with?(s)
     head = self[0, s.length]
     head == s
-  end
-end
-
-class IO
-  def ready_for_read?
-    result = IO.select([self], nil, nil, 0)
-    result && (result.first.first == self)
   end
 end
 
@@ -315,12 +301,6 @@ module VIM
 
   def self.getcwd
     eva("getcwd()")
-  end
-
-  def self.single_quote_escape(s)
-    # Everything in a Vim single quoted string is literal, except single quotes.
-    # Single quotes are escaped by doubling them.
-    s.gsub("'", "''")
   end
 
   def self.filename_escape(s)
@@ -495,9 +475,8 @@ class LustyExplorer
         end
 
         if $PROFILING
-          #outfile = File.new('rbprof.txt', 'a')
-          #RubyProf::CallTreePrinter.new(RubyProf.stop).print(outfile)
           outfile = File.new('rbprof.html', 'a')
+          #RubyProf::CallTreePrinter.new(RubyProf.stop).print(outfile)
           RubyProf::GraphHtmlPrinter.new(RubyProf.stop).print(outfile)
         end
       end
@@ -1442,7 +1421,7 @@ class VimSwaps
 
   def file_names
     if @files_with_swaps.nil?
-      if @vim_r.ready_for_read?
+      if @vim_r.ready?
         @files_with_swaps = []
         @vim_r.each_line do |line|
           if line =~ /^ +file name: (.*)$/

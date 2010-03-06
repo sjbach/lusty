@@ -162,39 +162,32 @@ nmap <silent> <Leader>lj :LustyJuggler<CR>
 
 " Vim-to-ruby function calls.
 function! s:LustyJugglerStart()
-  ruby $lusty_juggler.run
+  ruby protect() { $lusty_juggler.run }
 endfunction
 
 function! LustyJugglerKeyPressed(code_arg)
-  ruby $lusty_juggler.key_pressed
+  ruby protect() { $lusty_juggler.key_pressed }
 endfunction
 
 function! LustyJugglerCancel()
-  ruby $lusty_juggler.cleanup
+  ruby protect() { $lusty_juggler.cleanup }
 endfunction
 
 function! s:JugglePreviousRun()
-  ruby juggle_previous()
+  ruby protect() { juggle_previous() }
 endfunction
 
 " Setup the autocommands that handle buffer MRU ordering.
 augroup LustyJuggler
   autocmd!
-  autocmd BufEnter * ruby $buffer_stack.push
-  autocmd BufDelete * ruby $buffer_stack.pop
-  autocmd BufWipeout * ruby $buffer_stack.pop
+  autocmd BufEnter * ruby protect() { $buffer_stack.push }
+  autocmd BufDelete * ruby protect() { $buffer_stack.pop }
+  autocmd BufWipeout * ruby protect() { $buffer_stack.pop }
 augroup End
 
 ruby << EOF
 
 require 'pathname'
-
-class AssertionError < StandardError
-end
-
-def assert(condition, message = 'assertion failure')
-  raise AssertionError.new(message) unless condition
-end
 
 module VIM
   def self.zero?(var)
@@ -216,6 +209,10 @@ module VIM
 
   def self.exists?(s)
     self.nonzero? eva("exists('#{s}')")
+  end
+
+  def self.columns
+    eva("&columns").to_i
   end
 end
 
@@ -521,7 +518,9 @@ class NameBar
     def clip(items)
       @active = 0 if @active.nil?
 
-      half_displayable_len = columns() / 2
+      # Note: Vim gives the annoying "Press ENTER to continue" message if we
+      # use the full (half) width.
+      half_displayable_len = (VIM::columns() - 1) / 2
 
       # The active buffer is excluded since it's basically split between
       # the sides.
@@ -623,8 +622,6 @@ end
 
 
 # Maintain MRU ordering.
-# A little bit different than the LustyExplorer version -- probably they
-# should be unified.
 class BufferStack
   public
     def initialize
@@ -745,18 +742,11 @@ def msg(s)
   VIM.message s
 end
 
-def columns
-  # Vim gives the annoying "Press ENTER to continue" message if we use the
-  # full width.
-  eva("&columns").to_i - 1
-end
-
 def pretty_msg(*rest)
   return if rest.length == 0
   return if rest.length % 2 != 0
 
-  #exe "redraw"
-
+  exe "redraw"  # see :help echo-redraw
   i = 0
   while i < rest.length do
     exe "echohl #{rest[i]}"
@@ -765,6 +755,27 @@ def pretty_msg(*rest)
   end
 
   exe 'echohl None'
+end
+
+def protect
+  # Provide better backtraces when there's an error.
+  begin
+    yield
+  rescue Exception => e
+    puts e
+    puts e.backtrace
+  end
+end
+
+class AssertionError < StandardError ; end
+
+def assert(condition, message = 'assertion failure')
+  raise AssertionError.new(message) unless condition
+end
+
+def d(s)
+  # (Debug print)
+  $stderr.puts s
 end
 
 

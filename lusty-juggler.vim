@@ -327,10 +327,17 @@ class LustyJuggler
     end
 
   private
-    def print_buffer_list(highlighted_entry=0)
+    def print_buffer_list(highlighted_entry = nil)
       # If the user pressed a key higher than the number of open buffers,
       # highlight the highest (see also BufferStack.num_at_pos()).
-      @name_bar.active = [highlighted_entry, $buffer_stack.length].min
+
+      @name_bar.selected_buffer = \
+        if highlighted_entry
+          # Correct for zero-based array.
+          [highlighted_entry, $buffer_stack.length].min - 1
+        else
+          nil
+        end
 
       @name_bar.print
     end
@@ -371,14 +378,14 @@ class BarItem
 end
 
 class Buffer < BarItem
-  def initialize(str, active)
+  def initialize(str, highlighted)
     @str = str
-    @active = active
+    @highlighted = highlighted
     destructure()
   end
 
   def [](*rest)
-    return Buffer.new(@str[*rest], @active)
+    return Buffer.new(@str[*rest], @highlighted)
   end
 
   def pretty_print_input
@@ -390,14 +397,14 @@ class Buffer < BarItem
     #@@BUFFER_COLOR = "None"
     @@DIR_COLOR = "Directory"
     @@SLASH_COLOR = "Function"
-    @@ACTIVE_COLOR = "Question"
+    @@HIGHLIGHTED_COLOR = "Question"
 
     # Breakdown the string to colourize each part.
     def destructure
-      if @active
-        buf_color = @@ACTIVE_COLOR
-        dir_color = @@ACTIVE_COLOR
-        slash_color = @@ACTIVE_COLOR
+      if @highlighted
+        buf_color = @@HIGHLIGHTED_COLOR
+        dir_color = @@HIGHLIGHTED_COLOR
+        slash_color = @@HIGHLIGHTED_COLOR
       else
         buf_color = @@BUFFER_COLOR
         dir_color = @@DIR_COLOR
@@ -468,17 +475,21 @@ end
 class NameBar
   public
     def initialize
-      @active = nil
+      @selected_buffer = nil
     end
 
-    def active=(i)
-      # Correct for zero-based array.
-      @active = (i > 0) ? i - 1 : nil
-    end
+    attr_writer :selected_buffer
 
     def print
       items = create_items()
-      clipped = clip(items)
+
+      selected_item = \
+        if @selected_buffer
+          # Account for the separators we've added.
+          [@selected_buffer * 2, (items.length - 1)].min
+        end
+
+      clipped = clip(items, selected_item)
       NameBar.do_pretty_print(clipped)
     end
 
@@ -504,59 +515,68 @@ class NameBar
               end
 
         array << Buffer.new("#{key}#{name}",
-                            (@active and name == names[@active]))
+                            (@selected_buffer and \
+                             name == names[@selected_buffer]))
         array << Separator.new
       }
       items.pop   # Remove last separator.
-
-      # Account for the separators.
-      @active and @active = [@active * 2, (items.length - 1)].min
 
       return items
     end
 
     # Clip the given array of items to the available display width.
-    def clip(items)
-      @active = 0 if @active.nil?
+    def clip(items, selected)
+      # This function is pretty hard to follow...
 
       # Note: Vim gives the annoying "Press ENTER to continue" message if we
-      # use the full (half) width.
-      half_displayable_len = (VIM::columns() - 1) / 2
+      # use the full width.
+      columns = VIM::columns() - 1
 
-      # The active buffer is excluded since it's basically split between
+      if BarItem.full_length(items) <= columns
+        return items
+      end
+
+      selected = 0 if selected.nil?
+      half_displayable_len = columns / 2
+
+      # The selected buffer is excluded since it's basically split between
       # the sides.
-      left_len = BarItem.full_length items[0, @active - 1]
-      right_len = BarItem.full_length items[@active + 1, items.length - 1]
+      left_len = BarItem.full_length items[0, selected - 1]
+      right_len = BarItem.full_length items[selected + 1, items.length - 1]
 
       right_justify = (left_len > half_displayable_len) and \
                       (right_len < half_displayable_len)
 
-      active_str_half_len = (items[@active].length / 2) + \
-                            (items[@active].length % 2 == 0 ? 0 : 1)
+      selected_str_half_len = (items[selected].length / 2) + \
+                              (items[selected].length % 2 == 0 ? 0 : 1)
 
       if right_justify
         # Right justify the bar.
         first_layout = self.method :layout_right
         second_layout = self.method :layout_left
-        first_adjustment = active_str_half_len
-        second_adjustment = -active_str_half_len
+        first_adjustment = selected_str_half_len
+        second_adjustment = -selected_str_half_len
       else
         # Left justify (sort-of more likely).
         first_layout = self.method :layout_left
         second_layout = self.method :layout_right
-        first_adjustment = -active_str_half_len
-        second_adjustment = active_str_half_len
+        first_adjustment = -selected_str_half_len
+        second_adjustment = selected_str_half_len
       end
 
       # Layout the first side.
       allocation = half_displayable_len + first_adjustment
-      first_side, remainder = first_layout.call(items, allocation)
+      first_side, remainder = first_layout.call(items,
+                                                selected,
+                                                allocation)
 
       # Then layout the second side, also grabbing any unused space.
       allocation = half_displayable_len + \
                    second_adjustment + \
                    remainder
-      second_side, remainder = second_layout.call(items, allocation)
+      second_side, remainder = second_layout.call(items,
+                                                  selected,
+                                                  allocation)
 
       if right_justify
         second_side + first_side
@@ -566,10 +586,10 @@ class NameBar
     end
 
     # Clip the given array of items to the given space, counting downwards.
-    def layout_left(items, space)
+    def layout_left(items, selected, space)
       trimmed = []
 
-      i = @active - 1
+      i = selected - 1
       while i >= 0
         m = items[i]
         if space > m.length
@@ -590,10 +610,10 @@ class NameBar
     end
 
     # Clip the given array of items to the given space, counting upwards.
-    def layout_right(items, space)
+    def layout_right(items, selected, space)
       trimmed = []
 
-      i = @active
+      i = selected
       while i < items.length
         m = items[i]
         if space > m.length

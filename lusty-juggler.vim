@@ -289,8 +289,9 @@ class LustyJuggler
     def key_pressed()
       c = eva("a:code_arg")
 
-      if (c == @last_pressed) or \
-         (@last_pressed and c == 'ENTER')
+      if @last_pressed.nil? and c == 'ENTER'
+        cleanup()
+      elsif @last_pressed and (c == @last_pressed or c == 'ENTER')
         choose(@@KEYS[@last_pressed])
         cleanup()
       else

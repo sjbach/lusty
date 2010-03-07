@@ -116,9 +116,6 @@
 " TODO:
 " - when an edited file is in nowrap mode and the explorer is called while the
 "   current window is scrolled to the right, name truncation occurs.
-" - bug: NO ENTRIES is not red when input is a space
-"   - happens because LustyExpMatch declares after LustyExpNoEntries.
-" - if new_hash == previous_hash, don't bother 'repainting'.
 
 " Exit quickly when already loaded.
 if exists("g:loaded_lustyexplorer")

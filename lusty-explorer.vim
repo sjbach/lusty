@@ -29,9 +29,9 @@
 "
 "               You can also use the commands:
 "
-"                 ":FilesystemExplorer"
-"                 ":FilesystemExplorerFromHere"
-"                 ":BufferExplorer"
+"                 ":LustyFilesystemExplorer"
+"                 ":LustyFilesystemExplorerFromHere"
+"                 ":LustyBufferExplorer"
 "
 "               (Personally, I map these to ,f and ,r and ,b)
 "

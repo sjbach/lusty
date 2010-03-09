@@ -184,45 +184,58 @@ endif
 let g:loaded_lustyexplorer = "yep"
 
 " Commands.
-command BufferExplorer :call <SID>BufferExplorerStart()
-command FilesystemExplorer :call <SID>FilesystemExplorerStart()
-command FilesystemExplorerFromHere :call <SID>FilesystemExplorerStartFromHere()
+command LustyBufferExplorer :call <SID>LustyBufferExplorerStart()
+command LustyFilesystemExplorer :call <SID>LustyFilesystemExplorerStart()
+command LustyFilesystemExplorerFromHere :call <SID>LustyFilesystemExplorerFromHereStart()
+
+" Deprecated command names.
+command BufferExplorer :call
+  \ <SID>deprecated('BufferExplorer', 'LustyBufferExplorer')
+command FilesystemExplorer :call
+  \ <SID>deprecated('FilesystemExplorer', 'LustyFilesystemExplorer')
+command FilesystemExplorerFromHere :call
+  \ <SID>deprecated('FilesystemExplorerFromHere',
+  \                 'LustyFilesystemExplorerFromHere')
+
+function! s:deprecated(old, new)
+  echohl WarningMsg
+  echo ":" . a:old . " is deprecated; use :" . a:new . " instead."
+  echohl none
+endfunction
+
+
 
 " Default mappings.
-nmap <silent> <Leader>lf :FilesystemExplorer<CR>
-nmap <silent> <Leader>lr :FilesystemExplorerFromHere<CR>
-nmap <silent> <Leader>lb :BufferExplorer<CR>
-
-" Old mappings (from DynamicExplorer).
-nmap <silent> <Leader>df :FilesystemExplorer<CR>
-nmap <silent> <Leader>db :BufferExplorer<CR>
+nmap <silent> <Leader>lf :LustyFilesystemExplorer<CR>
+nmap <silent> <Leader>lr :LustyFilesystemExplorerFromHere<CR>
+nmap <silent> <Leader>lb :LustyBufferExplorer<CR>
 
 " Vim-to-ruby function calls.
-function! s:FilesystemExplorerStart()
+function! s:LustyFilesystemExplorerStart()
   ruby profile() { $filesystem_explorer.run_from_wd }
 endfunction
 
-function! s:FilesystemExplorerStartFromHere()
+function! s:LustyFilesystemExplorerFromHereStart()
   ruby profile() { $filesystem_explorer.run_from_here }
 endfunction
 
-function! s:BufferExplorerStart()
+function! s:LustyBufferExplorerStart()
   ruby profile() { $buffer_explorer.run }
 endfunction
 
-function! FilesystemExplorerCancel()
+function! s:LustyFilesystemExplorerCancel()
   ruby profile() { $filesystem_explorer.cancel }
 endfunction
 
-function! BufferExplorerCancel()
+function! s:LustyBufferExplorerCancel()
   ruby profile() { $buffer_explorer.cancel }
 endfunction
 
-function! FilesystemExplorerKeyPressed(code_arg)
+function! s:LustyFilesystemExplorerKeyPressed(code_arg)
   ruby profile() { $filesystem_explorer.key_pressed }
 endfunction
 
-function! BufferExplorerKeyPressed(code_arg)
+function! s:LustyBufferExplorerKeyPressed(code_arg)
   ruby profile() { $buffer_explorer.key_pressed }
 endfunction
 
@@ -512,37 +525,38 @@ class LustyExplorer
                     'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
                     '[]^_`abcdefghijklmnopqrstuvwxyz{}~'
 
-      map_command = "noremap <silent> <buffer> "
+      map = "noremap <silent> <buffer>"
+      explorer = self.class.to_s
 
       printables.each_byte do |b|
-        exe "#{map_command} <Char-#{b}> :call #{self.class}KeyPressed(#{b})<CR>"
+        exe "#{map} <Char-#{b}> :call <SID>Lusty#{explorer}KeyPressed(#{b})<CR>"
       end
 
       # Special characters
-      exe "#{map_command} <Tab>    :call #{self.class}KeyPressed(9)<CR>"
-      exe "#{map_command} <Bslash> :call #{self.class}KeyPressed(92)<CR>"
-      exe "#{map_command} <Space>  :call #{self.class}KeyPressed(32)<CR>"
-      exe "#{map_command} \026|    :call #{self.class}KeyPressed(124)<CR>"
+      exe "#{map} <Tab>    :call <SID>Lusty#{explorer}KeyPressed(9)<CR>"
+      exe "#{map} <Bslash> :call <SID>Lusty#{explorer}KeyPressed(92)<CR>"
+      exe "#{map} <Space>  :call <SID>Lusty#{explorer}KeyPressed(32)<CR>"
+      exe "#{map} \026|    :call <SID>Lusty#{explorer}KeyPressed(124)<CR>"
 
-      exe "#{map_command} <BS>     :call #{self.class}KeyPressed(8)<CR>"
-      exe "#{map_command} <Del>    :call #{self.class}KeyPressed(8)<CR>"
-      exe "#{map_command} <C-h>    :call #{self.class}KeyPressed(8)<CR>"
+      exe "#{map} <BS>     :call <SID>Lusty#{explorer}KeyPressed(8)<CR>"
+      exe "#{map} <Del>    :call <SID>Lusty#{explorer}KeyPressed(8)<CR>"
+      exe "#{map} <C-h>    :call <SID>Lusty#{explorer}KeyPressed(8)<CR>"
 
-      exe "#{map_command} <CR>     :call #{self.class}KeyPressed(13)<CR>"
-      exe "#{map_command} <S-CR>   :call #{self.class}KeyPressed(10)<CR>"
-      exe "#{map_command} <C-a>    :call #{self.class}KeyPressed(1)<CR>"
+      exe "#{map} <CR>     :call <SID>Lusty#{explorer}KeyPressed(13)<CR>"
+      exe "#{map} <S-CR>   :call <SID>Lusty#{explorer}KeyPressed(10)<CR>"
+      exe "#{map} <C-a>    :call <SID>Lusty#{explorer}KeyPressed(1)<CR>"
 
-      exe "#{map_command} <Esc>    :call #{self.class}Cancel()<CR>"
-      exe "#{map_command} <C-c>    :call #{self.class}Cancel()<CR>"
-      exe "#{map_command} <C-g>    :call #{self.class}Cancel()<CR>"
+      exe "#{map} <Esc>    :call <SID>Lusty#{explorer}Cancel()<CR>"
+      exe "#{map} <C-c>    :call <SID>Lusty#{explorer}Cancel()<CR>"
+      exe "#{map} <C-g>    :call <SID>Lusty#{explorer}Cancel()<CR>"
 
-      exe "#{map_command} <C-w>    :call #{self.class}KeyPressed(23)<CR>"
-      exe "#{map_command} <C-n>    :call #{self.class}KeyPressed(14)<CR>"
-      exe "#{map_command} <C-p>    :call #{self.class}KeyPressed(16)<CR>"
-      exe "#{map_command} <C-t>    :call #{self.class}KeyPressed(20)<CR>"
-      exe "#{map_command} <C-e>    :call #{self.class}KeyPressed(5)<CR>"
-      exe "#{map_command} <C-r>    :call #{self.class}KeyPressed(18)<CR>"
-      exe "#{map_command} <C-u>    :call #{self.class}KeyPressed(21)<CR>"
+      exe "#{map} <C-w>    :call <SID>Lusty#{explorer}KeyPressed(23)<CR>"
+      exe "#{map} <C-n>    :call <SID>Lusty#{explorer}KeyPressed(14)<CR>"
+      exe "#{map} <C-p>    :call <SID>Lusty#{explorer}KeyPressed(16)<CR>"
+      exe "#{map} <C-t>    :call <SID>Lusty#{explorer}KeyPressed(20)<CR>"
+      exe "#{map} <C-e>    :call <SID>Lusty#{explorer}KeyPressed(5)<CR>"
+      exe "#{map} <C-r>    :call <SID>Lusty#{explorer}KeyPressed(18)<CR>"
+      exe "#{map} <C-u>    :call <SID>Lusty#{explorer}KeyPressed(21)<CR>"
     end
 
     def highlight_selected_index

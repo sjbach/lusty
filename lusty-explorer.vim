@@ -1040,7 +1040,7 @@ class FilesystemPrompt < Prompt
 
   def input
     if @dirty
-      @memoized = variable_expansion(File.simplify_path(@input))
+      @memoized = File.simplify_path(variable_expansion(@input))
       @dirty = false
     end
 
@@ -1057,7 +1057,6 @@ class FilesystemPrompt < Prompt
 
   private
     def variable_expansion (input_str)
-      # FIXME does this still work?
       strings = input_str.split('$', -1)
       return "" if strings.nil? or strings.length == 0
 

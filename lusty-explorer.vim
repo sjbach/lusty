@@ -116,6 +116,14 @@
 " TODO:
 " - when an edited file is in nowrap mode and the explorer is called while the
 "   current window is scrolled to the right, name truncation occurs.
+" - enable VimSwaps stuff
+"   - set callback when pipe is ready for read and force refresh()
+" - fix variable expansion
+" - uppercase character should make flex matching case-sensitive
+" - FilesystemExplorerRecursive
+" - restore MRU buffer ordering for initial BufferExplorer display?
+" - C-jhkl navigation to highlight a file?
+" - FilesystemExplorer -> LustyFilesystemExplorer, etc.
 
 " Exit quickly when already loaded.
 if exists("g:loaded_lustyexplorer")

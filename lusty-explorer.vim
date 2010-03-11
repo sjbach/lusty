@@ -118,12 +118,10 @@
 "   current window is scrolled to the right, name truncation occurs.
 " - enable VimSwaps stuff
 "   - set callback when pipe is ready for read and force refresh()
-" - fix variable expansion
 " - uppercase character should make flex matching case-sensitive
 " - FilesystemExplorerRecursive
 " - restore MRU buffer ordering for initial BufferExplorer display?
 " - C-jhkl navigation to highlight a file?
-" - FilesystemExplorer -> LustyFilesystemExplorer, etc.
 
 " Exit quickly when already loaded.
 if exists("g:loaded_lustyexplorer")
@@ -202,7 +200,6 @@ function! s:deprecated(old, new)
   echo ":" . a:old . " is deprecated; use :" . a:new . " instead."
   echohl none
 endfunction
-
 
 
 " Default mappings.
@@ -414,6 +411,7 @@ class BufferEntry < Entry
   end
 end
 
+# Abstract base class; extended as BufferExplorer, FilesystemExplorer
 class LustyExplorer
   public
     def initialize
@@ -1075,7 +1073,7 @@ end
 
 # Simplify switching between windows.
 class Window
-    def Window.select(window)
+    def self.select(window)
       return true if window == $curwin
 
       start = $curwin

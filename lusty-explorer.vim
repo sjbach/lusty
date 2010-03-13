@@ -13,7 +13,7 @@
 "               Matt Tolton <matt-lusty-explorer@tolton.com>
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
-"               Matt Tolton, Björn Winckler, sowill
+"               Matt Tolton, Björn Winckler, sowill, David Brown
 "
 " Release Date: March 3, 2010
 "      Version: 2.1.3
@@ -50,17 +50,21 @@
 "                 <C-c>    cancel
 "                 <C-g>    cancel
 "
-"                 <C-t>    open the selected match in a new tab
-"                 <C-n>    select the next match
-"                 <C-p>    select the previous match
+"                 <C-t>    open selected match in a new [t]ab
+"                 <C-o>    open selected match in a new h[o]rizontal split
+"                 <C-v>    open selected match in a new [v]ertical split
+"
+"                 <C-n>    select the [n]ext match
+"                 <C-p>    select the [p]revious match
+"
 "                 <C-w>    ascend one directory at prompt
 "                 <C-u>    clear the prompt
 "
 "               Additional shortcuts for the filesystem explorer:
 "
-"                 <C-r>    refresh directory contents
-"                 <C-a>    open all files in the current list
-"                 <C-e>    create a new file with the given name
+"                 <C-r>    [r]efresh directory contents
+"                 <C-a>    open [a]ll files in the current list
+"                 <C-e>    create a new buffer with the given name and path
 "
 " Buffer Explorer:
 "  - The currently active buffer is highlighted.
@@ -469,11 +473,17 @@ class LustyExplorer
           @selected_index = \
             (@selected_index - 1) % @ordered_matching_entries.size
           refresh_mode = :no_recompute
+        when 15               # C-o choose in new horizontal split
+          choose(:new_split)
+          @selected_index = 0
         when 20               # C-t choose in new tab
           choose(:new_tab)
           @selected_index = 0
         when 21               # C-u clear prompt
           @prompt.clear!
+          @selected_index = 0
+        when 22               # C-v choose in new vertical split
+          choose(:new_vsplit)
           @selected_index = 0
       end
 
@@ -551,7 +561,9 @@ class LustyExplorer
       exe "#{map} <C-w>    :call <SID>Lusty#{explorer}KeyPressed(23)<CR>"
       exe "#{map} <C-n>    :call <SID>Lusty#{explorer}KeyPressed(14)<CR>"
       exe "#{map} <C-p>    :call <SID>Lusty#{explorer}KeyPressed(16)<CR>"
+      exe "#{map} <C-o>    :call <SID>Lusty#{explorer}KeyPressed(15)<CR>"
       exe "#{map} <C-t>    :call <SID>Lusty#{explorer}KeyPressed(20)<CR>"
+      exe "#{map} <C-v>    :call <SID>Lusty#{explorer}KeyPressed(22)<CR>"
       exe "#{map} <C-e>    :call <SID>Lusty#{explorer}KeyPressed(5)<CR>"
       exe "#{map} <C-r>    :call <SID>Lusty#{explorer}KeyPressed(18)<CR>"
       exe "#{map} <C-u>    :call <SID>Lusty#{explorer}KeyPressed(21)<CR>"
@@ -740,6 +752,10 @@ class BufferExplorer < LustyExplorer
               # For some reason just using tabe or e gives an error when
               # the alternate-file isn't set.
               "tab split | b"
+            when :new_split
+	      "sp | b"
+            when :new_vsplit
+	      "vs | b"
             else
               assert(false, "bad open mode")
             end
@@ -926,6 +942,10 @@ class FilesystemExplorer < LustyExplorer
               "e"
             when :new_tab
               "tabe"
+            when :new_split
+	      "sp"
+            when :new_vsplit
+	      "vs"
             else
               assert(false, "bad open mode")
             end

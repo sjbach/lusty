@@ -75,6 +75,8 @@
     (define-key map "\C-p" 'lusty-highlight-previous)
     (define-key map "\t" 'lusty-select-entry)
     ;; STEVE ^ entry for <Enter> as well?
+    ;; - if buffer explorer, same as \t
+    ;; - if file explorer, opens current name (or recurses if existing dir)
     map)
   "Minibuffer keymap for `lusty-file-explorer' and `lusty-buffer-explorer'.")
 
@@ -83,7 +85,7 @@
   "Launch the file/directory mode of LustyExplorer"
   (interactive)
   (let* ((lusty--active-mode :file-explorer)
-         (lusty--completion-ignored-extensions
+         (lusty--ignored-extensions
           (mapcar (lambda (ext) (concat (regexp-quote ext) "$"))
                   completion-ignored-extensions))
          (file (lusty--run 'read-file-name)))
@@ -109,20 +111,24 @@
 ;; - fuzzy matching
 ;; - FIX: type nonsense directory name, /, then foo, then TAB
 ;;     Wrong type argument: blah blah
+;; - FIX: deal with permission-denied
 
 
 (defvar lusty--active-mode nil)
 (defvar lusty--wrapping-ido-p nil)
-(defvar lusty--previous-minibuffer-contents nil)
 (defvar lusty--initial-window-config nil)
+(defvar lusty--previous-minibuffer-contents nil)
+(defvar lusty--ignored-extensions nil)
 (defvar lusty--highlighted-index 0)
-(defvar lusty--completion-ignored-extensions nil)
+(defvar lusty--previous-printed-matches '())
 
 (defun lusty-highlight-next ()
+  ; STEVE document
   (interactive)
   (incf lusty--highlighted-index)
   (lusty-update-matches-buffer))
 (defun lusty-highlight-previous ()
+  ; STEVE document
   (interactive)
   (decf lusty--highlighted-index)
   (when (minusp lusty--highlighted-index)
@@ -130,7 +136,7 @@
   (lusty-update-matches-buffer))
 
 (defun lusty-sort-by-fuzzy-score (strings abbrev)
-  ; STEVE case-sensitive when abbrev contains capital letter?
+  ;; TODO: case-sensitive when abbrev contains capital letter
   (if (or (string= abbrev "")
           (string= abbrev "."))
       (sort strings 'string<)
@@ -152,7 +158,6 @@
   (and (file-directory-p dir)
        dir))
 
-; STEVE still needed?
 (defun lusty-complete-env-variable (path)
   "Look for an environment variable in PATH and try to complete it as
 much as possible."
@@ -188,7 +193,7 @@ does not begin with '.'."
            (string= (directory-file-name str) "."))
          (ignored-p (name)
            (some (lambda (ext) (string-match ext name))
-                 lusty--completion-ignored-extensions)))
+                 lusty--ignored-extensions)))
     (remove-if 'ignored-p
                (if (hidden-p file-portion)
                    (remove-if 'pwd-p files)
@@ -203,15 +208,15 @@ does not begin with '.'."
 (defun lusty-select-entry ()
   "Select the highlighted entry in *Lusty-Matches*"
   (interactive)
-  (ecase lusty--active-mode
-    ;; STEVE basically at TAB we should set minibuffer to be name of the
-    ;;       selected entry, then lusty-update-matches-buffer
-    (:file-explorer (lusty-file-explorer-minibuffer-tab-complete))
-    (:buffer-explorer (lusty-buffer-explorer-minibuffer-tab-complete))))
+  ; STEVE what if lusty--previous-printed-matches is nil?
+  (assert lusty--previous-printed-matches) ; STEVE remove
+  (let ((selected-entry (nth lusty--highlighted-index
+                             lusty--previous-printed-matches)))
+    (ecase lusty--active-mode
+      (:file-explorer (lusty--file-explorer-select selected-entry))
+      (:buffer-explorer (lusty--buffer-explorer-select selected-entry)))))
 
-; STEVE rename?
-(defun lusty-file-explorer-minibuffer-tab-complete ()
-  ;; STEVE remove this function?
+(defun lusty--file-explorer-select (entry)
   (let* ((path (minibuffer-contents-no-properties))
          (var-completed-path (lusty-complete-env-variable path)))
     (if var-completed-path
@@ -221,14 +226,15 @@ does not begin with '.'."
       (let* ((dir (file-name-directory path))
              (file-portion (file-name-nondirectory path))
              (normalized-dir (lusty-normalize-dir dir)))
-        (unless (string= dir normalized-dir)
-          ;; Clean up the path in the minibuffer.
-          (lusty-set-minibuffer-text normalized-dir file-portion)))
-      (lusty-update-matches-buffer t))))
+        ;; Clean up the path when selecting in case we recurse
+        (lusty-set-minibuffer-text normalized-dir entry)
+        (if (file-directory-p (concat normalized-dir entry))
+            (lusty-update-matches-buffer)
+          (minibuffer-complete-and-exit))))))
 
-; STEVE rename?
-(defun lusty-buffer-explorer-minibuffer-tab-complete ()
-  (lusty-update-matches-buffer t))
+(defun lusty--buffer-explorer-select (entry)
+  (lusty-set-minibuffer-text entry)
+  (minibuffer-complete-and-exit))
 
 ;; This may seem overkill, but it's the only way I've found to update the
 ;; matches list for every edit to the minibuffer.  Wrapping the keymap can't
@@ -304,6 +310,7 @@ does not begin with '.'."
   ;; Window configuration may be restored intermittently.
   (setq lusty--initial-window-config (current-window-configuration)))
 
+; STEVE remove tab-pressed-p
 (defun lusty-update-matches-buffer (&optional tab-pressed-p)
   (assert (minibufferp))
   (multiple-value-bind (matches openable-p)
@@ -326,6 +333,8 @@ does not begin with '.'."
           (minibuffer-complete-and-exit))
       ;;
       ;; Update the completion window.
+      ;; STEVE should not intermingle truncation and buffer update
+      ;; STEVE - first half, get entries; second half, display
       (let ((lusty-buffer (get-buffer-create lusty-buffer-name)))
         (with-current-buffer lusty-buffer
           (setq buffer-read-only t)
@@ -334,6 +343,7 @@ does not begin with '.'."
             (let ((buffer-read-only nil))
               (erase-buffer)
               (lusty-display-entries truncated-matches truncated-p)
+              (setq lusty--previous-printed-matches truncated-matches)
               (goto-char (point-min))))
 
           ;; If only our matches window is open,
@@ -517,6 +527,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 (defun lusty--run (read-fn)
   (add-hook 'post-command-hook 'lusty--post-command-function t)
   (let ((lusty--highlighted-index 0)
+        (lusty--previous-printed-matches '())
         ; STEVE move
         (minibuffer-local-completion-map lusty-mode-map)
         (minibuffer-local-filename-completion-map lusty-mode-map))

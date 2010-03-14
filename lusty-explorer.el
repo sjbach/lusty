@@ -74,7 +74,8 @@
     (define-key map "\C-n" 'lusty-highlight-next)
     (define-key map "\C-p" 'lusty-highlight-previous)
     (define-key map "\t" 'lusty-select-entry)
-    ;; STEVE ^ entry for <Enter> as well?
+    (define-key map (kbd "RET") 'lusty-select-entry)
+    ;; STEVE: perhaps RET should be:
     ;; - if buffer explorer, same as \t
     ;; - if file explorer, opens current name (or recurses if existing dir)
     map)
@@ -209,6 +210,7 @@ does not begin with '.'."
   "Select the highlighted entry in *Lusty-Matches*"
   (interactive)
   ; STEVE what if lusty--previous-printed-matches is nil?
+  ;       e.g. after NO-MATCHES
   (assert lusty--previous-printed-matches) ; STEVE remove
   (let ((selected-entry (nth lusty--highlighted-index
                              lusty--previous-printed-matches)))
@@ -310,67 +312,45 @@ does not begin with '.'."
   ;; Window configuration may be restored intermittently.
   (setq lusty--initial-window-config (current-window-configuration)))
 
-; STEVE remove tab-pressed-p
-(defun lusty-update-matches-buffer (&optional tab-pressed-p)
+(defun lusty-update-matches-buffer ()
   (assert (minibufferp))
-  (multiple-value-bind (matches openable-p)
-      (ecase lusty--active-mode
-        (:file-explorer (lusty-file-explorer-matches))
-        (:buffer-explorer (lusty-buffer-explorer-matches)))
+  (let ((matches
+         (ecase lusty--active-mode
+           (:file-explorer (lusty-file-explorer-matches))
+           (:buffer-explorer (lusty-buffer-explorer-matches)))))
+    ;;
+    ;; Update the completion window.
+    ;; STEVE should not intermingle truncation and buffer update
+    ;; STEVE - first half, get entries; second half, display
+    (let ((lusty-buffer (get-buffer-create lusty-buffer-name)))
+      (with-current-buffer lusty-buffer
+        (setq buffer-read-only t)
+        (multiple-value-bind (truncated-matches truncated-p)
+            (lusty-truncate-entries matches)
+          (let ((buffer-read-only nil))
+            (erase-buffer)
+            (lusty-display-entries truncated-matches truncated-p)
+            (setq lusty--previous-printed-matches truncated-matches)
+            (goto-char (point-min))))
 
-    (if (and openable-p tab-pressed-p)
-        ;; STEVE ^^ this is not right anymore
-        ;;       tab should select highlighted entry
-        ;;       - recurse if directory, open if file
-        ;;       enter should use current file-portion
-        ;;       - recurse if directory, open if file, create if names nothing
-        ;;         - unless file portion is empty
-        ;;
-        ;; The user pressed TAB (or some other completion key) and we're
-        ;; fully completable -- go ahead and choose it.
-        (progn
-          (lusty-set-minibuffer-text (car matches))
-          (minibuffer-complete-and-exit))
-      ;;
-      ;; Update the completion window.
-      ;; STEVE should not intermingle truncation and buffer update
-      ;; STEVE - first half, get entries; second half, display
-      (let ((lusty-buffer (get-buffer-create lusty-buffer-name)))
-        (with-current-buffer lusty-buffer
-          (setq buffer-read-only t)
-          (multiple-value-bind (truncated-matches truncated-p)
-              (lusty-truncate-entries matches)
-            (let ((buffer-read-only nil))
-              (erase-buffer)
-              (lusty-display-entries truncated-matches truncated-p)
-              (setq lusty--previous-printed-matches truncated-matches)
-              (goto-char (point-min))))
-
-          ;; If only our matches window is open,
-          (when (one-window-p t)
-            ;; Restore original window configuration before fitting the
-            ;; window so the minibuffer won't grow and look silly.
-            (set-window-configuration lusty--initial-window-config))
-          (fit-window-to-buffer (display-buffer lusty-buffer)
-                                ; TODO vvv do smarter
-                                (- (frame-height) 3))
-          (set-buffer-modified-p nil))))))
+        ;; If only our matches window is open,
+        (when (one-window-p t)
+          ;; Restore original window configuration before fitting the
+          ;; window so the minibuffer won't grow and look silly.
+          (set-window-configuration lusty--initial-window-config))
+        (fit-window-to-buffer (display-buffer lusty-buffer)
+                              ; TODO vvv do smarter
+                              (- (frame-height) 3))
+        (set-buffer-modified-p nil)))))
 
 (defun lusty-buffer-explorer-matches ()
   (let* ((contents (if lusty--wrapping-ido-p
                        ido-text
                      (minibuffer-contents-no-properties)))
-         (buffers (lusty-filter-buffers (buffer-list)))
-         (matches
-          (lusty-sort-by-fuzzy-score 
-           buffers
-           contents))
-         (openable-p
-          ;; Only one entry.
-          (let ((first-entry (car matches)))
-            (and (stringp first-entry)
-                 (endp (cdr matches))))))
-    (values matches openable-p)))
+         (buffers (lusty-filter-buffers (buffer-list))))
+    (lusty-sort-by-fuzzy-score 
+     buffers
+     contents)))
 
 (defun lusty-file-explorer-matches ()
   (let* ((path (minibuffer-contents-no-properties))
@@ -381,29 +361,10 @@ does not begin with '.'."
                ; NOTE: directory-files is quicker but
                ;       doesn't append slash for directories.
                ;(directory-files dir nil nil t)
-               (file-name-all-completions "" dir)))
-         (matches
-          (lusty-sort-by-fuzzy-score
-           (lusty-filter-files file-portion files)
-           file-portion))
-         (openable-p
-          ;; Only one entry and not a directory.
-          (let ((first-entry (car matches)))
-            (and (stringp first-entry)
-                 (endp (cdr matches))
-                 (let ((new-path (concat dir first-entry)))
-                   (not (file-directory-p new-path))))))
-         (unique-completion
-          ;; STEVE review
-          ;; Only one entry and not a directory.
-          ;; STEVE why not a directory?
-          (let ((first-entry (car matches)))
-            (and (stringp first-entry)
-                 (endp (cdr matches))
-                 (let ((new-path (concat dir first-entry)))
-                   (and (not (file-directory-p new-path))
-                        new-path))))))
-    (values matches openable-p)))
+               (file-name-all-completions "" dir))))
+    (lusty-sort-by-fuzzy-score
+     (lusty-filter-files file-portion files)
+     file-portion)))
 
 (defun lusty-propertize-path (path)
   "Propertize the given PATH like so: <dir></><dir></><file>

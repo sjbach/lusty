@@ -51,11 +51,6 @@
 (require 'advice)
 (require 'cl)
 
-;; Used only for the completion algorithms in these functions:
-;; - iswitchb-get-matched-buffers
-;; - iswitchb-set-common-completion
-(require 'iswitchb)
-
 ;; Used only for its faces (for color-theme).
 (require 'font-lock)
 
@@ -71,10 +66,23 @@
 (defvar lusty-truncated-string
   (propertize "-- TRUNCATED --" 'face 'font-lock-comment-face))
 
+(defvar lusty-mode-map
+  ;; STEVE also func ala iswitchb-define-mode-map ?
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map minibuffer-local-map)
+    (define-key map "\C-n" 'lusty-highlight-next)
+    (define-key map "\C-p" 'lusty-highlight-previous)
+    ; STEVE v keep?
+    ;(define-key map "\t" 'iswitchb-complete)
+    (define-key map "\t" 'lusty-tab-test)
+    map)
+  "Minibuffer keymap for `lusty-file-explorer' and `lusty-buffer-explorer'.")
+
 (defvar lusty--active-mode nil)
 (defvar lusty--wrapping-ido-p nil)
 (defvar lusty--previous-contents nil)
 (defvar lusty--initial-window-config nil)
+(defvar lusty--highlighted-index 0)
 (defvar lusty--completion-ignored-extensions nil)
 
 ;;;###autoload
@@ -100,10 +108,101 @@
     (when buffer
       (switch-to-buffer buffer))))
 
-;; TODO: completion-ignore-case
-;;       (let ((completion-ignore-case (blah))) ...
-;;       read-file-name-completion-ignore-case
-;; TODO: highlight opened buffers in filesystem explorer
+;; TODO:
+;; - completion-ignore-case
+;;   (let ((completion-ignore-case (blah))) ...
+;;   read-file-name-completion-ignore-case
+;; - highlight opened buffers in filesystem explorer
+;; - fuzzy matching
+;; - FIX: type nonsense directory name, /, then foo, then TAB
+;;     Wrong type argument: blah blah
+;; - completions -> matches
+
+
+;; Start LiquidMetal
+;;
+;; STEVE document where from
+
+(defconst LM--score-no-match 0.0)
+(defconst LM--score-match 1.0)
+(defconst LM--score-trailing 0.8)
+(defconst LM--score-trailing-but-started 0.90)
+(defconst LM--score-buffer 0.85)
+
+(defun LM-score (str abbrev)
+  (cond ((string= abbrev "")
+         LM--score-trailing)
+        ((> (length abbrev) (length str))
+         LM--score-no-match)
+        (t
+
+         (let* ((scores (LM--build-score-array str abbrev))
+                (sum (reduce '+ scores)))
+           (/ sum (length scores))))))
+
+(defun* LM--build-score-array (str abbrev)
+  (let ((scores (make-vector (length str) LM--score-no-match))
+        (lower (downcase str))
+        (last-index -1)
+        (started-p nil))
+    (loop for c across (downcase abbrev)
+          for i = (position c lower :start (1+ last-index))
+          do
+        (when (null i)
+          (fillarray scores LM--score-no-match)
+          (return-from LM--build-score-array scores))
+        (when (= i 0)
+          (setq started-p t))
+        (cond ((and (> i 0)
+                    (let ((C (aref str (1- i))))
+                      (or (char-equal C ?\ )
+                          (char-equal C ?\t)
+                          (char-equal C ?/)
+                          (char-equal C ?.)
+                          (char-equal C ?_)
+                          (char-equal C ?-))))
+               (aset scores (1- i) LM--score-match)
+               (fill scores LM--score-buffer :start (1+ last-index) :end (1- i)))
+              ((and (>= (aref str i) ?A)
+                    (<= (aref str i) ?Z)
+               (fill scores LM--score-buffer :start (1+ last-index) :end i)))
+              (t
+               (fill scores LM--score-no-match :start (1+ last-index) :end i)))
+        (aset scores i LM--score-match)
+        (setq last-index i))
+
+    (let ((trailing-score
+           (if started-p
+               LM--score-trailing-but-started
+             LM--score-trailing)))
+      (fill scores trailing-score :start (1+ last-index))
+      scores)))
+
+;; End LiquidMetal
+
+
+(defun lusty-highlight-next ()
+  (interactive)
+  (incf lusty--highlighted-index)
+  (lusty-update-completion-buffer))
+(defun lusty-highlight-previous ()
+  (interactive)
+  (decf lusty--highlighted-index)
+  (when (minusp lusty--highlighted-index)
+    (setq lusty--highlighted-index 0))
+  (lusty-update-completion-buffer))
+
+(defun lusty-sort-by-fuzzy-score (strings abbrev)
+  (if (or (string= abbrev "")
+          (string= abbrev "."))
+      (sort strings 'string<)
+    (let* ((all-entries (mapcar (lambda (s) (cons s (LM-score s abbrev)))
+                                strings))
+           (filtered (remove-if (lambda (c) (zerop (cdr c)))
+                                all-entries))
+           (sorted (sort filtered
+                         (lambda (a b) (< (cdr b) (cdr a))))))
+      (mapcar 'car sorted))))
 
 (defun lusty-normalize-dir (dir)
   "Clean up the given directory path."
@@ -162,14 +261,18 @@ does not begin with '.'."
   (delete-region (minibuffer-prompt-end) (point-max))
   (apply 'insert args))
 
-(defadvice minibuffer-complete (around lusty-completion-wrapper activate)
+; STEVE make real
+(defun lusty-tab-test ()
   "Circumvent default completion in *Completions* window."
+  (interactive)
   (ecase lusty--active-mode
+    ;; STEVE basically at TAB we should set minibuffer to be name of the
+    ;;       selected entry, then lusty-update-completion-buffer
     (:file-explorer (lusty-file-explorer-minibuffer-tab-complete))
-    (:buffer-explorer (lusty-buffer-explorer-minibuffer-tab-complete))
-    ((nil) ad-do-it)))
+    (:buffer-explorer (lusty-buffer-explorer-minibuffer-tab-complete))))
 
 (defun lusty-file-explorer-minibuffer-tab-complete ()
+  ;; STEVE remove this function?
   (let* ((path (minibuffer-contents-no-properties))
          (var-completed-path (lusty-complete-env-variable path)))
     (if var-completed-path
@@ -188,25 +291,17 @@ does not begin with '.'."
         (unless (string= dir normalized-dir)
           ;; Clean up the path in the minibuffer.
           (lusty-set-minibuffer-text normalized-dir file-portion))
-        (cond ((null completion))
-              ((eq t completion)
-               (minibuffer-complete-and-exit))
-              ((> (length completion) (length file-portion))
-               (insert (substring completion (length file-portion))))))
+        ; STEVE remove
+;        (cond ((null completion))
+;              ((eq t completion)
+ ;              (minibuffer-complete-and-exit))
+  ;            ((> (length completion) (length file-portion))
+   ;            (insert (substring completion (length file-portion)))))
+        )
       (lusty-update-completion-buffer t))))
 
 (defun lusty-buffer-explorer-minibuffer-tab-complete ()
-  (let* ((contents (minibuffer-contents-no-properties))
-         (buffers (lusty-filter-buffers (buffer-list)))
-         (completion (let ((iswitchb-text contents)
-                           (iswitchb-matches buffers))
-                       (iswitchb-set-common-completion))))
-    (cond ((null completion))
-          ((eq t completion)
-           (minibuffer-complete-and-exit))
-          ((> (length completion) (length contents))
-           (delete-region (minibuffer-prompt-end) (point-max))
-           (insert completion))))
+  ;; STEVE remove this function?
   (lusty-update-completion-buffer t))
 
 ;; This may seem overkill, but it's the only way I've found to update the
@@ -232,7 +327,8 @@ does not begin with '.'."
     ;;     remember to add back the '/'
     ;;     update the minibuffer contents
     ;;   
-    (setq lusty--previous-contents (minibuffer-contents-no-properties))
+    (setq lusty--previous-contents (minibuffer-contents-no-properties)
+          lusty--highlighted-index 0)
     (lusty-update-completion-buffer)))
 
 ;; Cribbed with modification from tail-select-lowest-window.
@@ -283,37 +379,44 @@ does not begin with '.'."
 
 (defun lusty-update-completion-buffer (&optional tab-pressed-p)
   (assert (minibufferp))
-  (multiple-value-bind (completions match single-selectable-completion)
+  (multiple-value-bind (matches openable-p)
       (ecase lusty--active-mode
-        (:file-explorer (lusty-file-explorer-completions))
+        (:file-explorer (lusty-file-explorer-matches))
         (:buffer-explorer (lusty-buffer-explorer-completions)))
 
-    (if (and tab-pressed-p
-             single-selectable-completion)
+    (if (and openable-p tab-pressed-p)
+        ;; STEVE ^^ this is not right anymore
+        ;;       tab should select highlighted entry
+        ;;       - recurse if directory, open if file
+        ;;       enter should use current file-portion
+        ;;       - recurse if directory, open if file, create if names nothing
+        ;;         - unless file portion is empty
         ;;
         ;; The user pressed TAB (or some other completion key) and we're
         ;; fully completable -- go ahead and choose it.
         (progn
-          (lusty-set-minibuffer-text single-selectable-completion)
+          (lusty-set-minibuffer-text (car matches))
           (minibuffer-complete-and-exit))
       ;;
       ;; Update the completion window.
       (let ((lusty-buffer (get-buffer-create lusty-buffer-name)))
         (with-current-buffer lusty-buffer
           (setq buffer-read-only t)
-          (let ((buffer-read-only nil))
-            (erase-buffer)
-            (lusty-display-completion-list completions match)
-            (goto-char (point-min))
+          (multiple-value-bind (truncated-matches truncated-p)
+              (lusty-truncate-entries matches)
+            (let ((buffer-read-only nil))
+              (erase-buffer)
+              (lusty-display-entries truncated-matches truncated-p)
+              (goto-char (point-min))))
 
-            ;; If only our completions window is open,
-            (when (one-window-p t)
-              ;; Restore original window configuration before fitting the
-              ;; window so the minibuffer won't grow and look silly.
-              (set-window-configuration lusty--initial-window-config))
-            (fit-window-to-buffer (display-buffer lusty-buffer)
-                                  ; TODO vvv do smarter
-                                  (- (frame-height) 3)))
+          ;; If only our completions window is open,
+          (when (one-window-p t)
+            ;; Restore original window configuration before fitting the
+            ;; window so the minibuffer won't grow and look silly.
+            (set-window-configuration lusty--initial-window-config))
+          (fit-window-to-buffer (display-buffer lusty-buffer)
+                                ; TODO vvv do smarter
+                                (- (frame-height) 3))
           (set-buffer-modified-p nil))))))
 
 (defun lusty-buffer-explorer-completions ()
@@ -321,43 +424,48 @@ does not begin with '.'."
                        ido-text
                      (minibuffer-contents-no-properties)))
          (buffers (lusty-filter-buffers (buffer-list)))
-         (completions (let ((iswitchb-text contents))
-                        (iswitchb-get-matched-buffers contents nil buffers)))
-         (match (find contents completions :test 'string=))
-         (unique-completion
+         (matches
+          (lusty-sort-by-fuzzy-score 
+           buffers
+           contents))
+         (openable-p
           ;; Only one entry.
-          (let ((first-entry (car completions)))
+          (let ((first-entry (car matches)))
             (and (stringp first-entry)
-                 (endp (cdr completions))
-                 first-entry))))
-    (values completions
-            match
-            unique-completion)))
+                 (endp (cdr matches))))))
+    (values matches openable-p)))
 
-(defun lusty-file-explorer-completions ()
+(defun lusty-file-explorer-matches ()
   (let* ((path (minibuffer-contents-no-properties))
          (dir (lusty-normalize-dir (file-name-directory path)))
          (file-portion (file-name-nondirectory path))
-         (completions
-          (sort (and dir
-                     (lusty-filter-files
-                      file-portion
-                      ;; TODO: let bind read-file-name-completion-ignore-case 
-                      ;; based on whether file-portion includes uppercase
-                      (file-name-all-completions file-portion dir)))
-                'string<))
-         (match (find file-portion completions :test 'string=))
-         (unique-completion
+         (matches
+          ;; TODO: let bind read-file-name-completion-ignore-case 
+          ;; based on whether file-portion includes uppercase
+          (and dir
+               (lusty-sort-by-fuzzy-score 
+                (lusty-filter-files
+                 file-portion
+                 (directory-files dir nil nil t))
+                file-portion)))
+         (openable-p
           ;; Only one entry and not a directory.
-          (let ((first-entry (car completions)))
+          (let ((first-entry (car matches)))
             (and (stringp first-entry)
-                 (endp (cdr completions))
+                 (endp (cdr matches))
+                 (let ((new-path (concat dir first-entry)))
+                   (not (file-directory-p new-path))))))
+         (unique-completion
+          ;; STEVE review
+          ;; Only one entry and not a directory.
+          ;; STEVE why not a directory?
+          (let ((first-entry (car matches)))
+            (and (stringp first-entry)
+                 (endp (cdr matches))
                  (let ((new-path (concat dir first-entry)))
                    (and (not (file-directory-p new-path))
                         new-path))))))
-    (values completions
-            match
-            unique-completion)))
+    (values matches openable-p)))
 
 (defun lusty-propertize-path (path)
   "Propertize the given PATH like so: <dir></><dir></><file>
@@ -378,52 +486,54 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   (loop for item in lst
         maximizing (length item)))
 
-(defun* lusty-display-completion-list (entries match)
-  (when (endp entries)
-    (lusty-print-no-entries)
-    (return-from lusty-display-completion-list))
-
+(defun lusty-truncate-entries (entries)
   (let* ((max-possibly-displayable-entries
           (* (- (frame-height) 3)
              (/ (window-width)
                 (1+ (length lusty-column-separator)))))
-         (cut-off (nthcdr max-possibly-displayable-entries entries))
-         (truncate-p (consp cut-off)))
+         (cut-off-point (nthcdr max-possibly-displayable-entries entries))
+         (truncate-p (consp cut-off-point)))
 
     (when truncate-p
-      (setf (cdr cut-off) nil))
+      ;; Trim down the entries
+      (setf (cdr cut-off-point) nil))
 
-    (setq entries
-          (mapcar
-           (cond ((endp (cdr entries))
-                  (lambda (e) (propertize e 'face lusty-match-face)))
-                 (match
-                  (lambda (e)
-                    (if (eq match e)
-                        (propertize e 'face lusty-match-face)
-                      (lusty-propertize-path e))))
-                 (t
-                  'lusty-propertize-path))
-           entries))
+    (values entries truncate-p)))
 
-    (loop for column-count downfrom (lusty-column-count-upperbound entries)
-          ;; FIXME this is calculated one too many times in the degenerate
-          ;; case.
-          for columns = (lusty-columnize entries column-count)
-          for widths = (mapcar 'lusty-longest-length columns)
-          for full-width = (+ (reduce '+ widths)
-                              (* (length lusty-column-separator)
-                                 (1- column-count)))
-          until (or (<= column-count 1)
-                    (< full-width (window-width)))
-          finally
-          (when (<= column-count 1)
-            (setq columns (list entries)
-                  widths (list 0)))
-          (lusty-print-columns columns widths))
+(defun* lusty-display-entries (entries truncated-p)
+  (when (endp entries)
+    (lusty-print-no-entries)
+    (return-from lusty-display-entries))
 
-    (when truncate-p
-      (lusty-print-truncated))))
+  ; STEVE clean up this
+  (setq entries
+        (loop with len = (length entries)
+              with highlighted-index = (mod lusty--highlighted-index len)
+              for e in entries
+              for i from 0
+              when (= i highlighted-index)
+              collect (propertize e 'face lusty-match-face)
+              else
+              collect (lusty-propertize-path e)))
+
+  (loop for column-count downfrom (lusty-column-count-upperbound entries)
+        ;; FIXME this is calculated one too many times in the degenerate
+        ;; case.
+        for columns = (lusty-columnize entries column-count)
+        for widths = (mapcar 'lusty-longest-length columns)
+        for full-width = (+ (reduce '+ widths)
+                            (* (length lusty-column-separator)
+                               (1- column-count)))
+        until (or (<= column-count 1)
+                  (< full-width (window-width)))
+        finally
+        (when (<= column-count 1)
+          (setq columns (list entries)
+                widths (list 0)))
+        (lusty-print-columns columns widths))
+
+  (when truncated-p
+    (lusty-print-truncated)))
   
 (defun lusty-print-no-entries ()
   (insert lusty-no-entries-string)
@@ -477,12 +587,16 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 
 (defun lusty--run (read-fn)
   (add-hook 'post-command-hook 'lusty--post-command-function t)
-  (unwind-protect 
-      (save-window-excursion
-        (funcall read-fn ">> "))
-    (remove-hook 'post-command-hook 'lusty--post-command-function)
-    (setq lusty--previous-contents nil
-          lusty--initial-window-config nil)))
+  (let ((lusty--highlighted-index 0)
+        ; STEVE move
+        (minibuffer-local-completion-map lusty-mode-map)
+        (minibuffer-local-filename-completion-map lusty-mode-map))
+    (unwind-protect 
+        (save-window-excursion
+          (funcall read-fn ">> "))
+      (remove-hook 'post-command-hook 'lusty--post-command-function)
+      (setq lusty--previous-contents nil
+            lusty--initial-window-config nil))))
 
 (provide 'lusty-explorer)
 

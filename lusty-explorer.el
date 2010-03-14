@@ -49,7 +49,7 @@
 
 ;;; Code:
 
-(require 'advice)
+;; Used for many functions and macros.
 (require 'cl)
 
 ;; Used only for its faces (for color-theme).
@@ -77,13 +77,6 @@
     ;; STEVE ^ entry for <Enter> as well?
     map)
   "Minibuffer keymap for `lusty-file-explorer' and `lusty-buffer-explorer'.")
-
-(defvar lusty--active-mode nil)
-(defvar lusty--wrapping-ido-p nil)
-(defvar lusty--previous-contents nil)
-(defvar lusty--initial-window-config nil)
-(defvar lusty--highlighted-index 0)
-(defvar lusty--completion-ignored-extensions nil)
 
 ;;;###autoload
 (defun lusty-file-explorer ()
@@ -118,67 +111,12 @@
 ;;     Wrong type argument: blah blah
 
 
-;; Start LiquidMetal
-;;
-;; STEVE document where from
-
-(defconst LM--score-no-match 0.0)
-(defconst LM--score-match 1.0)
-(defconst LM--score-trailing 0.8)
-(defconst LM--score-trailing-but-started 0.90)
-(defconst LM--score-buffer 0.85)
-
-(defun LM-score (str abbrev)
-  (cond ((string= abbrev "")
-         LM--score-trailing)
-        ((> (length abbrev) (length str))
-         LM--score-no-match)
-        (t
-
-         (let* ((scores (LM--build-score-array str abbrev))
-                (sum (reduce '+ scores)))
-           (/ sum (length scores))))))
-
-(defun* LM--build-score-array (str abbrev)
-  (let ((scores (make-vector (length str) LM--score-no-match))
-        (lower (downcase str))
-        (last-index -1)
-        (started-p nil))
-    (loop for c across (downcase abbrev)
-          for i = (position c lower :start (1+ last-index))
-          do
-        (when (null i)
-          (fillarray scores LM--score-no-match)
-          (return-from LM--build-score-array scores))
-        (when (= i 0)
-          (setq started-p t))
-        (cond ((and (> i 0)
-                    (let ((C (aref str (1- i))))
-                      (or (char-equal C ?\ )
-                          (char-equal C ?\t)
-                          (char-equal C ?/)
-                          (char-equal C ?.)
-                          (char-equal C ?_)
-                          (char-equal C ?-))))
-               (aset scores (1- i) LM--score-match)
-               (fill scores LM--score-buffer :start (1+ last-index) :end (1- i)))
-              ((and (>= (aref str i) ?A)
-                    (<= (aref str i) ?Z)
-               (fill scores LM--score-buffer :start (1+ last-index) :end i)))
-              (t
-               (fill scores LM--score-no-match :start (1+ last-index) :end i)))
-        (aset scores i LM--score-match)
-        (setq last-index i))
-
-    (let ((trailing-score
-           (if started-p
-               LM--score-trailing-but-started
-             LM--score-trailing)))
-      (fill scores trailing-score :start (1+ last-index))
-      scores)))
-
-;; End LiquidMetal
-
+(defvar lusty--active-mode nil)
+(defvar lusty--wrapping-ido-p nil)
+(defvar lusty--previous-minibuffer-contents nil)
+(defvar lusty--initial-window-config nil)
+(defvar lusty--highlighted-index 0)
+(defvar lusty--completion-ignored-extensions nil)
 
 (defun lusty-highlight-next ()
   (interactive)
@@ -290,19 +228,19 @@ does not begin with '.'."
 
 ; STEVE rename?
 (defun lusty-buffer-explorer-minibuffer-tab-complete ()
-  ;; STEVE remove this function?
   (lusty-update-matches-buffer t))
 
 ;; This may seem overkill, but it's the only way I've found to update the
-;; completion list for every edit to the minibuffer.  Wrapping the keymap can't
+;; matches list for every edit to the minibuffer.  Wrapping the keymap can't
 ;; account for user bindings or commands and would also fail for viper.
 (defun lusty--post-command-function ()
   (assert lusty--active-mode)
   (when (and (minibufferp)
-             (or (null lusty--previous-contents)
-                 (not (string= lusty--previous-contents
+             (or (null lusty--previous-minibuffer-contents)
+                 (not (string= lusty--previous-minibuffer-contents
                                (minibuffer-contents-no-properties)))))
-    (unless lusty--initial-window-config
+
+    (when (null lusty--initial-window-config)
       ;; (Only run when the explorer function is initially executed.)
       (lusty-setup-matches-window))
 
@@ -316,7 +254,7 @@ does not begin with '.'."
     ;;     remember to add back the '/'
     ;;     update the minibuffer contents
     ;;   
-    (setq lusty--previous-contents (minibuffer-contents-no-properties)
+    (setq lusty--previous-minibuffer-contents (minibuffer-contents-no-properties)
           lusty--highlighted-index 0)
     (lusty-update-matches-buffer)))
 
@@ -491,36 +429,37 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
     (values entries truncate-p)))
 
 (defun* lusty-display-entries (entries truncated-p)
+
   (when (endp entries)
     (lusty-print-no-entries)
     (return-from lusty-display-entries))
 
-  ; STEVE clean up this
-  (setq entries
-        (loop with len = (length entries)
-              with highlighted-index = (mod lusty--highlighted-index len)
-              for e in entries
-              for i from 0
-              when (= i highlighted-index)
-              collect (propertize e 'face lusty-match-face)
-              else
-              collect (lusty-propertize-path e)))
+  (let ((propertized
+         ; Add font faces to the entries
+         (loop with len = (length entries)
+               with highlighted-index = (mod lusty--highlighted-index len)
+               for e in entries
+               for i from 0
+               when (= i highlighted-index)
+               collect (propertize e 'face lusty-match-face)
+               else
+               collect (lusty-propertize-path e))))
 
-  (loop for column-count downfrom (lusty-column-count-upperbound entries)
-        ;; FIXME this is calculated one too many times in the degenerate
-        ;; case.
-        for columns = (lusty-columnize entries column-count)
-        for widths = (mapcar 'lusty-longest-length columns)
-        for full-width = (+ (reduce '+ widths)
-                            (* (length lusty-column-separator)
-                               (1- column-count)))
-        until (or (<= column-count 1)
-                  (< full-width (window-width)))
-        finally
-        (when (<= column-count 1)
-          (setq columns (list entries)
-                widths (list 0)))
-        (lusty-print-columns columns widths))
+    (loop for column-count downfrom (lusty-column-count-upperbound propertized)
+          ;; FIXME this is calculated one too many times in the degenerate
+          ;; case.
+          for columns = (lusty-columnize propertized column-count)
+          for widths = (mapcar 'lusty-longest-length columns)
+          for full-width = (+ (reduce '+ widths)
+                              (* (length lusty-column-separator)
+                                 (1- column-count)))
+          until (or (<= column-count 1)
+                    (< full-width (window-width)))
+          finally
+          (when (<= column-count 1)
+            (setq columns (list propertized)
+                  widths (list 0)))
+          (lusty-print-columns columns widths)))
 
   (when truncated-p
     (lusty-print-truncated)))
@@ -585,8 +524,71 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
         (save-window-excursion
           (funcall read-fn ">> "))
       (remove-hook 'post-command-hook 'lusty--post-command-function)
-      (setq lusty--previous-contents nil
+      (setq lusty--previous-minibuffer-contents nil
             lusty--initial-window-config nil))))
+
+
+;; Start LiquidMetal
+;;
+;; STEVE document where from
+
+(defconst LM--score-no-match 0.0)
+(defconst LM--score-match 1.0)
+(defconst LM--score-trailing 0.8)
+(defconst LM--score-trailing-but-started 0.90)
+(defconst LM--score-buffer 0.85)
+
+(defun LM-score (str abbrev)
+  (cond ((string= abbrev "")
+         LM--score-trailing)
+        ((> (length abbrev) (length str))
+         LM--score-no-match)
+        (t
+
+         (let* ((scores (LM--build-score-array str abbrev))
+                (sum (reduce '+ scores)))
+           (/ sum (length scores))))))
+
+(defun* LM--build-score-array (str abbrev)
+  (let ((scores (make-vector (length str) LM--score-no-match))
+        (lower (downcase str))
+        (last-index -1)
+        (started-p nil))
+    (loop for c across (downcase abbrev)
+          for i = (position c lower :start (1+ last-index))
+          do
+        (when (null i)
+          (fillarray scores LM--score-no-match)
+          (return-from LM--build-score-array scores))
+        (when (= i 0)
+          (setq started-p t))
+        (cond ((and (> i 0)
+                    (let ((C (aref str (1- i))))
+                      (or (char-equal C ?\ )
+                          (char-equal C ?\t)
+                          (char-equal C ?/)
+                          (char-equal C ?.)
+                          (char-equal C ?_)
+                          (char-equal C ?-))))
+               (aset scores (1- i) LM--score-match)
+               (fill scores LM--score-buffer :start (1+ last-index) :end (1- i)))
+              ((and (>= (aref str i) ?A)
+                    (<= (aref str i) ?Z)
+               (fill scores LM--score-buffer :start (1+ last-index) :end i)))
+              (t
+               (fill scores LM--score-no-match :start (1+ last-index) :end i)))
+        (aset scores i LM--score-match)
+        (setq last-index i))
+
+    (let ((trailing-score
+           (if started-p
+               LM--score-trailing-but-started
+             LM--score-trailing)))
+      (fill scores trailing-score :start (1+ last-index))
+      scores)))
+
+;; End LiquidMetal
+
 
 (provide 'lusty-explorer)
 

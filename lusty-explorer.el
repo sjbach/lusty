@@ -89,6 +89,7 @@
          (lusty--ignored-extensions
           (mapcar (lambda (ext) (concat (regexp-quote ext) "$"))
                   completion-ignored-extensions))
+         (minibuffer-local-filename-completion-map lusty-mode-map)
          (file (lusty--run 'read-file-name)))
     (when file
       (switch-to-buffer
@@ -100,9 +101,36 @@
   "Launch the buffer mode of LustyExplorer"
   (interactive)
   (let* ((lusty--active-mode :buffer-explorer)
+         (minibuffer-local-completion-map lusty-mode-map)
          (buffer (lusty--run 'read-buffer)))
     (when buffer
       (switch-to-buffer buffer))))
+
+(defun lusty-highlight-next ()
+  "Highlight the next entry in *Lusty-Matches*"
+  (interactive)
+  (incf lusty--highlighted-index)
+  (lusty-update-matches-buffer))
+
+(defun lusty-highlight-previous ()
+  "Highlight the previous entry in *Lusty-Matches*"
+  (interactive)
+  (decf lusty--highlighted-index)
+  (when (minusp lusty--highlighted-index)
+    (setq lusty--highlighted-index 0))
+  (lusty-update-matches-buffer))
+
+(defun lusty-select-entry ()
+  "Select the highlighted entry in *Lusty-Matches*"
+  (interactive)
+  ; STEVE what if lusty--previous-printed-matches is nil?
+  ;       e.g. after NO-MATCHES
+  (assert lusty--previous-printed-matches) ; STEVE remove
+  (let ((selected-entry (nth lusty--highlighted-index
+                             lusty--previous-printed-matches)))
+    (ecase lusty--active-mode
+      (:file-explorer (lusty--file-explorer-select selected-entry))
+      (:buffer-explorer (lusty--buffer-explorer-select selected-entry)))))
 
 ;; TODO:
 ;; - completion-ignore-case
@@ -122,19 +150,6 @@
 (defvar lusty--ignored-extensions nil)
 (defvar lusty--highlighted-index 0)
 (defvar lusty--previous-printed-matches '())
-
-(defun lusty-highlight-next ()
-  ; STEVE document
-  (interactive)
-  (incf lusty--highlighted-index)
-  (lusty-update-matches-buffer))
-(defun lusty-highlight-previous ()
-  ; STEVE document
-  (interactive)
-  (decf lusty--highlighted-index)
-  (when (minusp lusty--highlighted-index)
-    (setq lusty--highlighted-index 0))
-  (lusty-update-matches-buffer))
 
 (defun lusty-sort-by-fuzzy-score (strings abbrev)
   ;; TODO: case-sensitive when abbrev contains capital letter
@@ -205,18 +220,6 @@ does not begin with '.'."
   (assert (minibufferp))
   (delete-region (minibuffer-prompt-end) (point-max))
   (apply 'insert args))
-
-(defun lusty-select-entry ()
-  "Select the highlighted entry in *Lusty-Matches*"
-  (interactive)
-  ; STEVE what if lusty--previous-printed-matches is nil?
-  ;       e.g. after NO-MATCHES
-  (assert lusty--previous-printed-matches) ; STEVE remove
-  (let ((selected-entry (nth lusty--highlighted-index
-                             lusty--previous-printed-matches)))
-    (ecase lusty--active-mode
-      (:file-explorer (lusty--file-explorer-select selected-entry))
-      (:buffer-explorer (lusty--buffer-explorer-select selected-entry)))))
 
 (defun lusty--file-explorer-select (entry)
   (let* ((path (minibuffer-contents-no-properties))
@@ -318,6 +321,7 @@ does not begin with '.'."
          (ecase lusty--active-mode
            (:file-explorer (lusty-file-explorer-matches))
            (:buffer-explorer (lusty-buffer-explorer-matches)))))
+    (setq lusty--previous-printed-matches matches)
     ;;
     ;; Update the completion window.
     ;; STEVE should not intermingle truncation and buffer update
@@ -330,7 +334,6 @@ does not begin with '.'."
           (let ((buffer-read-only nil))
             (erase-buffer)
             (lusty-display-entries truncated-matches truncated-p)
-            (setq lusty--previous-printed-matches truncated-matches)
             (goto-char (point-min))))
 
         ;; If only our matches window is open,
@@ -488,10 +491,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 (defun lusty--run (read-fn)
   (add-hook 'post-command-hook 'lusty--post-command-function t)
   (let ((lusty--highlighted-index 0)
-        (lusty--previous-printed-matches '())
-        ; STEVE move
-        (minibuffer-local-completion-map lusty-mode-map)
-        (minibuffer-local-filename-completion-map lusty-mode-map))
+        (lusty--previous-printed-matches '()))
     (unwind-protect 
         (save-window-excursion
           (funcall read-fn ">> "))
@@ -500,9 +500,12 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
             lusty--initial-window-config nil))))
 
 
+;;
 ;; Start LiquidMetal
 ;;
-;; STEVE document where from
+;; Port of Ryan McGeary's LiquidMetal fuzzy matching algorithm found at:
+;;   http://github.com/rmm5t/liquidmetal/tree/master.
+;;
 
 (defconst LM--score-no-match 0.0)
 (defconst LM--score-match 1.0)
@@ -559,7 +562,9 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
       (fill scores trailing-score :start (1+ last-index))
       scores)))
 
+;;
 ;; End LiquidMetal
+;;
 
 
 (provide 'lusty-explorer)

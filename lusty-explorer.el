@@ -26,10 +26,11 @@
 ;;    M-x lusty-file-explorer
 ;;    M-x lusty-buffer-explorer
 ;;
+;; STEVE update doc
 ;; And then use as you would `find-file' or `switch-to-buffer'.  (There are
 ;; minor differences in entry selection, e.g. tab-completing when there is a
 ;; only a single completion will select that completion.)  A split window
-;; shows the *Lusty-Completions* buffer, which updates dynamically as you
+;; shows the *Lusty-Matches* buffer, which updates dynamically as you
 ;; type.
 ;;
 ;; Respects these variables:
@@ -59,7 +60,7 @@
 (defvar lusty-slash-face font-lock-keyword-face)
 (defvar lusty-file-face font-lock-string-face)
 
-(defvar lusty-buffer-name " *Lusty-Completions*")
+(defvar lusty-buffer-name " *Lusty-Matches*")
 (defvar lusty-column-separator "    ")
 (defvar lusty-no-entries-string
   (propertize "-- NO ENTRIES --" 'face 'font-lock-warning-face))
@@ -72,9 +73,8 @@
     (set-keymap-parent map minibuffer-local-map)
     (define-key map "\C-n" 'lusty-highlight-next)
     (define-key map "\C-p" 'lusty-highlight-previous)
-    ; STEVE v keep?
-    ;(define-key map "\t" 'iswitchb-complete)
-    (define-key map "\t" 'lusty-tab-test)
+    (define-key map "\t" 'lusty-select-entry)
+    ;; STEVE ^ entry for <Enter> as well?
     map)
   "Minibuffer keymap for `lusty-file-explorer' and `lusty-buffer-explorer'.")
 
@@ -116,7 +116,6 @@
 ;; - fuzzy matching
 ;; - FIX: type nonsense directory name, /, then foo, then TAB
 ;;     Wrong type argument: blah blah
-;; - completions -> matches
 
 
 ;; Start LiquidMetal
@@ -184,15 +183,16 @@
 (defun lusty-highlight-next ()
   (interactive)
   (incf lusty--highlighted-index)
-  (lusty-update-completion-buffer))
+  (lusty-update-matches-buffer))
 (defun lusty-highlight-previous ()
   (interactive)
   (decf lusty--highlighted-index)
   (when (minusp lusty--highlighted-index)
     (setq lusty--highlighted-index 0))
-  (lusty-update-completion-buffer))
+  (lusty-update-matches-buffer))
 
 (defun lusty-sort-by-fuzzy-score (strings abbrev)
+  ; STEVE case-sensitive when abbrev contains capital letter?
   (if (or (string= abbrev "")
           (string= abbrev "."))
       (sort strings 'string<)
@@ -214,6 +214,7 @@
   (and (file-directory-p dir)
        dir))
 
+; STEVE still needed?
 (defun lusty-complete-env-variable (path)
   "Look for an environment variable in PATH and try to complete it as
 much as possible."
@@ -261,16 +262,16 @@ does not begin with '.'."
   (delete-region (minibuffer-prompt-end) (point-max))
   (apply 'insert args))
 
-; STEVE make real
-(defun lusty-tab-test ()
-  "Circumvent default completion in *Completions* window."
+(defun lusty-select-entry ()
+  "Select the highlighted entry in *Lusty-Matches*"
   (interactive)
   (ecase lusty--active-mode
     ;; STEVE basically at TAB we should set minibuffer to be name of the
-    ;;       selected entry, then lusty-update-completion-buffer
+    ;;       selected entry, then lusty-update-matches-buffer
     (:file-explorer (lusty-file-explorer-minibuffer-tab-complete))
     (:buffer-explorer (lusty-buffer-explorer-minibuffer-tab-complete))))
 
+; STEVE rename?
 (defun lusty-file-explorer-minibuffer-tab-complete ()
   ;; STEVE remove this function?
   (let* ((path (minibuffer-contents-no-properties))
@@ -281,28 +282,16 @@ does not begin with '.'."
         (lusty-set-minibuffer-text var-completed-path)
       (let* ((dir (file-name-directory path))
              (file-portion (file-name-nondirectory path))
-             (normalized-dir (lusty-normalize-dir dir))
-             (completion (and normalized-dir
-                              ;; TODO: let bind
-                              ;; read-file-name-completion-ignore-case based on
-                              ;; whether file-portion includes uppercase
-                              (file-name-completion file-portion
-                                                    normalized-dir))))
+             (normalized-dir (lusty-normalize-dir dir)))
         (unless (string= dir normalized-dir)
           ;; Clean up the path in the minibuffer.
-          (lusty-set-minibuffer-text normalized-dir file-portion))
-        ; STEVE remove
-;        (cond ((null completion))
-;              ((eq t completion)
- ;              (minibuffer-complete-and-exit))
-  ;            ((> (length completion) (length file-portion))
-   ;            (insert (substring completion (length file-portion)))))
-        )
-      (lusty-update-completion-buffer t))))
+          (lusty-set-minibuffer-text normalized-dir file-portion)))
+      (lusty-update-matches-buffer t))))
 
+; STEVE rename?
 (defun lusty-buffer-explorer-minibuffer-tab-complete ()
   ;; STEVE remove this function?
-  (lusty-update-completion-buffer t))
+  (lusty-update-matches-buffer t))
 
 ;; This may seem overkill, but it's the only way I've found to update the
 ;; completion list for every edit to the minibuffer.  Wrapping the keymap can't
@@ -315,7 +304,7 @@ does not begin with '.'."
                                (minibuffer-contents-no-properties)))))
     (unless lusty--initial-window-config
       ;; (Only run when the explorer function is initially executed.)
-      (lusty-setup-completion-window))
+      (lusty-setup-matches-window))
 
     ;; TODO: check that last 'element' in minibuffer string is valid
     ;; if last char is a '/'
@@ -329,7 +318,7 @@ does not begin with '.'."
     ;;   
     (setq lusty--previous-contents (minibuffer-contents-no-properties)
           lusty--highlighted-index 0)
-    (lusty-update-completion-buffer)))
+    (lusty-update-matches-buffer)))
 
 ;; Cribbed with modification from tail-select-lowest-window.
 (defun lusty-lowest-window ()
@@ -352,7 +341,7 @@ does not begin with '.'."
           (setq window-search nil))))
     lowest-window))
 
-(defun lusty-setup-completion-window ()
+(defun lusty-setup-matches-window ()
   (let ((lowest-window (lusty-lowest-window))
         (lusty-buffer (get-buffer-create lusty-buffer-name)))
     (save-selected-window
@@ -377,12 +366,12 @@ does not begin with '.'."
   ;; Window configuration may be restored intermittently.
   (setq lusty--initial-window-config (current-window-configuration)))
 
-(defun lusty-update-completion-buffer (&optional tab-pressed-p)
+(defun lusty-update-matches-buffer (&optional tab-pressed-p)
   (assert (minibufferp))
   (multiple-value-bind (matches openable-p)
       (ecase lusty--active-mode
         (:file-explorer (lusty-file-explorer-matches))
-        (:buffer-explorer (lusty-buffer-explorer-completions)))
+        (:buffer-explorer (lusty-buffer-explorer-matches)))
 
     (if (and openable-p tab-pressed-p)
         ;; STEVE ^^ this is not right anymore
@@ -409,7 +398,7 @@ does not begin with '.'."
               (lusty-display-entries truncated-matches truncated-p)
               (goto-char (point-min))))
 
-          ;; If only our completions window is open,
+          ;; If only our matches window is open,
           (when (one-window-p t)
             ;; Restore original window configuration before fitting the
             ;; window so the minibuffer won't grow and look silly.
@@ -419,7 +408,7 @@ does not begin with '.'."
                                 (- (frame-height) 3))
           (set-buffer-modified-p nil))))))
 
-(defun lusty-buffer-explorer-completions ()
+(defun lusty-buffer-explorer-matches ()
   (let* ((contents (if lusty--wrapping-ido-p
                        ido-text
                      (minibuffer-contents-no-properties)))
@@ -439,15 +428,16 @@ does not begin with '.'."
   (let* ((path (minibuffer-contents-no-properties))
          (dir (lusty-normalize-dir (file-name-directory path)))
          (file-portion (file-name-nondirectory path))
-         (matches
-          ;; TODO: let bind read-file-name-completion-ignore-case 
-          ;; based on whether file-portion includes uppercase
+         (files
           (and dir
-               (lusty-sort-by-fuzzy-score 
-                (lusty-filter-files
-                 file-portion
-                 (directory-files dir nil nil t))
-                file-portion)))
+               ; NOTE: directory-files is quicker but
+               ;       doesn't append slash for directories.
+               ;(directory-files dir nil nil t)
+               (file-name-all-completions "" dir)))
+         (matches
+          (lusty-sort-by-fuzzy-score
+           (lusty-filter-files file-portion files)
+           file-portion))
          (openable-p
           ;; Only one entry and not a directory.
           (let ((first-entry (car matches)))

@@ -83,7 +83,7 @@
 
 ;;;###autoload
 (defun lusty-file-explorer ()
-  "Launch the file/directory mode of LustyExplorer"
+  "Launch the file/directory mode of LustyExplorer."
   (interactive)
   (let* ((lusty--active-mode :file-explorer)
          (lusty--ignored-extensions
@@ -98,7 +98,7 @@
 
 ;;;###autoload
 (defun lusty-buffer-explorer ()
-  "Launch the buffer mode of LustyExplorer"
+  "Launch the buffer mode of LustyExplorer."
   (interactive)
   (let* ((lusty--active-mode :buffer-explorer)
          (minibuffer-local-completion-map lusty-mode-map)
@@ -107,39 +107,31 @@
       (switch-to-buffer buffer))))
 
 (defun lusty-highlight-next ()
-  "Highlight the next entry in *Lusty-Matches*"
+  "Highlight the next entry in *Lusty-Matches*."
   (interactive)
   (incf lusty--highlighted-index)
-  (lusty-update-matches-buffer))
+  (lusty-refresh-matches-buffer))
 
 (defun lusty-highlight-previous ()
-  "Highlight the previous entry in *Lusty-Matches*"
+  "Highlight the previous entry in *Lusty-Matches*."
   (interactive)
   (decf lusty--highlighted-index)
   (when (minusp lusty--highlighted-index)
     (setq lusty--highlighted-index 0))
-  (lusty-update-matches-buffer))
+  (lusty-refresh-matches-buffer))
 
 (defun lusty-select-entry ()
-  "Select the highlighted entry in *Lusty-Matches*"
+  "Select the highlighted entry in *Lusty-Matches*."
   (interactive)
-  ; STEVE what if lusty--previous-printed-matches is nil?
-  ;       e.g. after NO-MATCHES
-  (assert lusty--previous-printed-matches) ; STEVE remove
-  (let ((selected-entry (nth lusty--highlighted-index
-                             lusty--previous-printed-matches)))
-    (ecase lusty--active-mode
-      (:file-explorer (lusty--file-explorer-select selected-entry))
-      (:buffer-explorer (lusty--buffer-explorer-select selected-entry)))))
+  (when lusty--previous-printed-matches
+    (let ((selected-entry (nth lusty--highlighted-index
+                               lusty--previous-printed-matches)))
+      (ecase lusty--active-mode
+        (:file-explorer (lusty--file-explorer-select selected-entry))
+        (:buffer-explorer (lusty--buffer-explorer-select selected-entry))))))
 
 ;; TODO:
-;; - completion-ignore-case
-;;   (let ((completion-ignore-case (blah))) ...
-;;   read-file-name-completion-ignore-case
 ;; - highlight opened buffers in filesystem explorer
-;; - fuzzy matching
-;; - FIX: type nonsense directory name, /, then foo, then TAB
-;;     Wrong type argument: blah blah
 ;; - FIX: deal with permission-denied
 
 
@@ -234,7 +226,7 @@ does not begin with '.'."
         ;; Clean up the path when selecting in case we recurse
         (lusty-set-minibuffer-text normalized-dir entry)
         (if (file-directory-p (concat normalized-dir entry))
-            (lusty-update-matches-buffer)
+            (lusty-refresh-matches-buffer)
           (minibuffer-complete-and-exit))))))
 
 (defun lusty--buffer-explorer-select (entry)
@@ -253,21 +245,11 @@ does not begin with '.'."
 
     (when (null lusty--initial-window-config)
       ;; (Only run when the explorer function is initially executed.)
-      (lusty-setup-matches-window))
+      (lusty--setup-matches-window))
 
-    ;; TODO: check that last 'element' in minibuffer string is valid
-    ;; if last char is a '/'
-    ;;  if last directory is all lower case
-    ;;   if an all lower case directory of that name exists
-    ;;     do nothing
-    ;;   else if a mixed case directory of that name exists
-    ;;     convert directory name to mixed case
-    ;;     remember to add back the '/'
-    ;;     update the minibuffer contents
-    ;;   
     (setq lusty--previous-minibuffer-contents (minibuffer-contents-no-properties)
           lusty--highlighted-index 0)
-    (lusty-update-matches-buffer)))
+    (lusty-refresh-matches-buffer)))
 
 ;; Cribbed with modification from tail-select-lowest-window.
 (defun lusty-lowest-window ()
@@ -290,7 +272,7 @@ does not begin with '.'."
           (setq window-search nil))))
     lowest-window))
 
-(defun lusty-setup-matches-window ()
+(defun lusty--setup-matches-window ()
   (let ((lowest-window (lusty-lowest-window))
         (lusty-buffer (get-buffer-create lusty-buffer-name)))
     (save-selected-window
@@ -315,25 +297,28 @@ does not begin with '.'."
   ;; Window configuration may be restored intermittently.
   (setq lusty--initial-window-config (current-window-configuration)))
 
-(defun lusty-update-matches-buffer ()
+(defun lusty-refresh-matches-buffer ()
+  "Refresh *Lusty-Matches*."
   (assert (minibufferp))
-  (let ((matches
-         (ecase lusty--active-mode
-           (:file-explorer (lusty-file-explorer-matches))
-           (:buffer-explorer (lusty-buffer-explorer-matches)))))
-    (setq lusty--previous-printed-matches matches)
-    ;;
-    ;; Update the completion window.
-    ;; STEVE should not intermingle truncation and buffer update
-    ;; STEVE - first half, get entries; second half, display
-    (let ((lusty-buffer (get-buffer-create lusty-buffer-name)))
-      (with-current-buffer lusty-buffer
-        (setq buffer-read-only t)
-        (multiple-value-bind (truncated-matches truncated-p)
-            (lusty-truncate-entries matches)
+  (let* ((minibuffer-text (if lusty--wrapping-ido-p
+                              ido-text
+                            (minibuffer-contents-no-properties)))
+         (matches
+          (ecase lusty--active-mode
+            (:file-explorer (lusty-file-explorer-matches minibuffer-text))
+            (:buffer-explorer (lusty-buffer-explorer-matches minibuffer-text)))))
+
+    (multiple-value-bind (truncated-matches truncated-p)
+        (lusty-truncate-entries matches)
+      (setq lusty--previous-printed-matches truncated-matches)
+
+      ;; Update the matches window.
+      (let ((lusty-buffer (get-buffer-create lusty-buffer-name)))
+        (with-current-buffer lusty-buffer
+          (setq buffer-read-only t)
           (let ((buffer-read-only nil))
             (erase-buffer)
-            (lusty-display-entries truncated-matches truncated-p)
+            (lusty--display-entries truncated-matches truncated-p)
             (goto-char (point-min))))
 
         ;; If only our matches window is open,
@@ -346,18 +331,14 @@ does not begin with '.'."
                               (- (frame-height) 3))
         (set-buffer-modified-p nil)))))
 
-(defun lusty-buffer-explorer-matches ()
-  (let* ((contents (if lusty--wrapping-ido-p
-                       ido-text
-                     (minibuffer-contents-no-properties)))
-         (buffers (lusty-filter-buffers (buffer-list))))
+(defun lusty-buffer-explorer-matches (text)
+  (let* ((buffers (lusty-filter-buffers (buffer-list))))
     (lusty-sort-by-fuzzy-score 
      buffers
-     contents)))
+     text)))
 
-(defun lusty-file-explorer-matches ()
-  (let* ((path (minibuffer-contents-no-properties))
-         (dir (lusty-normalize-dir (file-name-directory path)))
+(defun lusty-file-explorer-matches (path)
+  (let* ((dir (lusty-normalize-dir (file-name-directory path)))
          (file-portion (file-name-nondirectory path))
          (files
           (and dir
@@ -389,10 +370,12 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
         maximizing (length item)))
 
 (defun lusty-truncate-entries (entries)
-  (let* ((max-possibly-displayable-entries
-          (* (- (frame-height) 3)
-             (/ (window-width)
-                (1+ (length lusty-column-separator)))))
+  (let* ((lusty-buffer (get-buffer-create lusty-buffer-name))
+         (max-possibly-displayable-entries
+          (with-current-buffer lusty-buffer
+            (* (- (frame-height) 3)
+               (/ (window-width)
+                  (1+ (length lusty-column-separator))))))
          (cut-off-point (nthcdr max-possibly-displayable-entries entries))
          (truncate-p (consp cut-off-point)))
 
@@ -402,11 +385,11 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 
     (values entries truncate-p)))
 
-(defun* lusty-display-entries (entries truncated-p)
+(defun* lusty--display-entries (entries truncated-p)
 
   (when (endp entries)
-    (lusty-print-no-entries)
-    (return-from lusty-display-entries))
+    (lusty--print-no-entries)
+    (return-from lusty--display-entries))
 
   (let ((propertized
          ; Add font faces to the entries
@@ -433,22 +416,22 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
           (when (<= column-count 1)
             (setq columns (list propertized)
                   widths (list 0)))
-          (lusty-print-columns columns widths)))
+          (lusty--print-columns columns widths)))
 
   (when truncated-p
-    (lusty-print-truncated)))
+    (lusty--print-truncated)))
   
-(defun lusty-print-no-entries ()
+(defun lusty--print-no-entries ()
   (insert lusty-no-entries-string)
   (let ((fill-column (window-width)))
     (center-line)))
 
-(defun lusty-print-truncated ()
+(defun lusty--print-truncated ()
   (insert lusty-truncated-string)
   (let ((fill-column (window-width)))
     (center-line)))
 
-(defun lusty-print-columns (columns widths)
+(defun lusty--print-columns (columns widths)
   (dotimes (i (lusty-longest-length columns))
     (unless (> (line-number-at-pos)
                (- (frame-height) 3)) ;; TODO: determine dynamically

@@ -1,8 +1,8 @@
 ;;; lusty-explorer.el --- Dynamic filesystem explorer and buffer switcher
 ;;
-;; Copyright (C) 2008, 2009 Stephen Bach <this-file@sjbach.com>
+;; Copyright (C) 2008 - 2010 Stephen Bach <this-file@sjbach.com>
 ;;
-;; Version: 1.0.2
+;; Version: 2.0
 ;; Created: January 26, 2009
 ;; Keywords: convenience, files, matching
 ;; Compatibility: GNU Emacs 22 and 23

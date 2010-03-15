@@ -29,8 +29,8 @@
 ;;
 ;; And then use as you would `find-file' or `switch-to-buffer'. A split window
 ;; shows the *Lusty-Matches* buffer, which updates dynamically as you type
-;; using a fuzzy matching algorithm.  One of entries is highlighted; you can
-;; move the highlight using C-n / C-p.  Pressing TAB or RET will select the
+;; using a fuzzy matching algorithm.  One entry is highlighted; you can move
+;; the highlight using C-n / C-p.  Pressing TAB or RET will select the
 ;; highlighted entry.
 ;;
 ;;; Customization:

@@ -1,1 +1,3 @@
-Fix an error message in Windows introduced in the previous release.  (Thanks to sowill)
+- New keys: C-o -> open in horizontal split, C-v -> open in vertical split.  (Thanks to David Brown)
+- Fix environment variable expansion.
+- Rename launch commands, e.g. BufferExplorer -> LustyBufferExplorer.

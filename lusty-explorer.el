@@ -15,6 +15,7 @@
 ;; the use of this software.
 
 ;;; Commentary:
+;;  -----------
 ;;
 ;; To install, copy this file somewhere in your load-path and add this line to
 ;; your .emacs:
@@ -26,12 +27,20 @@
 ;;    M-x lusty-file-explorer
 ;;    M-x lusty-buffer-explorer
 ;;
-;; STEVE update doc
-;; And then use as you would `find-file' or `switch-to-buffer'.  (There are
-;; minor differences in entry selection, e.g. tab-completing when there is a
-;; only a single completion will select that completion.)  A split window
-;; shows the *Lusty-Matches* buffer, which updates dynamically as you
-;; type.
+;; And then use as you would `find-file' or `switch-to-buffer'. A split window
+;; shows the *Lusty-Matches* buffer, which updates dynamically as you type
+;; using a fuzzy matching algorithm.  One of entries is highlighted; you can
+;; move the highlight using C-n / C-p.  Pressing TAB or RET will select the
+;; highlighted entry.
+;;
+;;; Customization:
+;;  --------------
+;;
+;; To modify the keybindings, use something like:
+;;
+;;   (add-hook 'lusty-setup-hook 'my-lusty-hook)
+;;   (defun my-lusty-hook ()
+;;     (define-key lusty-mode-map "\C-j" 'lusty-highlight-next))
 ;;
 ;; Respects these variables:
 ;;   completion-ignored-extensions
@@ -481,7 +490,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   ;; Re-generated every run so that it can inherit new functions.
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map minibuffer-local-map)
-    ;; STEVE: perhaps RET should be:
+    ;; TODO: perhaps RET should be:
     ;; - if buffer explorer, same as \t
     ;; - if file explorer, opens current name (or recurses if existing dir)
     (define-key map (kbd "RET") 'lusty-select-entry)

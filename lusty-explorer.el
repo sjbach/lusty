@@ -55,6 +55,18 @@
 ;; Used only for its faces (for color-theme).
 (require 'font-lock)
 
+(defgroup lusty-explorer nil
+  "Quickly open new files or switch among open buffers."
+  :group 'extensions
+  :group 'convenience
+  :version "23")
+
+(defcustom lusty-setup-hook nil
+  "Hook run after the lusty keymap has been setup.
+Additional keys can be defined in `lusty-mode-map'."
+  :type 'hook
+  :group 'lusty-explorer)
+
 (defvar lusty-match-face font-lock-function-name-face)
 (defvar lusty-directory-face font-lock-type-face)
 (defvar lusty-slash-face font-lock-keyword-face)
@@ -67,24 +79,14 @@
 (defvar lusty-truncated-string
   (propertize "-- TRUNCATED --" 'face 'font-lock-comment-face))
 
-(defvar lusty-mode-map
-  ;; STEVE also func ala iswitchb-define-mode-map ?
-  (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map minibuffer-local-map)
-    (define-key map "\C-n" 'lusty-highlight-next)
-    (define-key map "\C-p" 'lusty-highlight-previous)
-    (define-key map "\t" 'lusty-select-entry)
-    (define-key map (kbd "RET") 'lusty-select-entry)
-    ;; STEVE: perhaps RET should be:
-    ;; - if buffer explorer, same as \t
-    ;; - if file explorer, opens current name (or recurses if existing dir)
-    map)
+(defvar lusty-mode-map nil
   "Minibuffer keymap for `lusty-file-explorer' and `lusty-buffer-explorer'.")
 
 ;;;###autoload
 (defun lusty-file-explorer ()
   "Launch the file/directory mode of LustyExplorer."
   (interactive)
+  (lusty--define-mode-map)
   (let* ((lusty--active-mode :file-explorer)
          (lusty--ignored-extensions
           (mapcar (lambda (ext) (concat (regexp-quote ext) "$"))
@@ -100,18 +102,21 @@
 (defun lusty-buffer-explorer ()
   "Launch the buffer mode of LustyExplorer."
   (interactive)
+  (lusty--define-mode-map)
   (let* ((lusty--active-mode :buffer-explorer)
          (minibuffer-local-completion-map lusty-mode-map)
          (buffer (lusty--run 'read-buffer)))
     (when buffer
       (switch-to-buffer buffer))))
 
+;;;###autoload
 (defun lusty-highlight-next ()
   "Highlight the next entry in *Lusty-Matches*."
   (interactive)
   (incf lusty--highlighted-index)
   (lusty-refresh-matches-buffer))
 
+;;;###autoload
 (defun lusty-highlight-previous ()
   "Highlight the previous entry in *Lusty-Matches*."
   (interactive)
@@ -120,6 +125,7 @@
     (setq lusty--highlighted-index 0))
   (lusty-refresh-matches-buffer))
 
+;;;###autoload
 (defun lusty-select-entry ()
   "Select the highlighted entry in *Lusty-Matches*."
   (interactive)
@@ -471,10 +477,24 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
       (setq entries (nthcdr n-rows entries)))
     (nreverse sublists)))
 
+(defun lusty--define-mode-map ()
+  ;; Re-generated every run so that it can inherit new functions.
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map minibuffer-local-map)
+    ;; STEVE: perhaps RET should be:
+    ;; - if buffer explorer, same as \t
+    ;; - if file explorer, opens current name (or recurses if existing dir)
+    (define-key map (kbd "RET") 'lusty-select-entry)
+    (define-key map "\t" 'lusty-select-entry)
+    (define-key map "\C-n" 'lusty-highlight-next)
+    (define-key map "\C-p" 'lusty-highlight-previous)
+    (setq lusty-mode-map map))
+  (run-hooks 'lusty-setup-hook))
+
 (defun lusty--run (read-fn)
-  (add-hook 'post-command-hook 'lusty--post-command-function t)
   (let ((lusty--highlighted-index 0)
         (lusty--previous-printed-matches '()))
+    (add-hook 'post-command-hook 'lusty--post-command-function t)
     (unwind-protect 
         (save-window-excursion
           (funcall read-fn ">> "))

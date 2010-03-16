@@ -125,7 +125,7 @@ Additional keys can be defined in `lusty-mode-map'."
   (interactive)
   (when lusty--active-mode
     (incf lusty--highlighted-index)
-    (lusty-refresh-matches-buffer)))
+    (lusty-refresh-matches-buffer :use-previous-matches)))
 
 ;;;###autoload
 (defun lusty-highlight-previous ()
@@ -135,7 +135,7 @@ Additional keys can be defined in `lusty-mode-map'."
     (decf lusty--highlighted-index)
     (when (minusp lusty--highlighted-index)
       (setq lusty--highlighted-index 0))
-    (lusty-refresh-matches-buffer)))
+    (lusty-refresh-matches-buffer :use-previous-matches)))
 
 ;;;###autoload
 (defun lusty-select-entry ()
@@ -317,17 +317,21 @@ does not begin with '.'."
   ;; Window configuration may be restored intermittently.
   (setq lusty--initial-window-config (current-window-configuration)))
 
-(defun lusty-refresh-matches-buffer ()
+(defun lusty-refresh-matches-buffer (&optional use-previous-matches-p)
   "Refresh *Lusty-Matches*."
   (assert (minibufferp))
   (let* ((minibuffer-text (if lusty--wrapping-ido-p
                               ido-text
                             (minibuffer-contents-no-properties)))
          (matches
-          (ecase lusty--active-mode
-            (:file-explorer (lusty-file-explorer-matches minibuffer-text))
-            (:buffer-explorer (lusty-buffer-explorer-matches minibuffer-text))))
-         (truncated-matches (lusty-truncate-entries matches)))
+          (if use-previous-matches-p
+              lusty--previous-printed-matches
+            (lusty-truncate-matches
+             (ecase lusty--active-mode
+               (:file-explorer
+                (lusty-file-explorer-matches minibuffer-text))
+               (:buffer-explorer
+                (lusty-buffer-explorer-matches minibuffer-text)))))))
 
     ;; Update the matches window.
     (let ((lusty-buffer (get-buffer-create lusty-buffer-name)))
@@ -335,8 +339,8 @@ does not begin with '.'."
         (setq buffer-read-only t)
         (let ((buffer-read-only nil))
           (erase-buffer)
-          (lusty--display-entries truncated-matches)
-          (setq lusty--previous-printed-matches truncated-matches)
+          (lusty--display-entries matches)
+          (setq lusty--previous-printed-matches matches)
           (goto-char (point-min))))
 
       ;; If only our matches window is open,
@@ -385,22 +389,22 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   (loop for item in lst
         maximizing (length item)))
 
-;; For performance, trim the entries if we can prove we can't fit them all.
-(defun lusty-truncate-entries (entries)
+;; For performance, trim the matches if we can prove we can't fit them all.
+(defun lusty-truncate-matches (matches)
   (let* ((lusty-buffer (get-buffer-create lusty-buffer-name))
-         (max-possibly-displayable-entries
+         (max-possibly-displayable-matches
           (with-current-buffer lusty-buffer
             (* (- (frame-height) 3)
                (/ (window-width)
                   (1+ (length lusty-column-separator))))))
-         (cut-off-point (nthcdr max-possibly-displayable-entries entries))
+         (cut-off-point (nthcdr max-possibly-displayable-matches matches))
          (truncate-p (consp cut-off-point)))
 
     (when truncate-p
-      ;; Trim down the entries
+      ;; Trim down the matches
       (setf (cdr cut-off-point) nil))
 
-    entries))
+    matches))
 
 (defun* lusty--display-entries (entries)
 

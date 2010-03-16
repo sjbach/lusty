@@ -98,9 +98,8 @@ Additional keys can be defined in `lusty-mode-map'."
   (interactive)
   (lusty--define-mode-map)
   (let* ((lusty--active-mode :file-explorer)
-         (lusty--ignored-extensions
-          (mapcar (lambda (ext) (concat (regexp-quote ext) "$"))
-                  completion-ignored-extensions))
+         (lusty--ignored-extensions-regex
+          (concat (regexp-opt completion-ignored-extensions) "$"))
          (minibuffer-local-filename-completion-map lusty-mode-map)
          (file (lusty--run 'read-file-name)))
     (when file
@@ -152,28 +151,29 @@ Additional keys can be defined in `lusty-mode-map'."
 ;; TODO:
 ;; - highlight opened buffers in filesystem explorer
 ;; - FIX: deal with permission-denied
-;; - don't recalculate entries when moving highlight
-
 
 (defvar lusty--active-mode nil)
 (defvar lusty--wrapping-ido-p nil)
 (defvar lusty--initial-window-config nil)
 (defvar lusty--previous-minibuffer-contents nil)
-(defvar lusty--ignored-extensions nil)
+(defvar lusty--ignored-extensions-regex nil)
 (defvar lusty--highlighted-index 0)
 (defvar lusty--previous-printed-matches '())
+
+(when lusty--wrapping-ido-p
+  (require 'ido))
 
 (defun lusty-sort-by-fuzzy-score (strings abbrev)
   ;; TODO: case-sensitive when abbrev contains capital letter
   (if (or (string= abbrev "")
           (string= abbrev "."))
       (sort strings 'string<)
-    (let* ((all-entries (mapcar (lambda (s) (cons s (LM-score s abbrev)))
-                                strings))
-           (filtered (remove-if (lambda (c) (zerop (cdr c)))
-                                all-entries))
-           (sorted (sort filtered
-                         (lambda (a b) (< (cdr b) (cdr a))))))
+    (let* ((strings+scores
+            (loop for str in strings
+                  for score = (LM-score str abbrev)
+                  unless (zerop score)
+                  collect (cons str score)))
+           (sorted (sort* strings+scores '< :key 'cdr)))
       (mapcar 'car sorted))))
 
 (defun lusty-normalize-dir (dir)
@@ -208,24 +208,34 @@ much as possible."
 
 (defun lusty-filter-buffers (buffers)
   "Return BUFFERS converted to strings with hidden buffers removed."
-  (flet ((ephemeral-p (name)
-           (string= (substring name 0 1) " ")))
-    (remove-if 'ephemeral-p (mapcar 'buffer-name buffers))))
+  (macrolet ((ephemeral-p (name)
+               `(char-equal (string-to-char ,name) ?\ )))
+    (loop for buffer in buffers
+          for name = (buffer-name buffer)
+          unless (ephemeral-p name)
+          collect name)))
 
+;; Written kind-of silly for performance.
 (defun lusty-filter-files (file-portion files)
   "Return FILES with './' removed and hidden files if FILE-PORTION
 does not begin with '.'."
-  (flet ((hidden-p (str)
-           (char-equal (string-to-char str) ?.))
-         (pwd-p (str)
-           (string= (directory-file-name str) "."))
-         (ignored-p (name)
-           (some (lambda (ext) (string-match ext name))
-                 lusty--ignored-extensions)))
-    (remove-if 'ignored-p
-               (if (hidden-p file-portion)
-                   (remove-if 'pwd-p files)
-                 (remove-if 'hidden-p files)))))
+  (macrolet ((leading-dot-p (str)
+               `(char-equal (string-to-char ,str) ?.))
+             (pwd-p (str)
+               `(string= (directory-file-name ,str) "."))
+             (ignored-p (name)
+               `(string-match lusty--ignored-extensions-regex ,name)))
+    (let ((filtered-files '()))
+      (if (leading-dot-p file-portion)
+          (dolist (file files)
+            (unless (or (pwd-p file)
+                        (ignored-p file))
+              (push file filtered-files)))
+        (dolist (file files)
+          (unless (or (leading-dot-p file)
+                      (ignored-p file))
+            (push file filtered-files))))
+      (nreverse filtered-files))))
 
 (defun lusty-set-minibuffer-text (&rest args)
   "Sets ARGS into the minibuffer after the prompt."

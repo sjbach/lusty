@@ -326,30 +326,26 @@ does not begin with '.'."
          (matches
           (ecase lusty--active-mode
             (:file-explorer (lusty-file-explorer-matches minibuffer-text))
-            (:buffer-explorer (lusty-buffer-explorer-matches minibuffer-text)))))
+            (:buffer-explorer (lusty-buffer-explorer-matches minibuffer-text))))
+         (truncated-matches (lusty-truncate-entries matches)))
 
-    (multiple-value-bind (truncated-matches truncated-p)
-        (lusty-truncate-entries matches)
-      (setq lusty--previous-printed-matches truncated-matches)
+    ;; Update the matches window.
+    (let ((lusty-buffer (get-buffer-create lusty-buffer-name)))
+      (with-current-buffer lusty-buffer
+        (setq buffer-read-only t)
+        (let ((buffer-read-only nil))
+          (erase-buffer)
+          (lusty--display-entries truncated-matches)
+          (setq lusty--previous-printed-matches truncated-matches)
+          (goto-char (point-min))))
 
-      ;; Update the matches window.
-      (let ((lusty-buffer (get-buffer-create lusty-buffer-name)))
-        (with-current-buffer lusty-buffer
-          (setq buffer-read-only t)
-          (let ((buffer-read-only nil))
-            (erase-buffer)
-            (lusty--display-entries truncated-matches truncated-p)
-            (goto-char (point-min))))
-
-        ;; If only our matches window is open,
-        (when (one-window-p t)
-          ;; Restore original window configuration before fitting the
-          ;; window so the minibuffer won't grow and look silly.
-          (set-window-configuration lusty--initial-window-config))
-        (fit-window-to-buffer (display-buffer lusty-buffer)
-                              ; TODO vvv do smarter
-                              (- (frame-height) 3))
-        (set-buffer-modified-p nil)))))
+      ;; If only our matches window is open,
+      (when (one-window-p t)
+        ;; Restore original window configuration before fitting the
+        ;; window so the minibuffer won't grow and look silly.
+        (set-window-configuration lusty--initial-window-config))
+      (fit-window-to-buffer (display-buffer lusty-buffer))
+      (set-buffer-modified-p nil))))
 
 (defun lusty-buffer-explorer-matches (text)
   (let* ((buffers (lusty-filter-buffers (buffer-list))))
@@ -389,6 +385,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   (loop for item in lst
         maximizing (length item)))
 
+;; For performance, trim the entries if we can prove we can't fit them all.
 (defun lusty-truncate-entries (entries)
   (let* ((lusty-buffer (get-buffer-create lusty-buffer-name))
          (max-possibly-displayable-entries
@@ -403,9 +400,9 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
       ;; Trim down the entries
       (setf (cdr cut-off-point) nil))
 
-    (values entries truncate-p)))
+    entries))
 
-(defun* lusty--display-entries (entries truncated-p)
+(defun* lusty--display-entries (entries)
 
   (when (endp entries)
     (lusty--print-no-entries)
@@ -436,10 +433,10 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
           (when (<= column-count 1)
             (setq columns (list propertized)
                   widths (list 0)))
-          (lusty--print-columns columns widths)))
+          (let ((truncated-p (lusty--print-columns columns widths)))
+            (when truncated-p
+              (lusty--print-truncated))))))
 
-  (when truncated-p
-    (lusty--print-truncated)))
 
 (defun lusty--print-no-entries ()
   (insert lusty-no-entries-string)
@@ -452,9 +449,9 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
     (center-line)))
 
 (defun lusty--print-columns (columns widths)
-  (dotimes (i (lusty-longest-length columns))
-    (unless (> (line-number-at-pos)
-               (- (frame-height) 3)) ;; TODO: determine dynamically
+  (let ((max-printable-rows (- (frame-height) 3)) ;; TODO: determine smarter
+        (max-rows (lusty-longest-length columns)))
+    (dotimes (i (min max-printable-rows max-rows))
       (loop with row = ""
             for j to (1- (length columns))
             for entry = (nth i (nth j columns))
@@ -467,7 +464,10 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                      (substring row 0
                                 (- (length row)
                                    (length lusty-column-separator)))
-                            "\n")))))
+                     "\n")))
+
+    ;; Report whether we had to truncate the results
+    (> max-rows max-printable-rows)))
 
 ;; Get a starting upperbound on the number of columns.
 (defun lusty-column-count-upperbound (strings)

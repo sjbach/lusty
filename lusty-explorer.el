@@ -122,23 +122,26 @@ Additional keys can be defined in `lusty-mode-map'."
 (defun lusty-highlight-next ()
   "Highlight the next entry in *Lusty-Matches*."
   (interactive)
-  (incf lusty--highlighted-index)
-  (lusty-refresh-matches-buffer))
+  (when lusty--active-mode
+    (incf lusty--highlighted-index)
+    (lusty-refresh-matches-buffer)))
 
 ;;;###autoload
 (defun lusty-highlight-previous ()
   "Highlight the previous entry in *Lusty-Matches*."
   (interactive)
-  (decf lusty--highlighted-index)
-  (when (minusp lusty--highlighted-index)
-    (setq lusty--highlighted-index 0))
-  (lusty-refresh-matches-buffer))
+  (when lusty--active-mode
+    (decf lusty--highlighted-index)
+    (when (minusp lusty--highlighted-index)
+      (setq lusty--highlighted-index 0))
+    (lusty-refresh-matches-buffer)))
 
 ;;;###autoload
 (defun lusty-select-entry ()
   "Select the highlighted entry in *Lusty-Matches*."
   (interactive)
-  (when lusty--previous-printed-matches
+  (when (and lusty--active-mode
+             lusty--previous-printed-matches)
     (let ((selected-entry (nth lusty--highlighted-index
                                lusty--previous-printed-matches)))
       (ecase lusty--active-mode
@@ -148,6 +151,7 @@ Additional keys can be defined in `lusty-mode-map'."
 ;; TODO:
 ;; - highlight opened buffers in filesystem explorer
 ;; - FIX: deal with permission-denied
+;; - don't recalculate entries when moving highlight
 
 
 (defvar lusty--active-mode nil)
@@ -348,7 +352,7 @@ does not begin with '.'."
 
 (defun lusty-buffer-explorer-matches (text)
   (let* ((buffers (lusty-filter-buffers (buffer-list))))
-    (lusty-sort-by-fuzzy-score 
+    (lusty-sort-by-fuzzy-score
      buffers
      text)))
 
@@ -435,7 +439,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 
   (when truncated-p
     (lusty--print-truncated)))
-  
+
 (defun lusty--print-no-entries ()
   (insert lusty-no-entries-string)
   (let ((fill-column (window-width)))
@@ -504,7 +508,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   (let ((lusty--highlighted-index 0)
         (lusty--previous-printed-matches '()))
     (add-hook 'post-command-hook 'lusty--post-command-function t)
-    (unwind-protect 
+    (unwind-protect
         (save-window-excursion
           (funcall read-fn ">> "))
       (remove-hook 'post-command-hook 'lusty--post-command-function)

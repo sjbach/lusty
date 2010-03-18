@@ -547,8 +547,8 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 (defconst LM--score-buffer 0.85)
 
 (defun LM-score (str abbrev)
-  (cond ((string= abbrev "")
-         LM--score-trailing)
+  (cond ;((string= abbrev "")  ; Disabled; can't happen in practice
+        ; LM--score-trailing)
         ((> (length abbrev) (length str))
          LM--score-no-match)
         (t
@@ -558,30 +558,30 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 
 (defun* LM--build-score-array (str abbrev)
   (let ((scores (make-vector (length str) LM--score-no-match))
-        (lower (downcase str))
+        (str-lower (downcase str))
         (last-index -1)
         (started-p nil))
     (loop for c across (downcase abbrev)
-          for i = (position c lower :start (1+ last-index))
+          for i = (position c str-lower :start (1+ last-index))
           do
         (when (null i)
           (fillarray scores LM--score-no-match)
           (return-from LM--build-score-array scores))
-        (when (= i 0)
+        (when (zerop i)
           (setq started-p t))
-        (cond ((and (> i 0)
+        (cond ((and (plusp i)
                     (let ((C (aref str (1- i))))
                       (or (char-equal C ?\ )
-                          (char-equal C ?\t)
-                          (char-equal C ?/)
                           (char-equal C ?.)
                           (char-equal C ?_)
                           (char-equal C ?-))))
+               ;; New word.
                (aset scores (1- i) LM--score-match)
                (fill scores LM--score-buffer :start (1+ last-index) :end (1- i)))
               ((and (>= (aref str i) ?A)
-                    (<= (aref str i) ?Z)
-               (fill scores LM--score-buffer :start (1+ last-index) :end i)))
+                    (<= (aref str i) ?Z))
+               ;; New word.
+               (fill scores LM--score-buffer :start (1+ last-index) :end i))
               (t
                (fill scores LM--score-no-match :start (1+ last-index) :end i)))
         (aset scores i LM--score-match)

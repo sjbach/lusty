@@ -382,19 +382,18 @@ does not begin with '.'."
       (lusty-sort-by-fuzzy-score filtered file-portion))))
 
 (defun lusty-propertize-path (path)
-  "Propertize the given PATH like so: <dir></><dir></><file>
+  "Propertize the given PATH like so: <dir></> or <file>.
 Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
-  (loop with start = 0
-        for i from 0
-        for c across path
-        when (char-equal c ?/) ; <-- FIXME nonportable
-        do (put-text-property start i 'face lusty-directory-face path)
-           (put-text-property i (1+ i) 'face lusty-slash-face path)
-           (setq start (1+ i))
-        finally
-           (when (not (= start i))
-             (put-text-property start i 'face lusty-file-face path))
-           (return path)))
+  (let ((last (1- (length path))))
+    ;; Note: shouldn't get an empty path, so for performance
+    ;; I'm not going to check for that case.
+    (if (char-equal (aref path last) ?/) ; <-- FIXME nonportable?
+        (progn
+          ;; Directory
+          (put-text-property 0 last 'face lusty-directory-face path)
+          (put-text-property last (1+ last) 'face lusty-slash-face path))
+      (put-text-property 0 (1+ last) 'face lusty-file-face path)))
+  path)
 
 (defun lusty-longest-length (lst)
   (loop for item in lst
@@ -463,6 +462,8 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   (let ((fill-column (window-width)))
     (center-line)))
 
+; STEVE propertize in here so we only propertize when needed
+; STEVE maybe columns/widths should be arrays for faster access than nth?
 (defun lusty--print-columns (columns widths)
   (let ((max-printable-rows (- (frame-height) 3)) ;; TODO: determine smarter
         (max-rows (lusty-longest-length columns)))

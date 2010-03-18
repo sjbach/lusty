@@ -165,16 +165,13 @@ Additional keys can be defined in `lusty-mode-map'."
 
 (defun lusty-sort-by-fuzzy-score (strings abbrev)
   ;; TODO: case-sensitive when abbrev contains capital letter
-  (if (or (string= abbrev "")
-          (string= abbrev "."))
-      (sort strings 'string<)
-    (let* ((strings+scores
-            (loop for str in strings
-                  for score = (LM-score str abbrev)
-                  unless (zerop score)
-                  collect (cons str score)))
-           (sorted (sort* strings+scores '< :key 'cdr)))
-      (mapcar 'car sorted))))
+  (let* ((strings+scores
+          (loop for str in strings
+                for score = (LM-score str abbrev)
+                unless (zerop score)
+                collect (cons str score)))
+         (sorted (sort* strings+scores '< :key 'cdr)))
+    (mapcar 'car sorted)))
 
 (defun lusty-normalize-dir (dir)
   "Clean up the given directory path."
@@ -363,9 +360,11 @@ does not begin with '.'."
 
 (defun lusty-buffer-explorer-matches (text)
   (let* ((buffers (lusty-filter-buffers (buffer-list))))
-    (lusty-sort-by-fuzzy-score
-     buffers
-     text)))
+    (if (string= text "")
+        buffers
+      (lusty-sort-by-fuzzy-score
+       buffers
+       text))))
 
 (defun lusty-file-explorer-matches (path)
   (let* ((dir (lusty-normalize-dir (file-name-directory path)))
@@ -375,10 +374,12 @@ does not begin with '.'."
                ; NOTE: directory-files is quicker but
                ;       doesn't append slash for directories.
                ;(directory-files dir nil nil t)
-               (file-name-all-completions "" dir))))
-    (lusty-sort-by-fuzzy-score
-     (lusty-filter-files file-portion files)
-     file-portion)))
+               (file-name-all-completions "" dir)))
+         (filtered (lusty-filter-files file-portion files)))
+    (if (or (string= file-portion "")
+            (string= file-portion "."))
+        (sort filtered 'string<)
+      (lusty-sort-by-fuzzy-score filtered file-portion))))
 
 (defun lusty-propertize-path (path)
   "Propertize the given PATH like so: <dir></><dir></><file>
@@ -550,7 +551,6 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
         ((> (length abbrev) (length str))
          LM--score-no-match)
         (t
-
          (let* ((scores (LM--build-score-array str abbrev))
                 (sum (reduce '+ scores)))
            (/ sum (length scores))))))

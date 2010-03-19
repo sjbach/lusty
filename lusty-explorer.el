@@ -206,7 +206,7 @@ much as possible."
 (defun lusty-filter-buffers (buffers)
   "Return BUFFERS converted to strings with hidden buffers removed."
   (macrolet ((ephemeral-p (name)
-               `(char-equal (string-to-char ,name) ?\ )))
+               `(eq (string-to-char ,name) ?\ )))
     (loop for buffer in buffers
           for name = (buffer-name buffer)
           unless (ephemeral-p name)
@@ -217,7 +217,7 @@ much as possible."
   "Return FILES with './' removed and hidden files if FILE-PORTION
 does not begin with '.'."
   (macrolet ((leading-dot-p (str)
-               `(char-equal (string-to-char ,str) ?.))
+               `(eq (string-to-char ,str) ?.))
              (pwd-p (str)
                `(string= (directory-file-name ,str) "."))
              (ignored-p (name)
@@ -371,6 +371,8 @@ does not begin with '.'."
          (file-portion (file-name-nondirectory path))
          (files
           (and dir
+               ; STEVE measure the difference
+               ;  - for LM-score, may be better to not have slash
                ; NOTE: directory-files is quicker but
                ;       doesn't append slash for directories.
                ;(directory-files dir nil nil t)
@@ -387,7 +389,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   (let ((last (1- (length path))))
     ;; Note: shouldn't get an empty path, so for performance
     ;; I'm not going to check for that case.
-    (if (char-equal (aref path last) ?/) ; <-- FIXME nonportable?
+    (if (eq (aref path last) ?/) ; <-- FIXME nonportable?
         (progn
           ;; Directory
           (put-text-property 0 last 'face lusty-directory-face path)
@@ -557,35 +559,44 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
            (/ sum (length scores))))))
 
 (defun* LM--build-score-array (str abbrev)
-  (let ((scores (make-vector (length str) LM--score-no-match))
-        (str-lower (downcase str))
-        (last-index -1)
-        (started-p nil))
-    (loop for c across (downcase abbrev)
-          for i = (position c str-lower :start (1+ last-index))
-          do
-        (when (null i)
+  (let* ((str-len (length str))
+         (scores (make-vector str-len LM--score-no-match))
+         (str-lower (downcase str))
+         (abbrev-lower (downcase abbrev))
+         (last-index -1)
+         (started-p nil))
+    (dotimes (i (length abbrev))
+      (let ((pos (position (aref abbrev-lower i) str-lower
+                           :start (1+ last-index)
+                           :end str-len)))
+        (when (null pos)
           (fillarray scores LM--score-no-match)
           (return-from LM--build-score-array scores))
-        (when (zerop i)
+        (when (zerop pos)
           (setq started-p t))
-        (cond ((and (plusp i)
-                    (let ((C (aref str (1- i))))
-                      (or (char-equal C ?\ )
-                          (char-equal C ?.)
-                          (char-equal C ?_)
-                          (char-equal C ?-))))
+        (cond ((and (plusp pos)
+                    (let ((C (aref str (1- pos))))
+                      (or (= C ?\ )
+                          (= C ?.)
+                          (= C ?_)
+                          (= C ?-))))
                ;; New word.
-               (aset scores (1- i) LM--score-match)
-               (fill scores LM--score-buffer :start (1+ last-index) :end (1- i)))
-              ((and (>= (aref str i) ?A)
-                    (<= (aref str i) ?Z))
-               ;; New word.
-               (fill scores LM--score-buffer :start (1+ last-index) :end i))
+               (aset scores (1- pos) LM--score-match)
+               (fill scores LM--score-buffer
+                     :start (1+ last-index)
+                     :end (1- pos)))
+              ((and (>= (aref str pos) ?A)
+                    (<= (aref str pos) ?Z))
+               ;; Upper case.
+               (fill scores LM--score-buffer
+                     :start (1+ last-index)
+                     :end pos))
               (t
-               (fill scores LM--score-no-match :start (1+ last-index) :end i)))
-        (aset scores i LM--score-match)
-        (setq last-index i))
+               (fill scores LM--score-no-match
+                     :start (1+ last-index)
+                     :end pos)))
+        (aset scores pos LM--score-match)
+        (setq last-index pos)))
 
     (let ((trailing-score
            (if started-p

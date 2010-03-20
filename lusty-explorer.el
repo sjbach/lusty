@@ -299,6 +299,28 @@ does not begin with '.'."
           (setq window-search-p nil))))
     lowest-window))
 
+(defun lusty-max-window-height ()
+  "Return the expected maximum allowable height of a window on this frame"
+  ;; FIXME: are there cases where this is incorrect?
+  (let* ((lusty-window
+          (get-buffer-window
+           (get-buffer-create lusty-buffer-name)))
+         (other-window
+          ;; In case the *LustyMatches* window was closed
+          (or lusty-window
+              (if (minibufferp)
+                  (next-window (selected-window) :skip-mini)
+                (selected-window))))
+         (test-window
+          (or lusty-window other-window)))
+    (assert test-window)
+    (- (frame-height)
+       ;; Account for modeline and/or header...
+       (- (window-height test-window)
+          (window-body-height test-window))
+       ;; And minibuffer height.
+       (window-height (minibuffer-window)))))
+
 (defun lusty--setup-matches-window ()
   (let ((lowest-window (lusty-lowest-window))
         (lusty-buffer (get-buffer-create lusty-buffer-name)))
@@ -403,12 +425,10 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 
 ;; For performance, trim the matches if we can prove we can't fit them all.
 (defun lusty-truncate-matches (matches)
-  (let* ((lusty-buffer (get-buffer-create lusty-buffer-name))
-         (max-possibly-displayable-matches
-          (with-current-buffer lusty-buffer
-            (* (- (frame-height) 3)
-               (/ (window-width)
-                  (1+ (length lusty-column-separator))))))
+  (let* ((max-possibly-displayable-matches
+          (* (1- (lusty-max-window-height))
+             (/ (window-width)
+                (1+ (length lusty-column-separator)))))
          (cut-off-point (nthcdr max-possibly-displayable-matches matches))
          (truncate-p (consp cut-off-point)))
 
@@ -467,7 +487,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 ; STEVE propertize in here so we only propertize when needed
 ; STEVE maybe columns/widths should be arrays for faster access than nth?
 (defun lusty--print-columns (columns widths)
-  (let ((max-printable-rows (- (frame-height) 3)) ;; TODO: determine smarter
+  (let ((max-printable-rows (1- (lusty-max-window-height)))
         (max-rows (lusty-longest-length columns)))
     (dotimes (i (min max-printable-rows max-rows))
       (loop with row = ""

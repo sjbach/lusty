@@ -170,7 +170,8 @@ Additional keys can be defined in `lusty-mode-map'."
                 for score = (LM-score str abbrev)
                 unless (zerop score)
                 collect (cons str score)))
-         (sorted (sort* strings+scores '< :key 'cdr)))
+         (sorted
+          (sort* strings+scores '> :key 'cdr)))
     (mapcar 'car sorted)))
 
 (defun lusty-normalize-dir (dir)

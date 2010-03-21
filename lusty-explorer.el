@@ -300,6 +300,8 @@ does not begin with '.'."
           (setq window-search-p nil))))
     lowest-window))
 
+; STEVE need equivalent for width since (window-width) may take the width of
+; a window which doesn't stretch full width
 (defun lusty-max-window-height ()
   "Return the expected maximum allowable height of a window on this frame"
   ;; FIXME: are there cases where this is incorrect?
@@ -356,12 +358,11 @@ does not begin with '.'."
          (matches
           (if use-previous-matches-p
               lusty--previous-printed-matches
-            (lusty-truncate-matches
-             (ecase lusty--active-mode
-               (:file-explorer
-                (lusty-file-explorer-matches minibuffer-text))
-               (:buffer-explorer
-                (lusty-buffer-explorer-matches minibuffer-text)))))))
+            (ecase lusty--active-mode
+              (:file-explorer
+               (lusty-file-explorer-matches minibuffer-text))
+              (:buffer-explorer
+               (lusty-buffer-explorer-matches minibuffer-text))))))
 
     ;; Update the matches window.
     (let ((lusty-buffer (get-buffer-create lusty-buffer-name)))
@@ -389,6 +390,10 @@ does not begin with '.'."
        buffers
        text))))
 
+;; STEVE return two arrays:
+;; - by score (or string<)
+;; - by shortest length
+;; STEVE ditto for buffer matches
 (defun lusty-file-explorer-matches (path)
   (let* ((dir (lusty-normalize-dir (file-name-directory path)))
          (file-portion (file-name-nondirectory path))
@@ -424,20 +429,146 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   (loop for item in lst
         maximizing (length item)))
 
-;; For performance, trim the matches if we can prove we can't fit them all.
-(defun lusty-truncate-matches (matches)
-  (let* ((max-possibly-displayable-matches
-          (* (1- (lusty-max-window-height))
-             (/ (window-width)
-                (1+ (length lusty-column-separator)))))
-         (cut-off-point (nthcdr max-possibly-displayable-matches matches))
-         (truncate-p (consp cut-off-point)))
+(defun lusty--compute-optimal-layout (items)
+  (let* ((max-visible-rows (1- (lusty-max-window-height)))
+         (max-width (window-width))
+         (upper-bound most-positive-fixnum)
+         (n-items (length items))
+         ; STEVE use pre-allocated array?
+         (lengths-v (make-vector n-items 0))
+         (separator-length (length lusty-column-separator)))
 
-    (when truncate-p
-      ;; Trim down the matches
-      (setf (cdr cut-off-point) nil))
+    (let ((length-of-longest-name 0))
 
-    matches))
+      ;; Initialize lengths-v
+      (loop for i from 0
+            for item in items
+            for len = (length item)
+            do
+            (aset lengths-v i len)
+            (setq length-of-longest-name
+                  (max length-of-longest-name len)))
+
+      ;; Calculate upper-bound
+      (let ((width (+ length-of-longest-name
+                      separator-length))
+            (columns 1)
+            (sorted-shortest (sort (append lengths-v nil) '<)))
+        (dolist (item-len sorted-shortest)
+          (incf width item-len)
+          (when (> width max-width)
+            (return))
+          (incf columns)
+          (incf width separator-length))
+        (setq upper-bound (* columns max-visible-rows))))
+
+    ;; Now have upper-bound and lengths-v
+
+    (let ((optimal-n-rows
+           (cond ((< upper-bound n-items)
+                  max-visible-rows)
+                 ((<= (reduce (lambda (a b) (+ a separator-length b))
+                              lengths-v)
+                      max-width)
+                  ;; All fits in a single row.
+                  1)
+                 (t
+                  (lusty--compute-optimal-layout-inner lengths-v))))
+          (n-columns 0)
+          (column-widths '()))
+
+      ;; Calculate n-columns and column-widths
+      (loop with total-width = 0
+            for start = 0 then end ;(+ start optimal-n-rows)
+            for end = optimal-n-rows then
+                      (min (length lengths-v)
+                           (+ end optimal-n-rows))
+            while (< start end)
+            for col-width = (reduce 'max lengths-v
+                                    :start start
+                                    :end end)
+            do
+            (incf total-width col-width)
+            (when (> total-width max-width)
+              (return))
+            (incf n-columns)
+            (push col-width column-widths)
+            (incf total-width separator-length))
+
+      (values optimal-n-rows n-columns
+              (nreverse column-widths) lengths-v))))
+
+; STEVE indicate that results should be truncated
+(defun* lusty--compute-optimal-layout-inner (lengths-v)
+  (let ((n-items (length lengths-v))
+        (max-visible-rows (1- (lusty-max-window-height)))
+        (available-width (window-width))
+        ; STEVE figure out optimal start :size
+        ; STEVE use pre-allocated hash?
+        (lengths-h (make-hash-table :test 'equal)))
+
+    (do ((n-rows 2 (1+ n-rows))
+         (column-widths '() '()))
+        ((>= n-rows max-visible-rows)
+         ;(values max-visible-rows column-widths)
+         ; STEVE remove column-widths
+         max-visible-rows)
+      (let ((col-start-index 0)
+            (col-end-index (1- n-rows))
+            (total-width 0)
+            (split-factor
+             ; STEVE comment
+             (loop for i from 2 upto (ash n-rows -1)
+                   when (zerop (mod n-rows i))
+                   return (/ n-rows i))))
+
+        ;; Calculate required total-width for this number of rows.
+        (do ((separator-len 0 (length lusty-column-separator)))
+            ((>= col-end-index n-items))
+          (let ((column-width
+                 (lusty--compute-column-width
+                  col-start-index col-end-index split-factor
+                  lengths-v lengths-h)))
+
+            (push column-width column-widths)
+            (incf total-width column-width)
+            (incf total-width separator-len))
+
+          (incf col-start-index n-rows) ; setq col-end-index
+          (incf col-end-index n-rows)
+
+          (when (and (>= col-end-index n-items)
+                     (< col-start-index n-items))
+            ;; Remainder; last iteration will not be a full column.
+            (setq col-end-index (1- n-items)
+                  split-factor nil)))
+
+        (when (<= total-width available-width)
+          (return-from lusty--compute-optimal-layout-inner
+            ;(values n-rows (nreverse column-widths))))
+            n-rows))))))
+
+(defun lusty--compute-column-width (start-index end-index split-factor
+                                    lengths-v lengths-h)
+  (let ((width 0)
+        (iter start-index))
+    (cond ((= start-index end-index)
+           ;; Single-element remainder
+           (setq width (aref lengths-v iter)))
+          ((null split-factor)
+           ;; Prime number, or a remainder
+           (while (<= iter end-index)
+             (setq width (max width (aref lengths-v iter)))
+             (incf iter)))
+          (t
+           (while (<= iter end-index)
+             (assert (gethash (cons iter (+ iter (1- split-factor))) lengths-h))
+             (setq width
+                   (max width
+                        (gethash (cons iter (+ iter (1- split-factor))) lengths-h)))
+             (incf iter split-factor))))
+    (puthash (cons start-index end-index) width lengths-h)
+    width))
 
 (defun* lusty--display-entries (entries)
 
@@ -445,34 +576,49 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
     (lusty--print-no-entries)
     (return-from lusty--display-entries))
 
-  (let ((propertized
-         ; Add font faces to the entries
-         (loop with len = (length entries)
-               with highlighted-index = (mod lusty--highlighted-index len)
-               for e in entries
-               for i from 0
-               when (= i highlighted-index)
-               collect (propertize e 'face lusty-match-face)
-               else
-               collect (lusty-propertize-path e))))
+  (multiple-value-bind (n-rows n-columns column-widths lengths-v)
+      (lusty--compute-optimal-layout entries)
 
-    (loop for column-count downfrom (lusty-column-count-upperbound propertized)
-          ;; FIXME this is calculated one too many times in the degenerate
-          ;; case.
-          for columns = (lusty-columnize propertized column-count)
-          for widths = (mapcar 'lusty-longest-length columns)
-          for full-width = (+ (reduce '+ widths)
-                              (* (length lusty-column-separator)
-                                 (1- column-count)))
-          until (or (<= column-count 1)
-                    (< full-width (window-width)))
-          finally
-          (when (<= column-count 1)
-            (setq columns (list propertized)
-                  widths (list 0)))
-          (let ((truncated-p (lusty--print-columns columns widths)))
-            (when truncated-p
-              (lusty--print-truncated))))))
+    (let* ((n-entries (min (* n-rows n-columns)
+                           (length lengths-v)))
+           (propertized
+            ;; Add font faces to the entries
+            (loop with highlighted-index = (mod lusty--highlighted-index
+                                                n-entries)
+                  for e in entries
+                  for i from 0
+                  when (= i highlighted-index)
+                  collect (propertize e 'face lusty-match-face)
+                  else
+                  collect (lusty-propertize-path e))))
+
+      (let ((rows (make-vector n-rows nil)))
+        (loop with col = 0
+              with column-width = (car column-widths)
+              for count from 0 upto (1- n-entries)
+              for row = (mod count n-rows)
+              for len = (aref lengths-v count)
+              for entry in propertized
+              for spacer = (make-string (- column-width len) ?\ )
+              do
+              (push entry (aref rows row))
+              (push spacer (aref rows row))
+              (when (< col (1- n-columns))
+                (push lusty-column-separator (aref rows row)))
+              (when (> (/ (1+ count) n-rows) col)
+                (incf col)
+                (setq column-width (nth col column-widths))))
+
+        (loop for row across rows
+              do
+          (apply 'insert (nreverse row))
+          (insert "\n")))
+    )
+
+;            (when truncated-p
+;              (lusty--print-truncated))
+
+    ))
 
 
 (defun lusty--print-no-entries ()
@@ -484,51 +630,6 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   (insert lusty-truncated-string)
   (let ((fill-column (window-width)))
     (center-line)))
-
-; STEVE propertize in here so we only propertize when needed
-; STEVE maybe columns/widths should be arrays for faster access than nth?
-(defun lusty--print-columns (columns widths)
-  (let ((max-printable-rows (1- (lusty-max-window-height)))
-        (max-rows (lusty-longest-length columns)))
-    (dotimes (i (min max-printable-rows max-rows))
-      (loop with row = ""
-            for j to (1- (length columns))
-            for entry = (nth i (nth j columns))
-            for spacer = (make-string (max 0 (- (nth j widths)
-                                                (length entry)))
-                                      ?\ )
-            until (null entry)
-            do (setq row (concat row entry spacer lusty-column-separator))
-            finally (insert
-                     (substring row 0
-                                (- (length row)
-                                   (length lusty-column-separator)))
-                     "\n")))
-
-    ;; Report whether we had to truncate the results
-    (> max-rows max-printable-rows)))
-
-;; Get a starting upperbound on the number of columns.
-(defun lusty-column-count-upperbound (strings)
-  (let ((sorted (sort* (copy-list strings) '< :key 'length))
-        (max-width (window-width))
-        (sep-len (length lusty-column-separator)))
-    (loop for column-count from 0
-          for str in sorted
-          summing (length str) into length-so-far
-          while (< length-so-far max-width)
-          do (incf length-so-far sep-len)
-          finally (return column-count))))
-
-(defun lusty-columnize (entries n-columns)
-  "Split ENTRIES into N-COLUMNS sublists."
-  (let ((n-rows (ceiling (/ (float (length entries)) n-columns)))
-        (sublists))
-    (while entries
-      (push (subseq entries 0 (min n-rows (length entries)))
-            sublists)
-      (setq entries (nthcdr n-rows entries)))
-    (nreverse sublists)))
 
 (defun lusty--define-mode-map ()
   ;; Re-generated every run so that it can inherit new functions.

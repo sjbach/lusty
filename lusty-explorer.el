@@ -300,8 +300,6 @@ does not begin with '.'."
           (setq window-search-p nil))))
     lowest-window))
 
-; STEVE need equivalent for width since (window-width) may take the width of
-; a window which doesn't stretch full width
 (defun lusty-max-window-height ()
   "Return the expected maximum allowable height of a window on this frame"
   ;; FIXME: are there cases where this is incorrect?
@@ -323,6 +321,9 @@ does not begin with '.'."
           (window-body-height test-window))
        ;; And minibuffer height.
        (window-height (minibuffer-window)))))
+
+(defun lusty-max-window-width ()
+  (frame-width))
 
 (defun lusty--setup-matches-window ()
   (let ((lowest-window (lusty-lowest-window))
@@ -431,7 +432,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 
 (defun lusty--compute-optimal-layout (items)
   (let* ((max-visible-rows (1- (lusty-max-window-height)))
-         (max-width (window-width))
+         (max-width (lusty-max-window-width))
          (upper-bound most-positive-fixnum)
          (n-items (length items))
          ; STEVE use pre-allocated array?
@@ -502,7 +503,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 (defun* lusty--compute-optimal-layout-inner (lengths-v)
   (let ((n-items (length lengths-v))
         (max-visible-rows (1- (lusty-max-window-height)))
-        (available-width (window-width))
+        (available-width (lusty-max-window-width))
         ; STEVE figure out optimal start :size
         ; STEVE use pre-allocated hash?
         (lengths-h (make-hash-table :test 'equal)))

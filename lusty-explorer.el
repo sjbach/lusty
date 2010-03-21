@@ -435,7 +435,6 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
          (max-width (lusty-max-window-width))
          (upper-bound most-positive-fixnum)
          (n-items (length items))
-         ; STEVE use pre-allocated array?
          (lengths-v (make-vector n-items 0))
          (separator-length (length lusty-column-separator)))
 
@@ -465,55 +464,53 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 
     ;; Now have upper-bound and lengths-v
 
-    (let ((optimal-n-rows
-           (cond ((< upper-bound n-items)
-                  max-visible-rows)
-                 ((<= (reduce (lambda (a b) (+ a separator-length b))
-                              lengths-v)
-                      max-width)
-                  ;; All fits in a single row.
-                  1)
-                 (t
-                  (lusty--compute-optimal-layout-inner lengths-v))))
-          (n-columns 0)
-          (column-widths '()))
+    (multiple-value-bind (optimal-n-rows truncated-p)
+        (cond ((< upper-bound n-items)
+               (values max-visible-rows t))
+              ((<= (reduce (lambda (a b) (+ a separator-length b))
+                           lengths-v)
+                   max-width)
+               ;; All fits in a single row.
+               (values 1 nil))
+              (t
+               (lusty--compute-optimal-layout-inner lengths-v)))
+      (let ((n-columns 0)
+            (column-widths '()))
 
-      ;; Calculate n-columns and column-widths
-      (loop with total-width = 0
-            for start = 0 then end ;(+ start optimal-n-rows)
-            for end = optimal-n-rows then
-                      (min (length lengths-v)
-                           (+ end optimal-n-rows))
-            while (< start end)
-            for col-width = (reduce 'max lengths-v
-                                    :start start
-                                    :end end)
-            do
-            (incf total-width col-width)
-            (when (> total-width max-width)
-              (return))
-            (incf n-columns)
-            (push col-width column-widths)
-            (incf total-width separator-length))
+        ;; Calculate n-columns and column-widths
+        (loop with total-width = 0
+              for start = 0 then end
+              for end = optimal-n-rows then
+                        (min (length lengths-v)
+                             (+ end optimal-n-rows))
+              while (< start end)
+              for col-width = (reduce 'max lengths-v
+                                      :start start
+                                      :end end)
+              do
+              (incf total-width col-width)
+              (when (> total-width max-width)
+                (return))
+              (incf n-columns)
+              (push col-width column-widths)
+              (incf total-width separator-length))
 
-      (values optimal-n-rows n-columns
-              (nreverse column-widths) lengths-v))))
+        (values optimal-n-rows n-columns (nreverse column-widths)
+                lengths-v truncated-p)))))
 
-; STEVE indicate that results should be truncated
 (defun* lusty--compute-optimal-layout-inner (lengths-v)
   (let ((n-items (length lengths-v))
         (max-visible-rows (1- (lusty-max-window-height)))
         (available-width (lusty-max-window-width))
-        ; STEVE figure out optimal start :size
-        ; STEVE use pre-allocated hash?
-        (lengths-h (make-hash-table :test 'equal)))
+        (lengths-h (make-hash-table :test 'equal
+                                    ; not scientific
+                                    :size n-items)))
 
+    ; STEVE remove or return column-widths
     (do ((n-rows 2 (1+ n-rows))
          (column-widths '() '()))
         ((>= n-rows max-visible-rows)
-         ;(values max-visible-rows column-widths)
-         ; STEVE remove column-widths
-         max-visible-rows)
+         (values max-visible-rows t))
       (let ((col-start-index 0)
             (col-end-index (1- n-rows))
             (total-width 0)
@@ -546,8 +543,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 
         (when (<= total-width available-width)
           (return-from lusty--compute-optimal-layout-inner
-            ;(values n-rows (nreverse column-widths))))
-            n-rows))))))
+            (values n-rows nil)))))))
 
 (defun lusty--compute-column-width (start-index end-index split-factor
                                     lengths-v lengths-h)
@@ -577,7 +573,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
     (lusty--print-no-entries)
     (return-from lusty--display-entries))
 
-  (multiple-value-bind (n-rows n-columns column-widths lengths-v)
+  (multiple-value-bind (n-rows n-columns column-widths lengths-v truncated-p)
       (lusty--compute-optimal-layout entries)
 
     (let* ((n-entries (min (* n-rows n-columns)
@@ -613,13 +609,10 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
         (loop for row across rows
               do
           (apply 'insert (nreverse row))
-          (insert "\n")))
-    )
+          (insert "\n"))))
 
-;            (when truncated-p
-;              (lusty--print-truncated))
-
-    ))
+    (when truncated-p
+      (lusty--print-truncated))))
 
 
 (defun lusty--print-no-entries ()

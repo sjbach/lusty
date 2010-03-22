@@ -377,7 +377,7 @@ class LiquidMetal
       return scores.fill(@@SCORE_NO_MATCH, 0..-1) if index.nil?
       started = true if index == 0
 
-      if index > 0 and " \t/._-".include?(string[index - 1])
+      if index > 0 and " ._-".include?(string[index - 1])
         scores[index - 1] = @@SCORE_MATCH
         scores.fill(@@SCORE_BUFFER, (lastIndex + 1)...(index - 1))
       elsif string[index] >= "A"[0] and string[index] <= "Z"[0]

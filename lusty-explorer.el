@@ -220,7 +220,7 @@ does not begin with '.'."
   (macrolet ((leading-dot-p (str)
                `(eq (string-to-char ,str) ?.))
              (pwd-p (str)
-               `(string= (directory-file-name ,str) "."))
+               `(string= ,str "./"))
              (ignored-p (name)
                `(string-match lusty--ignored-extensions-regex ,name)))
     (let ((filtered-files '()))
@@ -438,7 +438,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
          (lengths-v (make-vector n-items 0))
          (separator-length (length lusty-column-separator)))
 
-    (let ((length-of-longest-name 0))
+    (let ((length-of-longest-name 0)) ; used to determine upper-bound
 
       ;; Initialize lengths-v
       (loop for i from 0
@@ -462,8 +462,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
           (incf width separator-length))
         (setq upper-bound (* columns max-visible-rows))))
 
-    ;; Now have upper-bound and lengths-v
-
+    ;; Determine optimal row count.
     (multiple-value-bind (optimal-n-rows truncated-p)
         (cond ((< upper-bound n-items)
                (values max-visible-rows t))
@@ -498,13 +497,14 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
         (values optimal-n-rows n-columns (nreverse column-widths)
                 lengths-v truncated-p)))))
 
+;; Returns number of rows and whether this truncates the entries.
 (defun* lusty--compute-optimal-layout-inner (lengths-v)
-  (let ((n-items (length lengths-v))
-        (max-visible-rows (1- (lusty-max-window-height)))
-        (available-width (lusty-max-window-width))
-        (lengths-h (make-hash-table :test 'equal
-                                    ; not scientific
-                                    :size n-items)))
+  (let* ((n-items (length lengths-v))
+         (max-visible-rows (1- (lusty-max-window-height)))
+         (available-width (lusty-max-window-width))
+         (lengths-h (make-hash-table :test 'equal
+                                     ; not scientific
+                                     :size n-items)))
 
     ; STEVE remove or return column-widths
     (do ((n-rows 2 (1+ n-rows))
@@ -589,6 +589,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                   else
                   collect (lusty-propertize-path e))))
 
+      ;; Compile and print rows.
       (let ((rows (make-vector n-rows nil)))
         (loop with col = 0
               with column-width = (car column-widths)
@@ -599,8 +600,8 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
               for spacer = (make-string (- column-width len) ?\ )
               do
               (push entry (aref rows row))
-              (push spacer (aref rows row))
               (when (< col (1- n-columns))
+                (push spacer (aref rows row))
                 (push lusty-column-separator (aref rows row)))
               (when (> (/ (1+ count) n-rows) col)
                 (incf col)

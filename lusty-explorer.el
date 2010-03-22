@@ -665,62 +665,61 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 (defconst LM--score-trailing-but-started 0.90)
 (defconst LM--score-buffer 0.85)
 
-(defun LM-score (str abbrev)
-  (cond ;((string= abbrev "")  ; Disabled; can't happen in practice
-        ; LM--score-trailing)
-        ((> (length abbrev) (length str))
-         LM--score-no-match)
-        (t
-         (let* ((scores (LM--build-score-array str abbrev))
-                (sum (reduce '+ scores)))
-           (/ sum (length scores))))))
+(defun* LM-score (str abbrev)
+  (let ((str-len (length str))
+        (abbrev-len (length abbrev)))
+    (cond ;((string= abbrev "")  ; Disabled; can't happen in practice
+          ; LM--score-trailing)
+          ((> abbrev-len str-len)
+           LM--score-no-match)
+          (t
+           ;; Content of LM-build-score-array...
+           ;; Inline for performance.
+           (let* ((scores (make-vector str-len LM--score-no-match))
+                  (str-lower (downcase str))
+                  (abbrev-lower (downcase abbrev))
+                  (last-index -1)
+                  (started-p nil))
+             (dotimes (i abbrev-len)
+               (let ((pos (position (aref abbrev-lower i) str-lower
+                                    :start (1+ last-index)
+                                    :end str-len)))
+                 (when (null pos)
+                   (return-from LM-score LM--score-no-match))
+                 (when (zerop pos)
+                   (setq started-p t))
+                 (cond ((and (plusp pos)
+                             (let ((C (aref str (1- pos))))
+                               (or (= C ?\ )
+                                   (= C ?.)
+                                   (= C ?_)
+                                   (= C ?-))))
+                        ;; New word.
+                        (aset scores (1- pos) LM--score-match)
+                        (fill scores LM--score-buffer
+                              :start (1+ last-index)
+                              :end (1- pos)))
+                       ((and (>= (aref str pos) ?A)
+                             (<= (aref str pos) ?Z))
+                        ;; Upper case.
+                        (fill scores LM--score-buffer
+                              :start (1+ last-index)
+                              :end pos))
+                       (t
+                        (fill scores LM--score-no-match
+                              :start (1+ last-index)
+                              :end pos)))
+                 (aset scores pos LM--score-match)
+                 (setq last-index pos)))
 
-(defun* LM--build-score-array (str abbrev)
-  (let* ((str-len (length str))
-         (scores (make-vector str-len LM--score-no-match))
-         (str-lower (downcase str))
-         (abbrev-lower (downcase abbrev))
-         (last-index -1)
-         (started-p nil))
-    (dotimes (i (length abbrev))
-      (let ((pos (position (aref abbrev-lower i) str-lower
-                           :start (1+ last-index)
-                           :end str-len)))
-        (when (null pos)
-          (fillarray scores LM--score-no-match)
-          (return-from LM--build-score-array scores))
-        (when (zerop pos)
-          (setq started-p t))
-        (cond ((and (plusp pos)
-                    (let ((C (aref str (1- pos))))
-                      (or (= C ?\ )
-                          (= C ?.)
-                          (= C ?_)
-                          (= C ?-))))
-               ;; New word.
-               (aset scores (1- pos) LM--score-match)
-               (fill scores LM--score-buffer
-                     :start (1+ last-index)
-                     :end (1- pos)))
-              ((and (>= (aref str pos) ?A)
-                    (<= (aref str pos) ?Z))
-               ;; Upper case.
-               (fill scores LM--score-buffer
-                     :start (1+ last-index)
-                     :end pos))
-              (t
-               (fill scores LM--score-no-match
-                     :start (1+ last-index)
-                     :end pos)))
-        (aset scores pos LM--score-match)
-        (setq last-index pos)))
+             (let ((trailing-score
+                    (if started-p
+                        LM--score-trailing-but-started
+                      LM--score-trailing)))
+               (fill scores trailing-score :start (1+ last-index))
 
-    (let ((trailing-score
-           (if started-p
-               LM--score-trailing-but-started
-             LM--score-trailing)))
-      (fill scores trailing-score :start (1+ last-index))
-      scores)))
+               (/ (reduce '+ scores)
+                  str-len )))))))
 
 ;;
 ;; End LiquidMetal

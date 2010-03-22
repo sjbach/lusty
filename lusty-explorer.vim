@@ -126,6 +126,7 @@
 " - FilesystemExplorerRecursive
 " - restore MRU buffer ordering for initial BufferExplorer display?
 " - C-jhkl navigation to highlight a file?
+" - abbrev "a" will score e.g. "m-a" higher than e.g. "ad"
 
 " Exit quickly when already loaded.
 if exists("g:loaded_lustyexplorer")

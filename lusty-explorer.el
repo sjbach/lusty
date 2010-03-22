@@ -391,17 +391,12 @@ does not begin with '.'."
        buffers
        text))))
 
-;; STEVE return two arrays:
-;; - by score (or string<)
-;; - by shortest length
-;; STEVE ditto for buffer matches
+;; FIXME: return an array instead of a list?
 (defun lusty-file-explorer-matches (path)
   (let* ((dir (lusty-normalize-dir (file-name-directory path)))
          (file-portion (file-name-nondirectory path))
          (files
           (and dir
-               ; STEVE measure the difference
-               ;  - for LM-score, may be better to not have slash
                ; NOTE: directory-files is quicker but
                ;       doesn't append slash for directories.
                ;(directory-files dir nil nil t)
@@ -425,10 +420,6 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
           (put-text-property last (1+ last) 'face lusty-slash-face path))
       (put-text-property 0 (1+ last) 'face lusty-file-face path)))
   path)
-
-(defun lusty-longest-length (lst)
-  (loop for item in lst
-        maximizing (length item)))
 
 (defun lusty--compute-optimal-layout (items)
   (let* ((max-visible-rows (1- (lusty-max-window-height)))
@@ -559,7 +550,6 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
              (incf iter)))
           (t
            (while (<= iter end-index)
-             (assert (gethash (cons iter (+ iter (1- split-factor))) lengths-h))
              (setq width
                    (max width
                         (gethash (cons iter (+ iter (1- split-factor))) lengths-h)))
@@ -615,7 +605,6 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
     (when truncated-p
       (lusty--print-truncated))))
 
-
 (defun lusty--print-no-entries ()
   (insert lusty-no-entries-string)
   (let ((fill-column (window-width)))
@@ -625,6 +614,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   (insert lusty-truncated-string)
   (let ((fill-column (window-width)))
     (center-line)))
+
 
 (defun lusty--define-mode-map ()
   ;; Re-generated every run so that it can inherit new functions.
@@ -639,6 +629,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
     (define-key map "\C-p" 'lusty-highlight-previous)
     (setq lusty-mode-map map))
   (run-hooks 'lusty-setup-hook))
+
 
 (defun lusty--run (read-fn)
   (let ((lusty--highlighted-index 0)
@@ -673,7 +664,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
           ((> abbrev-len str-len)
            LM--score-no-match)
           (t
-           ;; Content of LM-build-score-array...
+           ;; Content of LM--build-score-array...
            ;; Inline for performance.
            (let* ((scores (make-vector str-len LM--score-no-match))
                   (str-lower (downcase str))
@@ -690,10 +681,10 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                    (setq started-p t))
                  (cond ((and (plusp pos)
                              (let ((C (aref str (1- pos))))
-                               (or (= C ?\ )
-                                   (= C ?.)
-                                   (= C ?_)
-                                   (= C ?-))))
+                               (or (eq C ?\ )
+                                   (eq C ?.)
+                                   (eq C ?_)
+                                   (eq C ?-))))
                         ;; New word.
                         (aset scores (1- pos) LM--score-match)
                         (fill scores LM--score-buffer

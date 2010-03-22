@@ -269,7 +269,7 @@ end
 class File
   def self.simplify_path(s)
     begin
-      if s[0] == '~'[0]
+      if s[0] == ?~
         s = File.expand_path(s.sub(/\/.*/,'')) + \
             s.sub(/^[^\/]+/,'')
       end
@@ -380,7 +380,7 @@ class LiquidMetal
       if index > 0 and " ._-".include?(string[index - 1])
         scores[index - 1] = @@SCORE_MATCH
         scores.fill(@@SCORE_BUFFER, (lastIndex + 1)...(index - 1))
-      elsif string[index] >= "A"[0] and string[index] <= "Z"[0]
+      elsif string[index] >= ?A and string[index] <= ?Z
         scores.fill(@@SCORE_BUFFER, (lastIndex + 1)...index)
       else
         scores.fill(@@SCORE_NO_MATCH, (lastIndex + 1)...index)
@@ -909,12 +909,12 @@ class FilesystemExplorer < LustyExplorer
       all = @memoized_entries[view]
 
       if lusty_option_set?("AlwaysShowDotFiles") or \
-         current_abbreviation()[0] == '.'[0]
+         current_abbreviation()[0] == ?.
         all
       else
         # Filter out dotfiles if the current abbreviation doesn't start with
         # '.'.
-        all.select { |x| x.name[0] != '.'[0] }
+        all.select { |x| x.name[0] != ?. }
       end
     end
 
@@ -999,7 +999,7 @@ class Prompt
 
     def up_one_dir!
       @input.chop!
-      while !@input.empty? and @input[-1] != '/'[0]
+      while !@input.empty? and @input[-1] != ?/
         @input.chop!
       end
     end

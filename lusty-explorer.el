@@ -64,6 +64,8 @@
 ;; Used only for its faces (for color-theme).
 (require 'font-lock)
 
+(declaim (optimize (speed 3) (safety 0)))
+
 (defgroup lusty-explorer nil
   "Quickly open new files or switch among open buffers."
   :group 'extensions
@@ -416,7 +418,7 @@ does not begin with '.'."
         (sort filtered 'string<)
       (lusty-sort-by-fuzzy-score filtered file-portion))))
 
-(defun lusty-propertize-path (path)
+(defsubst lusty-propertize-path (path)
   "Propertize the given PATH like so: <dir></> or <file>.
 Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
   (let ((last (1- (length path))))
@@ -541,8 +543,8 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
           (return-from lusty--compute-optimal-row-count
             (values n-rows nil)))))))
 
-(defun lusty--compute-column-width (start-index end-index split-factor
-                                    lengths-v lengths-h)
+(defsubst lusty--compute-column-width (start-index end-index split-factor
+                                       lengths-v lengths-h)
   (let ((width 0)
         (iter start-index))
     (cond ((= start-index end-index)
@@ -661,7 +663,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 (defconst LM--score-trailing-but-started 0.90)
 (defconst LM--score-buffer 0.85)
 
-(defun* LM-score (str abbrev)
+(defsubst* LM-score (str abbrev)
   (let ((str-len (length str))
         (abbrev-len (length abbrev)))
     (cond ;((string= abbrev "")  ; Disabled; can't happen in practice

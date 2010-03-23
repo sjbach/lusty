@@ -681,10 +681,12 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
            LM--score-no-match)
           (t
            ;; Content of LM--build-score-array...
-           ;; Inline for performance.
+           ;; Inline for interpreted performance.
            (let* ((scores (make-vector str-len LM--score-no-match))
                   (str-lower (downcase str))
                   (abbrev-lower (downcase abbrev))
+                  ; STEVE this is used with 1+ everywhere; is there
+                  ; STEVE a way to start it at 0 and not use 1+?
                   (last-index -1)
                   (started-p nil))
              (dotimes (i abbrev-len)
@@ -696,23 +698,25 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                  (when (zerop pos)
                    (setq started-p t))
                  (cond ((and (plusp pos)
-                             (let ((C (aref str (1- pos))))
-                               (or (eq C ?\ )
-                                   (eq C ?.)
-                                   (eq C ?_)
-                                   (eq C ?-))))
+                             (memq (aref str (1- pos))
+                                   '(?. ?_ ?- ?\ )))
                         ;; New word.
                         (aset scores (1- pos) LM--score-match)
+                        ; STEVE test how frequently this is called
+                        ; STEVE with start == end
                         (fill scores LM--score-buffer
                               :start (1+ last-index)
                               :end (1- pos)))
                        ((and (>= (aref str pos) ?A)
                              (<= (aref str pos) ?Z))
+                        ; STEVE can I remove this case?
                         ;; Upper case.
                         (fill scores LM--score-buffer
                               :start (1+ last-index)
                               :end pos))
                        (t
+                        ; STEVE test how frequently this is called
+                        ; STEVE with start == end
                         (fill scores LM--score-no-match
                               :start (1+ last-index)
                               :end pos)))

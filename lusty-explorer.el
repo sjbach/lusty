@@ -1,8 +1,8 @@
 ;;; lusty-explorer.el --- Dynamic filesystem explorer and buffer switcher
 ;;
-;; Copyright (C) 2008 - 2010 Stephen Bach <this-file@sjbach.com>
+;; Copyright (C) 2008-2010 Stephen Bach <this-file@sjbach.com>
 ;;
-;; Version: 2.0
+;; Version: 2.1
 ;; Created: January 26, 2009
 ;; Keywords: convenience, files, matching
 ;; Compatibility: GNU Emacs 22 and 23
@@ -32,6 +32,11 @@
 ;; using a fuzzy matching algorithm.  One entry is highlighted; you can move
 ;; the highlight using C-n / C-p.  Pressing TAB or RET will select the
 ;; highlighted entry.
+;;
+;; Note: lusty-explorer.el benefits greatly from byte-compilation.  To byte-
+;; compile this library, M-x byte-compile-file and choose lusty-explorer.el.
+;; Then, restart Emacs or M-x load-library and choose the newly generated
+;; lusty-explorer.elc file.
 ;;
 ;;; Customization:
 ;;  --------------
@@ -509,6 +514,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                                      ; not scientific
                                      :size n-items)))
 
+    ;; FIXME: do binary search instead of linear
     (do ((n-rows 2 (1+ n-rows)))
         ((>= n-rows max-visible-rows)
          (values max-visible-rows t))

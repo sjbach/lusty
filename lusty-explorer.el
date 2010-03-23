@@ -685,13 +685,11 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
            (let* ((scores (make-vector str-len LM--score-no-match))
                   (str-lower (downcase str))
                   (abbrev-lower (downcase abbrev))
-                  ; STEVE this is used with 1+ everywhere; is there
-                  ; STEVE a way to start it at 0 and not use 1+?
-                  (last-index -1)
+                  (last-index 0)
                   (started-p nil))
              (dotimes (i abbrev-len)
                (let ((pos (position (aref abbrev-lower i) str-lower
-                                    :start (1+ last-index)
+                                    :start last-index
                                     :end str-len)))
                  (when (null pos)
                    (return-from LM-score LM--score-no-match))
@@ -705,29 +703,29 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                         ; STEVE test how frequently this is called
                         ; STEVE with start == end
                         (fill scores LM--score-buffer
-                              :start (1+ last-index)
+                              :start last-index
                               :end (1- pos)))
                        ((and (>= (aref str pos) ?A)
                              (<= (aref str pos) ?Z))
                         ; STEVE can I remove this case?
                         ;; Upper case.
                         (fill scores LM--score-buffer
-                              :start (1+ last-index)
+                              :start last-index
                               :end pos))
                        (t
                         ; STEVE test how frequently this is called
                         ; STEVE with start == end
                         (fill scores LM--score-no-match
-                              :start (1+ last-index)
+                              :start last-index
                               :end pos)))
                  (aset scores pos LM--score-match)
-                 (setq last-index pos)))
+                 (setq last-index (1+ pos))))
 
              (let ((trailing-score
                     (if started-p
                         LM--score-trailing-but-started
                       LM--score-trailing)))
-               (fill scores trailing-score :start (1+ last-index)))
+               (fill scores trailing-score :start last-index))
 
              (/ (reduce '+ scores)
                 str-len ))))))

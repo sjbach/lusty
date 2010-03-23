@@ -518,7 +518,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
             (split-factor (aref lusty--greatest-factors n-rows)))
 
         ;; Calculate required total-width for this number of rows.
-        (while (>= col-end-index n-items)
+        (while (< col-end-index n-items)
           (let ((column-width
                  (lusty--compute-column-width
                   col-start-index col-end-index split-factor

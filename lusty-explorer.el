@@ -700,21 +700,16 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                                    '(?. ?_ ?- ?\ )))
                         ;; New word.
                         (aset scores (1- pos) LM--score-match)
-                        ; STEVE test how frequently this is called
-                        ; STEVE with start == end
                         (fill scores LM--score-buffer
                               :start last-index
                               :end (1- pos)))
                        ((and (>= (aref str pos) ?A)
                              (<= (aref str pos) ?Z))
-                        ; STEVE can I remove this case?
                         ;; Upper case.
                         (fill scores LM--score-buffer
                               :start last-index
                               :end pos))
                        (t
-                        ; STEVE test how frequently this is called
-                        ; STEVE with start == end
                         (fill scores LM--score-no-match
                               :start last-index
                               :end pos)))

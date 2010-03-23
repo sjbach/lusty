@@ -472,8 +472,8 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                ;; All fits in a single row.
                (values 1 nil))
               (t
-               (lusty--compute-optimal-layout-inner lengths-v
-                                                    separator-length)))
+               (lusty--compute-optimal-row-count lengths-v
+                                                 separator-length)))
       (let ((n-columns 0)
             (column-widths '()))
 
@@ -499,7 +499,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                 lengths-v truncated-p)))))
 
 ;; Returns number of rows and whether this truncates the entries.
-(defun* lusty--compute-optimal-layout-inner (lengths-v separator-length)
+(defun* lusty--compute-optimal-row-count (lengths-v separator-length)
   (let* ((n-items (length lengths-v))
          (max-visible-rows (1- (lusty-max-window-height)))
          (available-width (lusty-max-window-width))
@@ -507,9 +507,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                                      ; not scientific
                                      :size n-items)))
 
-    ; STEVE remove or return column-widths
-    (do ((n-rows 2 (1+ n-rows))
-         (column-widths '() '()))
+    (do ((n-rows 2 (1+ n-rows)))
         ((>= n-rows max-visible-rows)
          (values max-visible-rows t))
       (let ((col-start-index 0)
@@ -524,7 +522,6 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                   col-start-index col-end-index split-factor
                   lengths-v lengths-h)))
 
-            (push column-width column-widths)
             (incf total-width column-width)
             (incf total-width separator-length))
 
@@ -541,7 +538,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
         (decf total-width separator-length)
 
         (when (<= total-width available-width)
-          (return-from lusty--compute-optimal-layout-inner
+          (return-from lusty--compute-optimal-row-count
             (values n-rows nil)))))))
 
 (defun lusty--compute-column-width (start-index end-index split-factor

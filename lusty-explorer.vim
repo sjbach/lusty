@@ -369,29 +369,29 @@ class LiquidMetal
     scores = Array.new(string.length)
     lower = string.downcase()
 
-    lastIndex = -1
+    lastIndex = 0
     started = false
 
     abbrev.downcase().each_char do |c|
-      index = lower.index(c, lastIndex + 1)
-      return scores.fill(@@SCORE_NO_MATCH, 0..-1) if index.nil?
+      index = lower.index(c, lastIndex)
+      return scores.fill(@@SCORE_NO_MATCH) if index.nil?
       started = true if index == 0
 
       if index > 0 and " ._-".include?(string[index - 1])
         scores[index - 1] = @@SCORE_MATCH
-        scores.fill(@@SCORE_BUFFER, (lastIndex + 1)...(index - 1))
+        scores.fill(@@SCORE_BUFFER, lastIndex...(index - 1))
       elsif string[index] >= ?A and string[index] <= ?Z
-        scores.fill(@@SCORE_BUFFER, (lastIndex + 1)...index)
+        scores.fill(@@SCORE_BUFFER, lastIndex...index)
       else
-        scores.fill(@@SCORE_NO_MATCH, (lastIndex + 1)...index)
+        scores.fill(@@SCORE_NO_MATCH, lastIndex...index)
       end
 
       scores[index] = @@SCORE_MATCH
-      lastIndex = index
+      lastIndex = index + 1
     end
 
     trailing_score = started ? @@SCORE_TRAILING_BUT_STARTED : @@SCORE_TRAILING
-    scores.fill(trailing_score, lastIndex + 1)
+    scores.fill(trailing_score, lastIndex)
     return scores
   end
 end

@@ -159,6 +159,15 @@ Additional keys can be defined in `lusty-mode-map'."
 (defvar lusty--ignored-extensions-regex nil)
 (defvar lusty--highlighted-index 0)
 (defvar lusty--previous-printed-matches '())
+(defconst lusty--greatest-factors
+  (let ((vec (make-vector 1000 nil)))
+    (dotimes (n 1000)
+      (let ((factor
+             (loop for i from 2 upto (ash n -1)
+                   when (zerop (mod n i))
+                   return (/ n i))))
+      (aset vec n factor)))
+    vec))
 
 (when lusty--wrapping-ido-p
   (require 'ido))
@@ -463,7 +472,8 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                ;; All fits in a single row.
                (values 1 nil))
               (t
-               (lusty--compute-optimal-layout-inner lengths-v)))
+               (lusty--compute-optimal-layout-inner lengths-v
+                                                    separator-length)))
       (let ((n-columns 0)
             (column-widths '()))
 
@@ -489,7 +499,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
                 lengths-v truncated-p)))))
 
 ;; Returns number of rows and whether this truncates the entries.
-(defun* lusty--compute-optimal-layout-inner (lengths-v)
+(defun* lusty--compute-optimal-layout-inner (lengths-v separator-length)
   (let* ((n-items (length lengths-v))
          (max-visible-rows (1- (lusty-max-window-height)))
          (available-width (lusty-max-window-width))
@@ -505,15 +515,10 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
       (let ((col-start-index 0)
             (col-end-index (1- n-rows))
             (total-width 0)
-            (split-factor
-             ; STEVE comment
-             (loop for i from 2 upto (ash n-rows -1)
-                   when (zerop (mod n-rows i))
-                   return (/ n-rows i))))
+            (split-factor (aref lusty--greatest-factors n-rows)))
 
         ;; Calculate required total-width for this number of rows.
-        (do ((separator-len 0 (length lusty-column-separator)))
-            ((>= col-end-index n-items))
+        (while (>= col-end-index n-items)
           (let ((column-width
                  (lusty--compute-column-width
                   col-start-index col-end-index split-factor
@@ -521,7 +526,7 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
 
             (push column-width column-widths)
             (incf total-width column-width)
-            (incf total-width separator-len))
+            (incf total-width separator-length))
 
           (incf col-start-index n-rows) ; setq col-end-index
           (incf col-end-index n-rows)
@@ -531,6 +536,9 @@ Uses `lusty-directory-face', `lusty-slash-face', `lusty-file-face'"
             ;; Remainder; last iteration will not be a full column.
             (setq col-end-index (1- n-items)
                   split-factor nil)))
+
+        ;; The final column doesn't need a separator.
+        (decf total-width separator-length)
 
         (when (<= total-width available-width)
           (return-from lusty--compute-optimal-layout-inner

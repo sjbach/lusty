@@ -360,7 +360,9 @@ class LiquidMetal
 
     scores = buildScoreArray(string, abbrev)
 
-    sum = scores.inject { |a, b| a + b }
+    # Faster than Array#inject...
+    sum = 0.0
+    scores.each { |x| sum += x }
 
     return sum / scores.length;
   end
@@ -592,8 +594,9 @@ class LustyExplorer
     end
 
     def matching_entries
+      abbrev = current_abbreviation()
       all_entries().select { |x|
-        x.current_score = LiquidMetal.score(x.name, current_abbreviation())
+        x.current_score = LiquidMetal.score(x.name, abbrev)
         x.current_score != 0.0
       }
     end
@@ -716,10 +719,10 @@ class BufferExplorer < LustyExplorer
                      end
 
         # Disabled: show buffer number next to name
-        #short_name += ' ' + buffer.number.to_s
+        #short_name << ' ' + buffer.number.to_s
 
         # Show modification indicator
-        short_name += entry.vim_buffer.modified? ? " [+]" : ""
+        short_name << entry.vim_buffer.modified? ? " [+]" : ""
 
         entry.name = short_name
       end
@@ -885,17 +888,16 @@ class FilesystemExplorer < LustyExplorer
       unless @memoized_entries.has_key?(view)
         # Generate an array of the files
         entries = []
-        view.each_entry do |file|
-          name = file.basename.to_s
+        view_str = view.to_s + File::SEPARATOR
+        Dir.foreach(view_str) do |name|
           next if name == "."   # Skip pwd
           next if name == ".." and lusty_option_set?("AlwaysShowDotFiles")
 
           # Hide masked files.
           next if FileMasks.masked?(name)
 
-          if (view + file).directory?
-            # ^^ bug in Pathname.each_entry -- block variable has no dir.
-            name += File::SEPARATOR
+          if FileTest.directory?(view_str + name)
+            name << File::SEPARATOR
           end
           entries << Entry.new(name)
         end
@@ -986,7 +988,7 @@ class Prompt
     end
 
     def add!(s)
-      @input += s
+      @input << s
     end
 
     def backspace!
@@ -1010,32 +1012,32 @@ class FilesystemPrompt < Prompt
   end
 
   def clear!
-    @dirty = true
     super
+    @dirty = true
   end
 
   def set!(s)
-    @dirty = true
     # On Windows, Vim will return paths with a '\' separator, but
     # we want to use '/'.
     super(s.gsub('\\', '/'))
+    @dirty = true
   end
 
   def backspace!
-    @dirty = true
     super
+    @dirty = true
   end
 
   def up_one_dir!
-    @dirty = true
     super
+    @dirty = true
   end
 
   def at_dir?
     # We have not typed anything yet or have just typed the final '/' on a
     # directory name in pwd.  This check is interspersed throughout
     # FilesystemExplorer because of the conventions of basename and dirname.
-    input().empty? or input().ends_with?(File::SEPARATOR)
+    input().empty? or input()[-1] == File::SEPARATOR[0]
     # Don't think the File.directory? call is necessary, but leaving this
     # here as a reminder.
     #(File.directory?(input()) and input().ends_with?(File::SEPARATOR))
@@ -1049,7 +1051,7 @@ class FilesystemPrompt < Prompt
     # Assumption: add!() will only receive enough chars at a time to complete
     # a single directory level, e.g. foo/, not foo/bar/
 
-    @input += s
+    @input << s
     @dirty = true
   end
 
@@ -1179,7 +1181,7 @@ class Displayer
             '\zs' + VIM::regex_escape(s) + '\%( \[+\]\)\?' + '\ze' \
             '\%(\s*$\|' + @@COLUMN_SEPARATOR + '\)'
 
-      str += '\c' if case_insensitive
+      str << '\c' if case_insensitive
 
       return str
     end
@@ -1279,7 +1281,7 @@ class Displayer
         }
 
         full_width = widths.inject { |sum, n| sum + n }
-        full_width += @@COLUMN_SEPARATOR.length * (col_count - 1)
+        full_width << @@COLUMN_SEPARATOR.length * (col_count - 1)
 
         if full_width <= $curwin.width
           break
@@ -1319,14 +1321,14 @@ class Displayer
         string = ""
         (0..cols.length-1).each do |j|
           break if cols[j][i].nil?
-          string += cols[j][i]
-          string += " " * [(widths[j] - cols[j][i].length), 0].max
-          string += @@COLUMN_SEPARATOR
+          string << cols[j][i]
+          string << " " * [(widths[j] - cols[j][i].length), 0].max
+          string << @@COLUMN_SEPARATOR
         end
 
         # Stretch the line to the length of the window with whitespace so that
         # we can "hide" the cursor in the corner.
-        string += " " * [($curwin.width - string.length), 0].max
+        string << " " * [($curwin.width - string.length), 0].max
 
         $curwin.cursor = [i+1, 1]
         $curbuf.append(i, string)

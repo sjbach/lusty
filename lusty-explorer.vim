@@ -430,10 +430,6 @@ class LustyExplorer
     def run
       return if @running
 
-      if $PROFILING
-        RubyProf.measure_mode = RubyProf::WALL_TIME
-      end
-
       @settings.save
       @running = true
       @calling_window = $curwin
@@ -1498,7 +1494,14 @@ def profile
   # Profile (if enabled) and provide better
   # backtraces when there's an error.
 
-  RubyProf.resume if $PROFILING
+  if $PROFILING
+    if not RubyProf.running?
+      RubyProf.measure_mode = RubyProf::WALL_TIME
+      RubyProf.start
+    else
+      RubyProf.resume
+    end
+  end
 
   begin
     yield
@@ -1507,7 +1510,9 @@ def profile
     puts e.backtrace
   end
 
-  RubyProf.pause if $PROFILING
+  if $PROFILING and RubyProf.running?
+    RubyProf.pause
+  end
 end
 
 class AssertionError < StandardError ; end

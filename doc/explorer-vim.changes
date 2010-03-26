@@ -1,1 +1,1 @@
-Performance improvements.
+BufferExplorer: fixed a spurious error message introduced in the previous release.  (Thanks to sowill)

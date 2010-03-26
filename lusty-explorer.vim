@@ -15,8 +15,8 @@
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
 "               Matt Tolton, Björn Winckler, sowill, David Brown
 "
-" Release Date: March 25, 2010
-"      Version: 2.2.1
+" Release Date: March 26, 2010
+"      Version: 2.2.2
 "
 "        Usage: To launch the explorers:
 "
@@ -720,7 +720,7 @@ class BufferExplorer < LustyExplorer
         #short_name << ' ' + buffer.number.to_s
 
         # Show modification indicator
-        short_name << entry.vim_buffer.modified? ? " [+]" : ""
+        short_name << (entry.vim_buffer.modified? ? " [+]" : "")
 
         entry.name = short_name
       end

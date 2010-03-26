@@ -15,10 +15,8 @@
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
 "               Matt Tolton, Björn Winckler, sowill, David Brown
 "
-" Release Date: March 15, 2010
-"      Version: 2.2.0
-"               Inspired by Viewglob, Emacs, and by Jeff Lanzarotta's Buffer
-"               Explorer plugin.
+" Release Date: March 25, 2010
+"      Version: 2.2.1
 "
 "        Usage: To launch the explorers:
 "

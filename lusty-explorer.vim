@@ -1167,11 +1167,11 @@ end
 class Displayer
   private
     @@COLUMN_SEPARATOR = "    "
-    @@NO_ENTRIES_STRING = "-- NO ENTRIES --"
+    @@NO_MATCHES_STRING = "-- NO MATCHES --"
     @@TRUNCATED_STRING = "-- TRUNCATED --"
 
   public
-    def Displayer.vim_match_string(s, case_insensitive)
+    def self.vim_match_string(s, case_insensitive)
       # Create a match regex string for the given s.  This is for a Vim regex,
       # not for a Ruby regex.
 
@@ -1188,6 +1188,10 @@ class Displayer
       @title = title
       @window = nil
       @buffer = nil
+
+      # Hashes by range, e.g. 0..2, representing the width
+      # of the column bounded by that range.
+      @col_range_widths = {}
     end
 
     def create
@@ -1229,7 +1233,7 @@ class Displayer
         exe 'syn match LustyExpModified " \[+\]"'
 
         exe 'syn match LustyExpNoEntries "\%^\s*' \
-                                         "#{@@NO_ENTRIES_STRING}" \
+                                         "#{@@NO_MATCHES_STRING}" \
                                          '\s*\%$"'
 
         exe 'syn match LustyExpTruncated "^\s*' \
@@ -1256,44 +1260,31 @@ class Displayer
         return
       end
 
-      # Perhaps truncate the results to just over the upper bound of
-      # displayable strings.  This isn't exact, but it's close enough.
-      max = VIM::lines * (VIM::columns / (1 + @@COLUMN_SEPARATOR.length))
-      if strings.length > max
-        strings.slice!(max, strings.length - max)
-      end
+      row_count, col_count, col_widths, truncated = \
+        compute_optimal_layout(strings)
 
-      # Get a high upper bound on the number of columns to display to optimize
-      # the following algorithm a little.
-      col_count = column_count_upper_bound(strings)
+      # Slice the strings into rows.
+      rows = Array.new(row_count){[]}
+      col_index = 0
+      strings.each_slice(row_count) do |column|
+        column_width = col_widths[col_index]
+        column.each_index do |i|
+          string = column[i]
 
-      # Figure out the actual number of columns to use (yuck)
-      cols = nil
-      widths = nil
-      while col_count > 1 do
+          rows[i] << string
 
-        cols = columnize(strings, col_count);
-
-        widths = cols.map { |col|
-          col.max { |a, b| a.length <=> b.length }.length
-        }
-
-        full_width = widths.inject { |sum, n| sum + n }
-        full_width += @@COLUMN_SEPARATOR.length * (col_count - 1)
-
-        if full_width <= $curwin.width
-          break
+          if col_index < col_count - 1
+            # Add spacer to the width of the column
+            rows[i] << (" " * (column_width - string.length))
+            rows[i] << @@COLUMN_SEPARATOR
+          end
         end
 
-        col_count -= 1
+        col_index += 1
+        break if col_index >= col_count
       end
 
-      if col_count <= 1
-        cols = [strings]
-        widths = [0]
-      end
-
-      print_columns(cols, widths)
+      print_rows(rows, truncated)
     end
 
     def close
@@ -1307,39 +1298,88 @@ class Displayer
       end
     end
 
+    def self.max_height
+      stored_height = $curwin.height
+      $curwin.height = 99999  # ha
+      highest_allowable = $curwin.height
+      $curwin.height = stored_height
+      highest_allowable
+    end
+
+    def self.max_width
+      VIM::columns()
+    end
+
   private
-    def print_columns(cols, widths)
-      unlock_and_clear()
 
-      # Set the height to the height of the longest column.
-      $curwin.height = cols.max { |a, b| a.length <=> b.length }.length
+    def compute_optimal_layout(strings)
+      # Compute optimal row count and corresponding column count.
+      # The displayer attempts to fit `strings' on as few rows as
+      # possible.
 
-      (0..$curwin.height-1).each do |i|
+      max_width = Displayer.max_width()
+      displayable_string_upper_bound = compute_displayable_upper_bound(strings)
 
-        string = ""
-        (0..cols.length-1).each do |j|
-          break if cols[j][i].nil?
-          string << cols[j][i]
-          string << " " * [(widths[j] - cols[j][i].length), 0].max
-          string << @@COLUMN_SEPARATOR
+      # Determine optimal row count.
+      optimal_row_count, truncated = \
+        if strings.length > displayable_string_upper_bound
+          # Use all available rows and truncate results.
+          # The -1 is for the truncation indicator.
+          [Displayer.max_height - 1, true]
+        else
+          single_row_width = \
+            strings.inject(0) { |len, s|
+              len + @@COLUMN_SEPARATOR.length + s.length
+            }
+          if single_row_width <= max_width
+            # All fits on a single row
+            [1, false]
+          else
+            compute_optimal_row_count(strings)
+          end
         end
 
-        # Stretch the line to the length of the window with whitespace so that
-        # we can "hide" the cursor in the corner.
-        string << " " * [($curwin.width - string.length), 0].max
+      # Compute column_count and column_widths.
+      column_count = 0
+      column_widths = []
+      total_width = 0
+      strings.each_slice(optimal_row_count) do |column|
+        column_width = column.max { |a, b| a.length <=> b.length }.length
+        total_width += column_width
 
-        $curwin.cursor = [i+1, 1]
-        $curbuf.append(i, string)
+        break if total_width > max_width
+
+        column_count += 1
+        column_widths << column_width
+        total_width += @@COLUMN_SEPARATOR.length
       end
 
-      # Check for result truncation.
-      if cols[0][$curwin.height]
-        # Show a truncation indicator.
-        $curbuf.delete($curbuf.count - 1)
-        $curwin.cursor = [$curbuf.count, 1]
+      [optimal_row_count, column_count, column_widths, truncated]
+    end
+
+    def print_rows(rows, truncated)
+      unlock_and_clear()
+
+      # Grow/shrink the window as needed
+      $curwin.height = rows.length + (truncated ? 1 : 0)
+
+      # Print the rows.
+      rows.each_index do |i|
+        $curwin.cursor = [i+1, 1]
+        $curbuf.append(i, rows[i].join(''))
+      end
+
+      # Print a TRUNCATED indicator, if needed.
+      if truncated
         $curbuf.append($curbuf.count - 1, \
                        @@TRUNCATED_STRING.center($curwin.width, " "))
       end
+
+      # Stretch the last line to the length of the window with whitespace so
+      # that we can "hide" the cursor in the corner.
+      last_line = $curbuf[$curbuf.count - 1]
+      last_line << (" " * ($curwin.width - last_line.length))
+      $curbuf[$curbuf.count - 1] = last_line
 
       # There's a blank line at the end of the buffer because of how
       # VIM::Buffer.append works.
@@ -1350,8 +1390,7 @@ class Displayer
     def print_no_entries
       unlock_and_clear()
       $curwin.height = 1
-
-      $curbuf[1] = @@NO_ENTRIES_STRING.center($curwin.width, " ")
+      $curbuf[1] = @@NO_MATCHES_STRING.center($curwin.width, " ")
       lock()
     end
 
@@ -1369,33 +1408,101 @@ class Displayer
       exe "normal! Gg$"
     end
 
-    # Get a starting upper bound on the number of columns
-    def column_count_upper_bound(strings)
-      column_count = 0
-      length = 0
+    def compute_displayable_upper_bound(strings)
+      # Compute an upper-bound on the number of displayable matches.
+      # Basically: find the length of the longest string, then keep
+      # adding shortest strings until we pass the width of the Vim
+      # window.  This is the maximum possible column-count assuming
+      # all strings can fit.  Then multiply by the number of rows.
 
-      sorted_by_length = strings.sort {|x, y| x.length <=> y.length }
+      sorted_by_shortest = strings.sort { |x, y| x.length <=> y.length }
+      longest_length = sorted_by_shortest.pop.length
 
-      sorted_by_length.each do |e|
-        length += e.length
-        break unless length < $curwin.width
+      row_width = longest_length + @@COLUMN_SEPARATOR.length
+
+      max_width = Displayer.max_width()
+      column_count = 1
+
+      sorted_by_shortest.each do |str|
+        row_width += str.length
+        if row_width > max_width
+          break
+        end
 
         column_count += 1
-        length += @@COLUMN_SEPARATOR.length
+        row_width += @@COLUMN_SEPARATOR.length
       end
 
-      return column_count
+      column_count * Displayer.max_height()
     end
 
-    def columnize(strings, n_cols)
-      n_rows = (strings.length.to_f / n_cols).ceil
+    def compute_optimal_row_count(strings)
+      max_width = Displayer.max_width
+      max_height = Displayer.max_height
 
-      # Break the array into sub arrays representing columns
-      cols = []
-      0.step(strings.size-1, n_rows) do |i|
-        cols << strings[i..(i + n_rows - 1)]
+      @col_range_widths.clear()
+
+      # We've already tried one row, so start at two.
+      (2..max_height).each do |row_count|
+        col_start_index = 0
+        col_end_index = row_count - 1
+        total_width = 0
+
+        while col_end_index < strings.length
+          total_width += \
+            compute_column_width(col_start_index..col_end_index, strings)
+
+          # STEVE early exit
+          if total_width > max_width
+            total_width += @@COLUMN_SEPARATOR.length
+            break
+          end
+
+          total_width += @@COLUMN_SEPARATOR.length
+
+          col_start_index += row_count
+          col_end_index += row_count
+
+          if col_end_index >= strings.length and \
+             col_start_index < strings.length
+            # Remainder; last iteration will not be a full column.
+            col_end_index = strings.length - 1
+          end
+        end
+
+        # The final column doesn't need a separator.
+        total_width -= @@COLUMN_SEPARATOR.length
+
+        if total_width <= max_width
+          # Success.
+          return [row_count, false]
+        end
       end
-      return cols
+
+      # No row count can accomodate all strings; have to truncate.
+      [max_height - 1, true]
+    end
+
+    def compute_column_width(range, strings)
+
+      if (range.first == range.last)
+        return strings[range.first].length
+      end
+
+      width = @col_range_widths[range]
+
+      if width.nil?
+        # Recurse for each half of the range.
+        split_point = range.first + ((range.last - range.first) >> 1)
+
+        first_half = compute_column_width(range.first..split_point, strings)
+        second_half = compute_column_width(split_point+1..range.last, strings)
+
+        width = [first_half, second_half].max
+        @col_range_widths[range] = width
+      end
+
+      width
     end
 end
 

@@ -1281,7 +1281,7 @@ class Displayer
         }
 
         full_width = widths.inject { |sum, n| sum + n }
-        full_width << @@COLUMN_SEPARATOR.length * (col_count - 1)
+        full_width += @@COLUMN_SEPARATOR.length * (col_count - 1)
 
         if full_width <= $curwin.width
           break

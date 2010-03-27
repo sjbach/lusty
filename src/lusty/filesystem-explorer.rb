@@ -121,14 +121,15 @@ class FilesystemExplorer < Explorer
     def all_entries
       view = view_path()
 
-      if not view.exist?
-        return []
-      elsif not view.readable?
-        # TODO: show "-- PERMISSION DENIED --"
-        return []
-      end
-
       unless @memoized_entries.has_key?(view)
+
+        if not view.directory?
+          return []
+        elsif not view.readable?
+          # TODO: show "-- PERMISSION DENIED --"
+          return []
+        end
+
         # Generate an array of the files
         entries = []
         view_str = view.to_s

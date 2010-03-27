@@ -452,7 +452,7 @@ end
 
 # Port of Ryan McGeary's LiquidMetal fuzzy matching algorithm found at:
 #   http://github.com/rmm5t/liquidmetal/tree/master.
-class LiquidMetal
+module LiquidMetal
   @@SCORE_NO_MATCH = 0.0
   @@SCORE_MATCH = 1.0
   @@SCORE_TRAILING = 0.8
@@ -1079,6 +1079,8 @@ end
 
 
 module Lusty
+
+# Used in BufferExplorer
 class Prompt
   private
     @@PROMPT = ">> "
@@ -1127,9 +1129,8 @@ class Prompt
       end
     end
 end
-end
 
-module Lusty
+# Used in FilesystemExplorer
 class FilesystemPrompt < Prompt
 
   def initialize
@@ -1216,6 +1217,7 @@ class FilesystemPrompt < Prompt
       }
     end
 end
+
 end
 
 

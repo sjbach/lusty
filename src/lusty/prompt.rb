@@ -8,6 +8,8 @@
 # software.
 
 module Lusty
+
+# Used in BufferExplorer
 class Prompt
   private
     @@PROMPT = ">> "
@@ -56,9 +58,8 @@ class Prompt
       end
     end
 end
-end
 
-module Lusty
+# Used in FilesystemExplorer
 class FilesystemPrompt < Prompt
 
   def initialize
@@ -145,5 +146,6 @@ class FilesystemPrompt < Prompt
       }
     end
 end
+
 end
 

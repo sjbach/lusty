@@ -341,7 +341,7 @@ module VIM
   end
 
   def self.nonzero?(var)
-    not(self.zero? var)
+    not zero?(var)
   end
 
   def self.evaluate_bool(var)
@@ -349,11 +349,11 @@ module VIM
   end
 
   def self.exists?(s)
-    self.nonzero? evaluate("exists('#{s}')")
+    nonzero? evaluate("exists('#{s}')")
   end
 
   def self.has_syntax?
-    self.nonzero? evaluate('has("syntax")')
+    nonzero? evaluate('has("syntax")')
   end
 
   def self.columns
@@ -441,7 +441,6 @@ module Lusty
     # (Debug print)
     $stderr.puts s
   end
-
 end
 
 # Port of Ryan McGeary's LiquidMetal fuzzy matching algorithm found at:

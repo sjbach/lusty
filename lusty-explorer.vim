@@ -1443,8 +1443,15 @@ class Displayer
       # STEVE faster to allocate new hash?
       @col_range_widths.clear()
 
-      # We've already tried one row, so start at two.
-      (2..max_height).each do |row_count|
+      # Binary search; find the lowest number of rows at which we
+      # can fit all the strings.
+
+      # We've already failed for a single row, so start at two.
+      lower = 1  # (1 = 2 - 1)
+      upper = max_height + 1
+      while lower + 1 != upper
+        row_count = (lower + upper) / 2   # Mid-point
+
         col_start_index = 0
         col_end_index = row_count - 1
         total_width = 0
@@ -1476,13 +1483,21 @@ class Displayer
         total_width -= @@COLUMN_SEPARATOR.length
 
         if total_width <= max_width
-          # Success.
-          return [row_count, false]
+          # This row count fits.
+          upper = row_count
+        else
+          # This row count doesn't fit.
+          lower = row_count
         end
       end
 
-      # No row count can accomodate all strings; have to truncate.
-      [max_height - 1, true]
+      if upper > max_height
+        # No row count can accomodate all strings; have to truncate.
+        # (-1 for the truncate indicator)
+        [max_height - 1, true]
+      else
+        [upper, false]
+      end
     end
 
     def compute_column_width(range, strings)

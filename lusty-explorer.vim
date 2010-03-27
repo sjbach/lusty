@@ -14,9 +14,10 @@
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
 "               Matt Tolton, Björn Winckler, sowill, David Brown
+"               Brett DiFrischia
 "
 " Release Date: March 26, 2010
-"      Version: 2.2.2
+"      Version: 2.2.3
 "
 "        Usage: To launch the explorers:
 "
@@ -131,6 +132,18 @@ if exists("g:loaded_lustyexplorer")
   finish
 endif
 
+if &compatible
+  echohl ErrorMsg
+  echo "LustyExplorer is not designed to run in &compatible mode;"
+  echo "To use this plugin, first disable vi-compatible mode like so:\n"
+
+  echo "   :set nocompatible\n"
+
+  echo "Or even better, just create an empty .vimrc file."
+  echohl none
+  finish
+endif
+
 if exists("g:FuzzyFinderMode.TextMate")
   echohl WarningMsg
   echo "Warning: LustyExplorer detects the presence of fuzzyfinder_textmate;"
@@ -241,7 +254,8 @@ endfunction
 
 ruby << EOF
 require 'pathname'
-require 'io/wait'  # for IO#ready
+# For IO#ready -- but Cygwin doesn't have io/wait.
+require 'io/wait' unless RUBY_PLATFORM =~ /cygwin/
 # Needed for String#each_char in Ruby 1.8 on some platforms
 require 'jcode' unless "".respond_to? :each_char
 
@@ -266,19 +280,43 @@ end
 
 class File
   def self.simplify_path(s)
+    s = s.gsub(/\/+/, '/')  # Remove redundant '/' characters
     begin
       if s[0] == ?~
+        # Tilde expansion - First expand the ~ part (e.g. '~' or '~steve')
+        # and then append the rest of the path.  We can't just call
+        # expand_path() or it'll throw on bad paths.
         s = File.expand_path(s.sub(/\/.*/,'')) + \
             s.sub(/^[^\/]+/,'')
       end
 
-      if s.ends_with?(File::SEPARATOR)
+      if s == '/'
+        # Special-case root so we don't add superfluous '/' characters,
+        # as this can make Cygwin choke.
+        s
+      elsif s.ends_with?(File::SEPARATOR)
         File.expand_path(s) + File::SEPARATOR
       else
-        File.expand_path(File.dirname(s)) + File::SEPARATOR + File.basename(s)
+        dirname_expanded = File.expand_path(File.dirname(s))
+        if dirname_expanded == '/'
+          dirname_expanded + File.basename(s)
+        else
+          dirname_expanded + File::SEPARATOR + File.basename(s)
+        end
       end
     rescue ArgumentError
       s
+    end
+  end
+end
+
+class IO
+  def ready_for_read?
+    if self.respond_to? :ready?
+      ready?
+    else
+      result = IO.select([self], nil, nil, 0)
+      result && (result.first.first == self)
     end
   end
 end
@@ -886,7 +924,12 @@ class FilesystemExplorer < LustyExplorer
       unless @memoized_entries.has_key?(view)
         # Generate an array of the files
         entries = []
-        view_str = view.to_s + File::SEPARATOR
+        view_str = view.to_s
+        unless view_str.ends_with?(File::SEPARATOR)
+          # Don't double-up on '/' -- makes Cygwin sad.
+          view_str << File::SEPARATOR
+        end
+
         Dir.foreach(view_str) do |name|
           next if name == "."   # Skip pwd
           next if name == ".." and lusty_option_set?("AlwaysShowDotFiles")
@@ -1440,7 +1483,7 @@ class VimSwaps
 
   def file_names
     if @files_with_swaps.nil?
-      if @vim_r.ready?
+      if @vim_r.ready_for_read?
         @files_with_swaps = []
         @vim_r.each_line do |line|
           if line =~ /^ +file name: (.*)$/

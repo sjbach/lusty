@@ -225,31 +225,31 @@ nmap <silent> <Leader>lb :LustyBufferExplorer<CR>
 
 " Vim-to-ruby function calls.
 function! s:LustyFilesystemExplorerStart()
-  ruby profile() { $filesystem_explorer.run_from_wd }
+  ruby Lusty::profile() { $lusty_filesystem_explorer.run_from_wd }
 endfunction
 
 function! s:LustyFilesystemExplorerFromHereStart()
-  ruby profile() { $filesystem_explorer.run_from_here }
+  ruby Lusty::profile() { $lusty_filesystem_explorer.run_from_here }
 endfunction
 
 function! s:LustyBufferExplorerStart()
-  ruby profile() { $buffer_explorer.run }
+  ruby Lusty::profile() { $lusty_buffer_explorer.run }
 endfunction
 
 function! s:LustyFilesystemExplorerCancel()
-  ruby profile() { $filesystem_explorer.cancel }
+  ruby Lusty::profile() { $lusty_filesystem_explorer.cancel }
 endfunction
 
 function! s:LustyBufferExplorerCancel()
-  ruby profile() { $buffer_explorer.cancel }
+  ruby Lusty::profile() { $lusty_buffer_explorer.cancel }
 endfunction
 
 function! s:LustyFilesystemExplorerKeyPressed(code_arg)
-  ruby profile() { $filesystem_explorer.key_pressed }
+  ruby Lusty::profile() { $lusty_filesystem_explorer.key_pressed }
 endfunction
 
 function! s:LustyBufferExplorerKeyPressed(code_arg)
-  ruby profile() { $buffer_explorer.key_pressed }
+  ruby Lusty::profile() { $lusty_buffer_explorer.key_pressed }
 endfunction
 
 ruby << EOF
@@ -259,19 +259,21 @@ require 'io/wait' unless RUBY_PLATFORM =~ /cygwin/
 # Needed for String#each_char in Ruby 1.8 on some platforms
 require 'jcode' unless "".respond_to? :each_char
 
-$PROFILING = false
+$LUSTY_PROFILING = false
 
-if $PROFILING
+if $LUSTY_PROFILING
   require 'rubygems'
   require 'ruby-prof'
 end
 
 class String
+  # STEVE put in Lusty
   def ends_with?(s)
     tail = self[-s.length, s.length]
     tail == s
   end
 
+  # STEVE put in Lusty
   def starts_with?(s)
     head = self[0, s.length]
     head == s
@@ -279,6 +281,7 @@ class String
 end
 
 class File
+  # STEVE put in Lusty
   def self.simplify_path(s)
     s = s.gsub(/\/+/, '/')  # Remove redundant '/' characters
     begin
@@ -311,6 +314,7 @@ class File
 end
 
 class IO
+  # STEVE put in Lusty
   def ready_for_read?
     if self.respond_to? :ready?
       ready?
@@ -331,7 +335,8 @@ module VIM
     when Fixnum
       var == 0
     else
-      assert(false, "unexpected type: #{var.class}")
+      # STEVE keep?
+      Lusty::assert(false, "unexpected type: #{var.class}")
     end
   end
 
@@ -339,24 +344,28 @@ module VIM
     not(self.zero? var)
   end
 
+  def self.evaluate_bool(var)
+    nonzero? evaluate(var)
+  end
+
   def self.exists?(s)
-    self.nonzero? eva("exists('#{s}')")
+    self.nonzero? evaluate("exists('#{s}')")
   end
 
   def self.has_syntax?
-    self.nonzero? eva('has("syntax")')
+    self.nonzero? evaluate('has("syntax")')
   end
 
   def self.columns
-    eva("&columns").to_i
+    evaluate("&columns").to_i
   end
 
   def self.lines
-    eva("&lines").to_i
+    evaluate("&lines").to_i
   end
 
   def self.getcwd
-    eva("getcwd()")
+    evaluate("getcwd()")
   end
 
   def self.filename_escape(s)
@@ -370,14 +379,69 @@ module VIM
 
   class Buffer
     def modified?
-      VIM::nonzero? eva("getbufvar(#{number()}, '&modified')")
+      VIM::nonzero? VIM::evaluate("getbufvar(#{number()}, '&modified')")
     end
+  end
+
+  # Print with colours
+  def self.pretty_msg(*rest)
+    return if rest.length == 0
+    return if rest.length % 2 != 0
+
+    command "redraw"  # see :help echo-redraw
+    i = 0
+    while i < rest.length do
+      command "echohl #{rest[i]}"
+      command "echon '#{rest[i+1]}'"
+      i += 2
+    end
+
+    command 'echohl None'
   end
 end
 
-def lusty_option_set?(opt_name)
-  opt_name = "g:LustyExplorer" + opt_name
-  VIM::nonzero? eva("exists('#{opt_name}') && #{opt_name} != '0'")
+module Lusty
+  def self.option_set?(opt_name)
+    opt_name = "g:LustyExplorer" + opt_name
+    VIM::evaluate_bool("exists('#{opt_name}') && #{opt_name} != '0'")
+  end
+
+  def self.profile
+    # Profile (if enabled) and provide better
+    # backtraces when there's an error.
+
+    if $LUSTY_PROFILING
+      if not RubyProf.running?
+        RubyProf.measure_mode = RubyProf::WALL_TIME
+        RubyProf.start
+      else
+        RubyProf.resume
+      end
+    end
+
+    begin
+      yield
+    rescue Exception => e
+      puts e
+      puts e.backtrace
+    end
+
+    if $LUSTY_PROFILING and RubyProf.running?
+      RubyProf.pause
+    end
+  end
+
+  class AssertionError < StandardError ; end
+
+  def self.assert(condition, message = 'assertion failure')
+    raise AssertionError.new(message) unless condition
+  end
+
+  def self.d(s)
+    # (Debug print)
+    $stderr.puts s
+  end
+
 end
 
 # Port of Ryan McGeary's LiquidMetal fuzzy matching algorithm found at:
@@ -435,6 +499,7 @@ class LiquidMetal
 end
 
 # Used in FilesystemExplorer
+module Lusty
 class Entry
   attr_accessor :name, :current_score
   def initialize(name)
@@ -442,8 +507,10 @@ class Entry
     @current_score = 0.0
   end
 end
+end
 
 # Used in BufferExplorer
+module Lusty
 class BufferEntry < Entry
   attr_accessor :full_name, :vim_buffer
   def initialize(vim_buffer)
@@ -453,9 +520,11 @@ class BufferEntry < Entry
     @current_score = 0.0
   end
 end
+end
 
 # Abstract base class; extended as BufferExplorer, FilesystemExplorer
-class LustyExplorer
+module Lusty
+class Explorer
   public
     def initialize
       @settings = SavedSettings.new
@@ -471,10 +540,10 @@ class LustyExplorer
       @settings.save
       @running = true
       @calling_window = $curwin
-      @saved_alternate_bufnum = if VIM::nonzero? eva("expand('#') == ''")
+      @saved_alternate_bufnum = if VIM::evaluate_bool("expand('#') == ''")
                                   nil
                                 else
-                                  eva("bufnr(expand('#'))")
+                                  VIM::evaluate("bufnr(expand('#'))")
                                 end
       @selected_index = 0
       create_explorer_window()
@@ -483,7 +552,7 @@ class LustyExplorer
 
     def key_pressed()
       # Grab argument from the Vim function.
-      i = eva("a:code_arg").to_i
+      i = VIM::evaluate("a:code_arg").to_i
       refresh_mode = :full
 
       case i
@@ -531,11 +600,11 @@ class LustyExplorer
         # fix alternate file
         if @saved_alternate_bufnum
           cur = $curbuf
-          exe "silent b #{@saved_alternate_bufnum}"
-          exe "silent b #{cur.number}"
+          VIM::command "silent b #{@saved_alternate_bufnum}"
+          VIM::command "silent b #{cur.number}"
         end
 
-        if $PROFILING
+        if $LUSTY_PROFILING
           outfile = File.new('rbprof.html', 'a')
           #RubyProf::CallTreePrinter.new(RubyProf.stop).print(outfile)
           RubyProf::GraphHtmlPrinter.new(RubyProf.stop).print(outfile)
@@ -569,39 +638,39 @@ class LustyExplorer
                     '[]^_`abcdefghijklmnopqrstuvwxyz{}~'
 
       map = "noremap <silent> <buffer>"
-      explorer = self.class.to_s
+      name = self.class.to_s.sub(/.*::/,'')  # Trim out "Lusty::"
 
       printables.each_byte do |b|
-        exe "#{map} <Char-#{b}> :call <SID>Lusty#{explorer}KeyPressed(#{b})<CR>"
+        VIM::command "#{map} <Char-#{b}> :call <SID>Lusty#{name}KeyPressed(#{b})<CR>"
       end
 
       # Special characters
-      exe "#{map} <Tab>    :call <SID>Lusty#{explorer}KeyPressed(9)<CR>"
-      exe "#{map} <Bslash> :call <SID>Lusty#{explorer}KeyPressed(92)<CR>"
-      exe "#{map} <Space>  :call <SID>Lusty#{explorer}KeyPressed(32)<CR>"
-      exe "#{map} \026|    :call <SID>Lusty#{explorer}KeyPressed(124)<CR>"
+      VIM::command "#{map} <Tab>    :call <SID>Lusty#{name}KeyPressed(9)<CR>"
+      VIM::command "#{map} <Bslash> :call <SID>Lusty#{name}KeyPressed(92)<CR>"
+      VIM::command "#{map} <Space>  :call <SID>Lusty#{name}KeyPressed(32)<CR>"
+      VIM::command "#{map} \026|    :call <SID>Lusty#{name}KeyPressed(124)<CR>"
 
-      exe "#{map} <BS>     :call <SID>Lusty#{explorer}KeyPressed(8)<CR>"
-      exe "#{map} <Del>    :call <SID>Lusty#{explorer}KeyPressed(8)<CR>"
-      exe "#{map} <C-h>    :call <SID>Lusty#{explorer}KeyPressed(8)<CR>"
+      VIM::command "#{map} <BS>     :call <SID>Lusty#{name}KeyPressed(8)<CR>"
+      VIM::command "#{map} <Del>    :call <SID>Lusty#{name}KeyPressed(8)<CR>"
+      VIM::command "#{map} <C-h>    :call <SID>Lusty#{name}KeyPressed(8)<CR>"
 
-      exe "#{map} <CR>     :call <SID>Lusty#{explorer}KeyPressed(13)<CR>"
-      exe "#{map} <S-CR>   :call <SID>Lusty#{explorer}KeyPressed(10)<CR>"
-      exe "#{map} <C-a>    :call <SID>Lusty#{explorer}KeyPressed(1)<CR>"
+      VIM::command "#{map} <CR>     :call <SID>Lusty#{name}KeyPressed(13)<CR>"
+      VIM::command "#{map} <S-CR>   :call <SID>Lusty#{name}KeyPressed(10)<CR>"
+      VIM::command "#{map} <C-a>    :call <SID>Lusty#{name}KeyPressed(1)<CR>"
 
-      exe "#{map} <Esc>    :call <SID>Lusty#{explorer}Cancel()<CR>"
-      exe "#{map} <C-c>    :call <SID>Lusty#{explorer}Cancel()<CR>"
-      exe "#{map} <C-g>    :call <SID>Lusty#{explorer}Cancel()<CR>"
+      VIM::command "#{map} <Esc>    :call <SID>Lusty#{name}Cancel()<CR>"
+      VIM::command "#{map} <C-c>    :call <SID>Lusty#{name}Cancel()<CR>"
+      VIM::command "#{map} <C-g>    :call <SID>Lusty#{name}Cancel()<CR>"
 
-      exe "#{map} <C-w>    :call <SID>Lusty#{explorer}KeyPressed(23)<CR>"
-      exe "#{map} <C-n>    :call <SID>Lusty#{explorer}KeyPressed(14)<CR>"
-      exe "#{map} <C-p>    :call <SID>Lusty#{explorer}KeyPressed(16)<CR>"
-      exe "#{map} <C-o>    :call <SID>Lusty#{explorer}KeyPressed(15)<CR>"
-      exe "#{map} <C-t>    :call <SID>Lusty#{explorer}KeyPressed(20)<CR>"
-      exe "#{map} <C-v>    :call <SID>Lusty#{explorer}KeyPressed(22)<CR>"
-      exe "#{map} <C-e>    :call <SID>Lusty#{explorer}KeyPressed(5)<CR>"
-      exe "#{map} <C-r>    :call <SID>Lusty#{explorer}KeyPressed(18)<CR>"
-      exe "#{map} <C-u>    :call <SID>Lusty#{explorer}KeyPressed(21)<CR>"
+      VIM::command "#{map} <C-w>    :call <SID>Lusty#{name}KeyPressed(23)<CR>"
+      VIM::command "#{map} <C-n>    :call <SID>Lusty#{name}KeyPressed(14)<CR>"
+      VIM::command "#{map} <C-p>    :call <SID>Lusty#{name}KeyPressed(16)<CR>"
+      VIM::command "#{map} <C-o>    :call <SID>Lusty#{name}KeyPressed(15)<CR>"
+      VIM::command "#{map} <C-t>    :call <SID>Lusty#{name}KeyPressed(20)<CR>"
+      VIM::command "#{map} <C-v>    :call <SID>Lusty#{name}KeyPressed(22)<CR>"
+      VIM::command "#{map} <C-e>    :call <SID>Lusty#{name}KeyPressed(5)<CR>"
+      VIM::command "#{map} <C-r>    :call <SID>Lusty#{name}KeyPressed(18)<CR>"
+      VIM::command "#{map} <C-u>    :call <SID>Lusty#{name}KeyPressed(21)<CR>"
     end
 
     def highlight_selected_index
@@ -610,9 +679,9 @@ class LustyExplorer
       entry = @ordered_matching_entries[@selected_index]
       return if entry.nil?
 
-      exe "syn clear LustyExpSelected"
-      exe "syn match LustyExpSelected " \
-	  "\"#{Displayer.vim_match_string(entry.name, false)}\" "
+      VIM::command "syn clear LustyExpSelected"
+      VIM::command "syn match LustyExpSelected " \
+	           "\"#{Displayer.vim_match_string(entry.name, false)}\" "
     end
 
     def compute_ordered_matching_entries
@@ -649,13 +718,15 @@ class LustyExplorer
       Window.select @calling_window
       @settings.restore
       @running = false
-      msg ""
+      VIM::message ""
       assert(@calling_window == $curwin)
     end
 end
+end
 
 
-class BufferExplorer < LustyExplorer
+module Lusty
+class BufferExplorer < Explorer
   public
     def initialize
       super
@@ -689,9 +760,10 @@ class BufferExplorer < LustyExplorer
     def on_refresh
       # Highlighting for the current buffer name.
       if VIM::has_syntax?
-        exe 'syn clear LustyExpCurrentBuffer'
-        exe "syn match LustyExpCurrentBuffer \"#{curbuf_match_string()}\" " \
-            'contains=LustyExpModified'
+        VIM::command 'syn clear LustyExpCurrentBuffer'
+        VIM::command 'syn match LustyExpCurrentBuffer ' \
+                     "\"#{curbuf_match_string()}\" " \
+                     'contains=LustyExpModified'
       end
     end
 
@@ -796,12 +868,14 @@ class BufferExplorer < LustyExplorer
               assert(false, "bad open mode")
             end
 
-      exe "silent #{cmd} #{number}"
+      VIM::command "silent #{cmd} #{number}"
     end
+end
 end
 
 
-class FilesystemExplorer < LustyExplorer
+module Lusty
+class FilesystemExplorer < Explorer
   public
     def initialize
       super
@@ -819,7 +893,7 @@ class FilesystemExplorer < LustyExplorer
       start_path = if $curbuf.name.nil?
                      VIM::getcwd()
                    else
-                     eva("expand('%:p:h')")
+                     VIM::evaluate("expand('%:p:h')")
                    end
 
       @prompt.set!(start_path + File::SEPARATOR)
@@ -832,7 +906,7 @@ class FilesystemExplorer < LustyExplorer
     end
 
     def key_pressed()
-      i = eva("a:code_arg").to_i
+      i = VIM::evaluate("a:code_arg").to_i
 
       case i
       when 1, 10  # <C-a>, <Shift-Enter>
@@ -871,14 +945,14 @@ class FilesystemExplorer < LustyExplorer
 
     def on_refresh
       if VIM::has_syntax?
-        exe 'syn clear LustyExpFileWithSwap'
+        VIM::command 'syn clear LustyExpFileWithSwap'
 
         view = view_path()
         @vim_swaps.file_names.each do |file_with_swap|
           if file_with_swap.dirname == view
             base = file_with_swap.basename
             match_str = Displayer.vim_match_string(base.to_s, false)
-            exe "syn match LustyExpFileWithSwap \"#{match_str}\""
+            VIM::command "syn match LustyExpFileWithSwap \"#{match_str}\""
           end
         end
       end
@@ -932,7 +1006,7 @@ class FilesystemExplorer < LustyExplorer
 
         Dir.foreach(view_str) do |name|
           next if name == "."   # Skip pwd
-          next if name == ".." and lusty_option_set?("AlwaysShowDotFiles")
+          next if name == ".." and Lusty::option_set?("AlwaysShowDotFiles")
 
           # Hide masked files.
           next if FileMasks.masked?(name)
@@ -947,7 +1021,7 @@ class FilesystemExplorer < LustyExplorer
 
       all = @memoized_entries[view]
 
-      if lusty_option_set?("AlwaysShowDotFiles") or \
+      if Lusty::option_set?("AlwaysShowDotFiles") or \
          current_abbreviation()[0] == ?.
         all
       else
@@ -976,7 +1050,7 @@ class FilesystemExplorer < LustyExplorer
       assert($curwin == @calling_window)
       # Escape for Vim and remove leading ./ for files in pwd.
       escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
-      sanitized = eva "fnamemodify('#{escaped}', ':.')"
+      sanitized = VIM::evaluate "fnamemodify('#{escaped}', ':.')"
       cmd = case open_mode
             when :current_tab
               "e"
@@ -990,11 +1064,13 @@ class FilesystemExplorer < LustyExplorer
               assert(false, "bad open mode")
             end
 
-      exe "silent #{cmd} #{sanitized}"
+      VIM::command "silent #{cmd} #{sanitized}"
     end
+end
 end
 
 
+module Lusty
 class Prompt
   private
     @@PROMPT = ">> "
@@ -1009,7 +1085,7 @@ class Prompt
     end
 
     def print
-      pretty_msg("Comment", @@PROMPT, "None", @input, "Underlined", " ")
+      VIM::pretty_msg("Comment", @@PROMPT, "None", @input, "Underlined", " ")
     end
 
     def set!(s)
@@ -1043,7 +1119,9 @@ class Prompt
       end
     end
 end
+end
 
+module Lusty
 class FilesystemPrompt < Prompt
 
   def initialize
@@ -1130,8 +1208,10 @@ class FilesystemPrompt < Prompt
       }
     end
 end
+end
 
 # Simplify switching between windows.
+module Lusty
 class Window
     def self.select(window)
       return true if window == $curwin
@@ -1140,73 +1220,77 @@ class Window
 
       # Try to select the given window.
       begin
-        exe "wincmd w"
+        VIM::command "wincmd w"
       end while ($curwin != window) and ($curwin != start)
 
       if $curwin == window
         return true
       else
         # Failed -- re-select the starting window.
-        exe("wincmd w") while $curwin != start
-        pretty_msg("ErrorMsg", "Cannot find the correct window!")
+        VIM::command("wincmd w") while $curwin != start
+        VIM::pretty_msg("ErrorMsg", "Cannot find the correct window!")
         return false
       end
     end
 end
+end
 
 # Save and restore settings when creating the explorer buffer.
+module Lusty
 class SavedSettings
   def initialize
     save()
   end
 
   def save
-    @timeoutlen = eva "&timeoutlen"
+    @timeoutlen = VIM::evaluate("&timeoutlen")
 
-    @splitbelow = VIM::nonzero? eva("&splitbelow")
-    @insertmode = VIM::nonzero? eva("&insertmode")
-    @showcmd = VIM::nonzero? eva("&showcmd")
-    @list = VIM::nonzero? eva("&list")
+    @splitbelow = VIM::evaluate_bool("&splitbelow")
+    @insertmode = VIM::evaluate_bool("&insertmode")
+    @showcmd = VIM::evaluate_bool("&showcmd")
+    @list = VIM::evaluate_bool("&list")
 
-    @report = eva "&report"
-    @sidescroll = eva "&sidescroll"
-    @sidescrolloff = eva "&sidescrolloff"
+    @report = VIM::evaluate("&report")
+    @sidescroll = VIM::evaluate("&sidescroll")
+    @sidescrolloff = VIM::evaluate("&sidescrolloff")
   end
 
   def restore
-    set "timeoutlen=#{@timeoutlen}"
+    VIM::set_option "timeoutlen=#{@timeoutlen}"
 
     if @splitbelow
-      set "splitbelow"
+      VIM::set_option "splitbelow"
     else
-      set "nosplitbelow"
+      VIM::set_option "nosplitbelow"
     end
 
     if @insertmode
-      set "insertmode"
+      VIM::set_option "insertmode"
     else
-      set "noinsertmode"
+      VIM::set_option "noinsertmode"
     end
 
     if @showcmd
-      set "showcmd"
+      VIM::set_option "showcmd"
     else
-      set "noshowcmd"
+      VIM::set_option "noshowcmd"
     end
 
     if @list
-      set "list"
+      VIM::set_option "list"
     else
-      set "nolist"
+      VIM::set_option "nolist"
     end
 
-    exe "set report=#{@report}"
-    exe "set sidescroll=#{@sidescroll}"
-    exe "set sidescrolloff=#{@sidescrolloff}"
+    VIM::command "set report=#{@report}"
+    VIM::command "set sidescroll=#{@sidescroll}"
+    VIM::command "set sidescrolloff=#{@sidescrolloff}"
   end
+end
 end
 
 # Manage the explorer buffer.
+module Lusty
 class Displayer
   private
     @@COLUMN_SEPARATOR = "    "
@@ -1239,59 +1323,59 @@ class Displayer
 
     def create
       # Make a window for the displayer and move there.
-      exe "silent! botright split #{@title}"
+      VIM::command "silent! botright split #{@title}"
 
       @window = $curwin
       @buffer = $curbuf
 
       # Displayer buffer is special.
-      exe "setlocal bufhidden=delete"
-      exe "setlocal buftype=nofile"
-      exe "setlocal nomodifiable"
-      exe "setlocal noswapfile"
-      exe "setlocal nowrap"
-      exe "setlocal nonumber"
-      exe "setlocal foldcolumn=0"
-      exe "setlocal nocursorline"
-      exe "setlocal nospell"
-      exe "setlocal nobuflisted"
-      exe "setlocal textwidth=0"
+      VIM::command "setlocal bufhidden=delete"
+      VIM::command "setlocal buftype=nofile"
+      VIM::command "setlocal nomodifiable"
+      VIM::command "setlocal noswapfile"
+      VIM::command "setlocal nowrap"
+      VIM::command "setlocal nonumber"
+      VIM::command "setlocal foldcolumn=0"
+      VIM::command "setlocal nocursorline"
+      VIM::command "setlocal nospell"
+      VIM::command "setlocal nobuflisted"
+      VIM::command "setlocal textwidth=0"
 
       # (Update SavedSettings if adding to below.)
-      set "timeoutlen=0"
-      set "noinsertmode"
-      set "noshowcmd"
-      set "nolist"
-      set "report=9999"
-      set "sidescroll=0"
-      set "sidescrolloff=0"
+      VIM::set_option "timeoutlen=0"
+      VIM::set_option "noinsertmode"
+      VIM::set_option "noshowcmd"
+      VIM::set_option "nolist"
+      VIM::set_option "report=9999"
+      VIM::set_option "sidescroll=0"
+      VIM::set_option "sidescrolloff=0"
 
       # TODO -- cpoptions?
 
       if VIM::has_syntax?
-        exe 'syn match LustyExpSlash "/" contained'
-        exe 'syn match LustyExpDir "\zs\%(\S\+ \)*\S\+/\ze" ' \
-                                   'contains=LustyExpSlash'
+        VIM::command 'syn match LustyExpSlash "/" contained'
+        VIM::command 'syn match LustyExpDir "\zs\%(\S\+ \)*\S\+/\ze" ' \
+                                            'contains=LustyExpSlash'
 
-        exe 'syn match LustyExpModified " \[+\]"'
+        VIM::command 'syn match LustyExpModified " \[+\]"'
 
-        exe 'syn match LustyExpNoEntries "\%^\s*' \
-                                         "#{@@NO_MATCHES_STRING}" \
-                                         '\s*\%$"'
+        VIM::command 'syn match LustyExpNoEntries "\%^\s*' \
+                                                  "#{@@NO_MATCHES_STRING}" \
+                                                  '\s*\%$"'
 
-        exe 'syn match LustyExpTruncated "^\s*' \
-                                         "#{@@TRUNCATED_STRING}" \
-                                         '\s*$"'
+        VIM::command 'syn match LustyExpTruncated "^\s*' \
+                                                  "#{@@TRUNCATED_STRING}" \
+                                                  '\s*$"'
 
-        exe 'highlight link LustyExpDir Directory'
-        exe 'highlight link LustyExpSlash Function'
-        exe 'highlight link LustyExpSelected Type'
-        exe 'highlight link LustyExpModified Special'
-        exe 'highlight link LustyExpCurrentBuffer Constant'
-        exe 'highlight link LustyExpOpenedFile PreProc'
-        exe 'highlight link LustyExpFileWithSwap WarningMsg'
-        exe 'highlight link LustyExpNoEntries ErrorMsg'
-        exe 'highlight link LustyExpTruncated Visual'
+        VIM::command 'highlight link LustyExpDir Directory'
+        VIM::command 'highlight link LustyExpSlash Function'
+        VIM::command 'highlight link LustyExpSelected Type'
+        VIM::command 'highlight link LustyExpModified Special'
+        VIM::command 'highlight link LustyExpCurrentBuffer Constant'
+        VIM::command 'highlight link LustyExpOpenedFile PreProc'
+        VIM::command 'highlight link LustyExpFileWithSwap WarningMsg'
+        VIM::command 'highlight link LustyExpNoEntries ErrorMsg'
+        VIM::command 'highlight link LustyExpTruncated Visual'
       end
     end
 
@@ -1335,7 +1419,7 @@ class Displayer
       if Window.select @window and \
          $curbuf == @buffer and \
          $curbuf.name =~ /#{Regexp.escape(@title)}$/
-          exe "bwipeout!"
+          VIM::command "bwipeout!"
           @window = nil
           @buffer = nil
       end
@@ -1438,17 +1522,17 @@ class Displayer
     end
 
     def unlock_and_clear
-      exe "setlocal modifiable"
+      VIM::command "setlocal modifiable"
 
       # Clear the explorer (black hole register)
-      exe "silent %d _"
+      VIM::command "silent %d _"
     end
 
     def lock
-      exe "setlocal nomodifiable"
+      VIM::command "setlocal nomodifiable"
 
       # Hide the cursor
-      exe "normal! Gg$"
+      VIM::command "normal! Gg$"
     end
 
     def compute_displayable_upper_bound(strings)
@@ -1565,8 +1649,10 @@ class Displayer
       width
     end
 end
+end
 
 
+module Lusty
 class FileMasks
   private
     @@glob_masks = []
@@ -1576,9 +1662,9 @@ class FileMasks
       @@glob_masks = \
         if VIM::exists? "g:LustyExplorerFileMasks"
           # Note: this variable deprecated.
-          eva("g:LustyExplorerFileMasks").split(',')
+          VIM::evaluate("g:LustyExplorerFileMasks").split(',')
         elsif VIM::exists? "&wildignore"
-          eva("&wildignore").split(',')
+          VIM::evaluate("&wildignore").split(',')
         else
           []
         end
@@ -1593,7 +1679,9 @@ class FileMasks
       return false
     end
 end
+end
 
+module Lusty
 class VimSwaps
   def initialize
     if VIM::has_syntax?
@@ -1624,79 +1712,11 @@ class VimSwaps
     @files_with_swaps
   end
 end
-
-
-# Simple mappings to decrease typing.
-def exe(s)
-  VIM.command s
-end
-
-def eva(s)
-  VIM.evaluate s
-end
-
-def set(s)
-  VIM.set_option s
-end
-
-def msg(s)
-  VIM.message s
-end
-
-def pretty_msg(*rest)
-  return if rest.length == 0
-  return if rest.length % 2 != 0
-
-  exe "redraw"  # see :help echo-redraw
-  i = 0
-  while i < rest.length do
-    exe "echohl #{rest[i]}"
-    exe "echon '#{rest[i+1]}'"
-    i += 2
-  end
-
-  exe 'echohl None'
-end
-
-def profile
-  # Profile (if enabled) and provide better
-  # backtraces when there's an error.
-
-  if $PROFILING
-    if not RubyProf.running?
-      RubyProf.measure_mode = RubyProf::WALL_TIME
-      RubyProf.start
-    else
-      RubyProf.resume
-    end
-  end
-
-  begin
-    yield
-  rescue Exception => e
-    puts e
-    puts e.backtrace
-  end
-
-  if $PROFILING and RubyProf.running?
-    RubyProf.pause
-  end
-end
-
-class AssertionError < StandardError ; end
-
-def assert(condition, message = 'assertion failure')
-  raise AssertionError.new(message) unless condition
-end
-
-def d(s)
-  # (Debug print)
-  $stderr.puts s
 end
 
 
-$buffer_explorer = BufferExplorer.new
-$filesystem_explorer = FilesystemExplorer.new
+$lusty_buffer_explorer = Lusty::BufferExplorer.new
+$lusty_filesystem_explorer = Lusty::FilesystemExplorer.new
 
 EOF
 

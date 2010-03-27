@@ -1440,6 +1440,7 @@ class Displayer
       max_width = Displayer.max_width
       max_height = Displayer.max_height
 
+      # STEVE faster to allocate new hash?
       @col_range_widths.clear()
 
       # We've already tried one row, so start at two.
@@ -1454,6 +1455,7 @@ class Displayer
 
           # STEVE early exit
           if total_width > max_width
+            # STEVE change to max_fixnum
             total_width += @@COLUMN_SEPARATOR.length
             break
           end
@@ -1525,6 +1527,7 @@ class FileMasks
     end
 
     def FileMasks.masked?(str)
+      # STEVE create a single regex instead of looping
       @@glob_masks.each do |mask|
         return true if File.fnmatch(mask, str)
       end

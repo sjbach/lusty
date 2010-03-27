@@ -1537,7 +1537,7 @@ class VimSwaps
   def initialize
     if VIM::has_syntax?
 # FIXME: vvv disabled
-#      @vim_r = IO.popen("vim -r 2>&1")
+#      @vim_r = IO.popen("vim -r --noplugin -i NONE 2>&1")
 #      @files_with_swaps = nil
       @files_with_swaps = []
     else

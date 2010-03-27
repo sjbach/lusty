@@ -8,3 +8,6 @@ repository:
 
   http://github.com/sjbach/lusty-emacs
 
+NOTE: lusty-explorer.vim is a generated file; modify src/ if you'd like to
+submit a patch.
+

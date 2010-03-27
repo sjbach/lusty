@@ -253,6 +253,7 @@ function! s:LustyBufferExplorerKeyPressed(code_arg)
 endfunction
 
 ruby << EOF
+
 require 'pathname'
 # For IO#ready -- but Cygwin doesn't have io/wait.
 require 'io/wait' unless RUBY_PLATFORM =~ /cygwin/
@@ -265,6 +266,7 @@ if $LUSTY_PROFILING
   require 'rubygems'
   require 'ruby-prof'
 end
+
 
 class String
   # STEVE put in Lusty
@@ -279,6 +281,7 @@ class String
     head == s
   end
 end
+
 
 class File
   # STEVE put in Lusty
@@ -313,6 +316,7 @@ class File
   end
 end
 
+
 class IO
   # STEVE put in Lusty
   def ready_for_read?
@@ -324,6 +328,7 @@ class IO
     end
   end
 end
+
 
 module VIM
   def self.zero?(var)
@@ -400,6 +405,7 @@ module VIM
   end
 end
 
+
 module Lusty
   def self.option_set?(opt_name)
     opt_name = "g:LustyExplorer" + opt_name
@@ -442,6 +448,7 @@ module Lusty
     $stderr.puts s
   end
 end
+
 
 # Port of Ryan McGeary's LiquidMetal fuzzy matching algorithm found at:
 #   http://github.com/rmm5t/liquidmetal/tree/master.
@@ -497,6 +504,7 @@ class LiquidMetal
   end
 end
 
+
 # Used in FilesystemExplorer
 module Lusty
 class Entry
@@ -520,6 +528,7 @@ class BufferEntry < Entry
   end
 end
 end
+
 
 # Abstract base class; extended as BufferExplorer, FilesystemExplorer
 module Lusty
@@ -1209,6 +1218,7 @@ class FilesystemPrompt < Prompt
 end
 end
 
+
 # Simplify switching between windows.
 module Lusty
 class Window
@@ -1233,6 +1243,7 @@ class Window
     end
 end
 end
+
 
 # Save and restore settings when creating the explorer buffer.
 module Lusty
@@ -1287,6 +1298,7 @@ class SavedSettings
   end
 end
 end
+
 
 # Manage the explorer buffer.
 module Lusty
@@ -1680,6 +1692,7 @@ class FileMasks
 end
 end
 
+
 module Lusty
 class VimSwaps
   def initialize
@@ -1712,6 +1725,7 @@ class VimSwaps
   end
 end
 end
+
 
 
 $lusty_buffer_explorer = Lusty::BufferExplorer.new

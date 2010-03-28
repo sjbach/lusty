@@ -124,8 +124,24 @@ class BufferExplorer < Explorer
       @prompt.input
     end
 
-    def all_entries
-      @buffer_entries
+    def compute_sorted_matches
+      abbrev = current_abbreviation()
+
+      if abbrev.length == 0
+        # Sort alphabetically if we have no abbreviation.
+        @buffer_entries.sort { |x, y| x.name <=> y.name }
+      else
+        matching_entries = \
+          @buffer_entries.select { |x|
+            x.current_score = LiquidMetal.score(x.name, abbrev)
+            x.current_score != 0.0
+          }
+
+        # Sort by score.
+        matching_entries.sort! { |x, y|
+          y.current_score <=> x.current_score
+        }
+      end
     end
 
     def open_entry(entry, open_mode)

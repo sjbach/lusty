@@ -15,7 +15,7 @@ class Explorer
       @settings = SavedSettings.new
       @displayer = Displayer.new title()
       @prompt = nil
-      @ordered_matching_entries = []
+      @current_sorted_matches = []
       @running = false
     end
 
@@ -56,11 +56,11 @@ class Explorer
           @selected_index = 0
         when 14               # C-n (select next)
           @selected_index = \
-            (@selected_index + 1) % @ordered_matching_entries.size
+            (@selected_index + 1) % @current_sorted_matches.size
           refresh_mode = :no_recompute
         when 16               # C-p (select previous)
           @selected_index = \
-            (@selected_index - 1) % @ordered_matching_entries.size
+            (@selected_index - 1) % @current_sorted_matches.size
           refresh_mode = :no_recompute
         when 15               # C-o choose in new horizontal split
           choose(:new_split)
@@ -102,12 +102,12 @@ class Explorer
       return if not @running
 
       if mode == :full
-        @ordered_matching_entries = compute_ordered_matching_entries()
+        @current_sorted_matches = compute_sorted_matches()
       end
 
       on_refresh()
       highlight_selected_index()
-      @displayer.print @ordered_matching_entries.map { |x| x.name }
+      @displayer.print @current_sorted_matches.map { |x| x.name }
       @prompt.print
     end
 
@@ -161,7 +161,7 @@ class Explorer
     def highlight_selected_index
       return unless VIM::has_syntax?
 
-      entry = @ordered_matching_entries[@selected_index]
+      entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
 
       VIM::command "syn clear LustyExpSelected"
@@ -169,30 +169,8 @@ class Explorer
 	           "\"#{Displayer.vim_match_string(entry.name, false)}\" "
     end
 
-    def compute_ordered_matching_entries
-      abbrev = current_abbreviation()
-      unordered = matching_entries()
-
-      # Sort alphabetically if there's just a dot or we have no abbreviation,
-      # otherwise it just looks weird.
-      if abbrev.length == 0 or abbrev == '.'
-        unordered.sort! { |x, y| x.name <=> y.name }
-      else
-        # Sort by score.
-        unordered.sort! { |x, y| y.current_score <=> x.current_score }
-      end
-    end
-
-    def matching_entries
-      abbrev = current_abbreviation()
-      all_entries().select { |x|
-        x.current_score = LiquidMetal.score(x.name, abbrev)
-        x.current_score != 0.0
-      }
-    end
-
     def choose(open_mode)
-      entry = @ordered_matching_entries[@selected_index]
+      entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
       @selected_index = 0
       open_entry(entry, open_mode)
@@ -206,6 +184,12 @@ class Explorer
       VIM::message ""
       Lusty::assert(@calling_window == $curwin)
     end
+
+    # Pure virtual methods
+    # - on_refresh
+    # - open_entry
+    # - compute_sorted_matches
+
 end
 end
 

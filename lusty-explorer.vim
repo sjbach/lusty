@@ -292,7 +292,6 @@ module VIM
     when Fixnum
       var == 0
     else
-      # STEVE keep?
       Lusty::assert(false, "unexpected type: #{var.class}")
     end
   end
@@ -1597,8 +1596,8 @@ class Displayer
       max_width = Displayer.max_width
       max_height = Displayer.max_height
 
-      # STEVE faster to allocate new hash?
-      @col_range_widths.clear()
+      # Creating a new hash is faster than clearing the old one.
+      @col_range_widths = {}
 
       # Binary search; find the lowest number of rows at which we
       # can fit all the strings.

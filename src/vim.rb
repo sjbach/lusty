@@ -19,7 +19,6 @@ module VIM
     when Fixnum
       var == 0
     else
-      # STEVE keep?
       Lusty::assert(false, "unexpected type: #{var.class}")
     end
   end

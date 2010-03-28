@@ -10,7 +10,7 @@ expect {
   ">>"
 }
 # Ctrl-U
-send \021
+send \025
 send "/"
 # Should not have caused a backtrace and "Press ENTER ..." message
 expect {

@@ -1,4 +1,7 @@
 set nocompatible
+set hidden
+set nobackup
+set noswapfile
 
 source ../../lusty-explorer.vim
 

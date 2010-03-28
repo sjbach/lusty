@@ -331,6 +331,8 @@ end
 
 
 module VIM
+  MOST_POSITIVE_INTEGER = 2**(32 - 1) - 2  # Vim ints are signed 32-bit.
+
   def self.zero?(var)
     # In Vim 7.2 and older, VIM::evaluate returns Strings for boolean
     # expressions; in later versions, Fixnums.
@@ -413,6 +415,8 @@ end
 
 
 module Lusty
+  MOST_POSITIVE_FIXNUM = 2**(0.size * 8 -2) -1
+
   def self.option_set?(opt_name)
     opt_name = "g:LustyExplorer" + opt_name
     VIM::evaluate_bool("exists('#{opt_name}') && #{opt_name} != '0'")
@@ -1346,6 +1350,8 @@ class Displayer
 
     def create
       # Make a window for the displayer and move there.
+      # Start at size 1 to mitigate flashing effect when
+      # we resize the window later.
       VIM::command "silent! botright 1split #{@title}"
 
       @window = $curwin
@@ -1451,7 +1457,7 @@ class Displayer
 
     def self.max_height
       stored_height = $curwin.height
-      $curwin.height = 99999  # ha
+      $curwin.height = VIM::MOST_POSITIVE_INTEGER
       highest_allowable = $curwin.height
       $curwin.height = stored_height
       highest_allowable
@@ -1611,10 +1617,9 @@ class Displayer
           total_width += \
             compute_column_width(col_start_index..col_end_index, strings)
 
-          # STEVE early exit
           if total_width > max_width
-            # STEVE change to max_fixnum
-            total_width += @@COLUMN_SEPARATOR.length
+            # Early exit.
+            total_width = Lusty::MOST_POSITIVE_FIXNUM
             break
           end
 

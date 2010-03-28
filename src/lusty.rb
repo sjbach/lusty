@@ -8,6 +8,8 @@
 # software.
 
 module Lusty
+  MOST_POSITIVE_FIXNUM = 2**(0.size * 8 -2) -1
+
   def self.option_set?(opt_name)
     opt_name = "g:LustyExplorer" + opt_name
     VIM::evaluate_bool("exists('#{opt_name}') && #{opt_name} != '0'")

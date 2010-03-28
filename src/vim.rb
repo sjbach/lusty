@@ -8,6 +8,8 @@
 # software.
 
 module VIM
+  MOST_POSITIVE_INTEGER = 2**(32 - 1) - 2  # Vim ints are signed 32-bit.
+
   def self.zero?(var)
     # In Vim 7.2 and older, VIM::evaluate returns Strings for boolean
     # expressions; in later versions, Fixnums.

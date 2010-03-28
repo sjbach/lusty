@@ -148,7 +148,7 @@ class Displayer
 
     def self.max_height
       stored_height = $curwin.height
-      $curwin.height = 99999  # ha
+      $curwin.height = VIM::MOST_POSITIVE_INTEGER
       highest_allowable = $curwin.height
       $curwin.height = stored_height
       highest_allowable
@@ -308,10 +308,9 @@ class Displayer
           total_width += \
             compute_column_width(col_start_index..col_end_index, strings)
 
-          # STEVE early exit
           if total_width > max_width
-            # STEVE change to max_fixnum
-            total_width += @@COLUMN_SEPARATOR.length
+            # Early exit.
+            total_width = Lusty::MOST_POSITIVE_FIXNUM
             break
           end
 

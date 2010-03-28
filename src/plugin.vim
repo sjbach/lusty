@@ -213,6 +213,7 @@ let g:loaded_lustyexplorer = "yep"
 command LustyBufferExplorer :call <SID>LustyBufferExplorerStart()
 command LustyFilesystemExplorer :call <SID>LustyFilesystemExplorerStart()
 command LustyFilesystemExplorerFromHere :call <SID>LustyFilesystemExplorerFromHereStart()
+command LustyGrepExplorer :call <SID>LustyGrepExplorerStart()
 
 " Deprecated command names.
 command BufferExplorer :call
@@ -234,6 +235,7 @@ endfunction
 nmap <silent> <Leader>lf :LustyFilesystemExplorer<CR>
 nmap <silent> <Leader>lr :LustyFilesystemExplorerFromHere<CR>
 nmap <silent> <Leader>lb :LustyBufferExplorer<CR>
+nmap <silent> <Leader>lg :LustyGrepExplorer<CR>
 
 " Vim-to-ruby function calls.
 function! s:LustyFilesystemExplorerStart()
@@ -248,6 +250,10 @@ function! s:LustyBufferExplorerStart()
   ruby Lusty::profile() { $lusty_buffer_explorer.run }
 endfunction
 
+function! s:LustyGrepExplorerStart()
+  ruby Lusty::profile() { $lusty_grep_explorer.run }
+endfunction
+
 function! s:LustyFilesystemExplorerCancel()
   ruby Lusty::profile() { $lusty_filesystem_explorer.cancel }
 endfunction
@@ -256,12 +262,20 @@ function! s:LustyBufferExplorerCancel()
   ruby Lusty::profile() { $lusty_buffer_explorer.cancel }
 endfunction
 
+function! s:LustyGrepExplorerCancel()
+  ruby Lusty::profile() { $lusty_grep_explorer.cancel }
+endfunction
+
 function! s:LustyFilesystemExplorerKeyPressed(code_arg)
   ruby Lusty::profile() { $lusty_filesystem_explorer.key_pressed }
 endfunction
 
 function! s:LustyBufferExplorerKeyPressed(code_arg)
   ruby Lusty::profile() { $lusty_buffer_explorer.key_pressed }
+endfunction
+
+function! s:LustyGrepExplorerKeyPressed(code_arg)
+  ruby Lusty::profile() { $lusty_grep_explorer.key_pressed }
 endfunction
 
 ruby << EOF
@@ -286,6 +300,7 @@ end
 
 $lusty_buffer_explorer = Lusty::BufferExplorer.new
 $lusty_filesystem_explorer = Lusty::FilesystemExplorer.new
+$lusty_grep_explorer = Lusty::GrepExplorer.new
 
 EOF
 

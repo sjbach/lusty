@@ -213,6 +213,7 @@ let g:loaded_lustyexplorer = "yep"
 command LustyBufferExplorer :call <SID>LustyBufferExplorerStart()
 command LustyFilesystemExplorer :call <SID>LustyFilesystemExplorerStart()
 command LustyFilesystemExplorerFromHere :call <SID>LustyFilesystemExplorerFromHereStart()
+command LustyGrepExplorer :call <SID>LustyGrepExplorerStart()
 
 " Deprecated command names.
 command BufferExplorer :call
@@ -234,6 +235,7 @@ endfunction
 nmap <silent> <Leader>lf :LustyFilesystemExplorer<CR>
 nmap <silent> <Leader>lr :LustyFilesystemExplorerFromHere<CR>
 nmap <silent> <Leader>lb :LustyBufferExplorer<CR>
+nmap <silent> <Leader>lg :LustyGrepExplorer<CR>
 
 " Vim-to-ruby function calls.
 function! s:LustyFilesystemExplorerStart()
@@ -248,6 +250,10 @@ function! s:LustyBufferExplorerStart()
   ruby Lusty::profile() { $lusty_buffer_explorer.run }
 endfunction
 
+function! s:LustyGrepExplorerStart()
+  ruby Lusty::profile() { $lusty_grep_explorer.run }
+endfunction
+
 function! s:LustyFilesystemExplorerCancel()
   ruby Lusty::profile() { $lusty_filesystem_explorer.cancel }
 endfunction
@@ -256,12 +262,20 @@ function! s:LustyBufferExplorerCancel()
   ruby Lusty::profile() { $lusty_buffer_explorer.cancel }
 endfunction
 
+function! s:LustyGrepExplorerCancel()
+  ruby Lusty::profile() { $lusty_grep_explorer.cancel }
+endfunction
+
 function! s:LustyFilesystemExplorerKeyPressed(code_arg)
   ruby Lusty::profile() { $lusty_filesystem_explorer.key_pressed }
 endfunction
 
 function! s:LustyBufferExplorerKeyPressed(code_arg)
   ruby Lusty::profile() { $lusty_buffer_explorer.key_pressed }
+endfunction
+
+function! s:LustyGrepExplorerKeyPressed(code_arg)
+  ruby Lusty::profile() { $lusty_grep_explorer.key_pressed }
 endfunction
 
 ruby << EOF
@@ -516,6 +530,9 @@ module LiquidMetal
 end
 
 
+# STEVE rename name to be something else; designation?
+# STEVE perhaps there should be a FilesystemEntry? so we don't need current_score in Entry
+
 # Used in FilesystemExplorer
 module Lusty
 class Entry
@@ -539,6 +556,22 @@ class BufferEntry < Entry
   end
 end
 end
+
+# Used in GrepExplorer
+module Lusty
+class GrepEntry < Entry
+  attr_accessor :full_name, :short_name, :vim_buffer, :line_number
+  def initialize(vim_buffer)
+    @full_name = vim_buffer.name
+    @vim_buffer = vim_buffer
+    @short_name = "::UNSET::"
+    @line_number = 0
+
+    @name = "::UNSET::"
+  end
+end
+end
+
 
 
 # Abstract base class; extended as BufferExplorer, FilesystemExplorer
@@ -1071,6 +1104,166 @@ class FilesystemExplorer < Explorer
             end
 
       VIM::command "silent #{cmd} #{sanitized}"
+    end
+end
+end
+
+
+# STEVE TODO:
+# - save grep entries and selection on cleanup and restore at next launch
+#   - so not have to retype everything to see next entry
+# - show context
+# - some way for user to indicate case-sensitive regex
+module Lusty
+class GrepExplorer < Explorer
+  public
+    def initialize
+      super
+      @prompt = Prompt.new
+      @buffer_entries = []
+    end
+
+    def run
+      unless @running
+        @prompt.clear!
+        @curbuf_at_start = VIM::Buffer.current
+        @buffer_entries = compute_buffer_entries()
+        super
+      end
+    end
+
+  private
+    def title
+      '[LustyExplorer-GrepBufferContents]'
+    end
+
+    def on_refresh
+    end
+
+    # STEVE make it a class function?
+    # STEVE duplicated from BufferExplorer
+    def common_prefix(entries)
+      prefix = entries[0].full_name
+      entries.each do |entry|
+        full_name = entry.full_name
+        for i in 0...prefix.length
+          if full_name.length <= i or prefix[i] != full_name[i]
+            prefix = prefix[0...i]
+            prefix = prefix[0..(prefix.rindex('/') or -1)]
+            break
+          end
+        end
+      end
+      return prefix
+    end
+
+    # STEVE make it a class function?
+    # STEVE duplicated from BufferExplorer
+    def compute_buffer_entries
+      buffer_entries = []
+      (0..VIM::Buffer.count-1).each do |i|
+        buffer_entries << GrepEntry.new(VIM::Buffer[i])
+      end
+
+      # Shorten each buffer name by removing all path elements which are not
+      # needed to differentiate a given name from other names.  This usually
+      # results in only the basename shown, but if several buffers of the
+      # same basename are opened, there will be more.
+
+      # Group the buffers by common basename
+      common_base = Hash.new { |hash, k| hash[k] = [] }
+      buffer_entries.each do |entry|
+        if entry.full_name
+          basename = Pathname.new(entry.full_name).basename.to_s
+          common_base[basename] << entry
+        end
+      end
+
+      # Determine the longest common prefix for each basename group.
+      basename_to_prefix = {}
+      common_base.each do |base, entries|
+        if entries.length > 1
+          basename_to_prefix[base] = common_prefix(entries)
+        end
+      end
+
+      # Compute shortened buffer names by removing prefix, if possible.
+      buffer_entries.each do |entry|
+        full_name = entry.full_name
+
+        short_name = if full_name.nil?
+                       '[No Name]'
+                     elsif Lusty::starts_with?(full_name, "scp://")
+                       full_name
+                     else
+                       base = Pathname.new(full_name).basename.to_s
+                       prefix = basename_to_prefix[base]
+
+                       prefix ? full_name[prefix.length..-1] \
+                              : base
+                     end
+
+        entry.short_name = short_name
+      end
+
+      buffer_entries
+    end
+
+    def current_abbreviation
+      @prompt.input
+    end
+
+    def compute_sorted_matches
+      abbrev = current_abbreviation()
+
+      if abbrev == ""
+        return @buffer_entries
+      end
+
+      regex = Regexp.compile(abbrev, Regexp::EXTENDED | Regexp::IGNORECASE)
+
+      grep_entries = []
+      @buffer_entries.each do |entry|
+        vim_buffer = entry.vim_buffer
+        line_count = vim_buffer.count
+        (1..line_count). each do |i|
+          match = regex.match(vim_buffer[i])
+          if match
+            grep_entry = entry.clone()
+            grep_entry.line_number = i
+            grep_entry.name = "#{grep_entry.short_name}:#{i}:#{match.to_s}"
+            grep_entries << grep_entry
+          end
+        end
+      end
+
+      return grep_entries
+    end
+
+    def open_entry(entry, open_mode)
+      cleanup()
+      Lusty::assert($curwin == @calling_window)
+
+      number = entry.vim_buffer.number
+      Lusty::assert(number)
+
+      cmd = case open_mode
+            when :current_tab
+              "b"
+            when :new_tab
+              # For some reason just using tabe or e gives an error when
+              # the alternate-file isn't set.
+              "tab split | b"
+            when :new_split
+	      "sp | b"
+            when :new_vsplit
+	      "vs | b"
+            else
+              Lusty::assert(false, "bad open mode")
+            end
+
+      VIM::command "silent #{cmd} #{number}"
+      VIM::command "#{entry.line_number}"
     end
 end
 end
@@ -1789,6 +1982,7 @@ end
 
 $lusty_buffer_explorer = Lusty::BufferExplorer.new
 $lusty_filesystem_explorer = Lusty::FilesystemExplorer.new
+$lusty_grep_explorer = Lusty::GrepExplorer.new
 
 EOF
 

@@ -1346,7 +1346,7 @@ class Displayer
 
     def create
       # Make a window for the displayer and move there.
-      VIM::command "silent! botright split #{@title}"
+      VIM::command "silent! botright 1split #{@title}"
 
       @window = $curwin
       @buffer = $curbuf

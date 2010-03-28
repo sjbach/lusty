@@ -41,7 +41,9 @@ class Displayer
 
     def create
       # Make a window for the displayer and move there.
-      VIM::command "silent! botright split #{@title}"
+      # Start at size 1 to mitigate flashing effect when
+      # we resize the window later.
+      VIM::command "silent! botright 1split #{@title}"
 
       @window = $curwin
       @buffer = $curbuf

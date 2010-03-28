@@ -283,19 +283,6 @@ class String
 end
 
 
-class IO
-  # STEVE put in Lusty
-  def ready_for_read?
-    if self.respond_to? :ready?
-      ready?
-    else
-      result = IO.select([self], nil, nil, 0)
-      result && (result.first.first == self)
-    end
-  end
-end
-
-
 module VIM
   MOST_POSITIVE_INTEGER = 2**(32 - 1) - 2  # Vim ints are signed 32-bit.
 
@@ -411,6 +398,15 @@ module Lusty
       end
     rescue ArgumentError
       s
+    end
+  end
+
+  def self.ready_for_read?(io)
+    if io.respond_to? :ready?
+      ready?
+    else
+      result = IO.select([io], nil, nil, 0)
+      result && (result.first.first == io)
     end
   end
 
@@ -1723,7 +1719,7 @@ class VimSwaps
 
   def file_names
     if @files_with_swaps.nil?
-      if @vim_r.ready_for_read?
+      if ready_for_read?(@vim_r)
         @files_with_swaps = []
         @vim_r.each_line do |line|
           if line =~ /^ +file name: (.*)$/

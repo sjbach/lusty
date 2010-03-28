@@ -41,6 +41,15 @@ module Lusty
     end
   end
 
+  def self.ready_for_read?(io)
+    if io.respond_to? :ready?
+      ready?
+    else
+      result = IO.select([io], nil, nil, 0)
+      result && (result.first.first == io)
+    end
+  end
+
   def self.option_set?(opt_name)
     opt_name = "g:LustyExplorer" + opt_name
     VIM::evaluate_bool("exists('#{opt_name}') && #{opt_name} != '0'")

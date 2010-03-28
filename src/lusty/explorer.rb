@@ -204,7 +204,7 @@ class Explorer
       @settings.restore
       @running = false
       VIM::message ""
-      assert(@calling_window == $curwin)
+      Lusty::assert(@calling_window == $curwin)
     end
 end
 end

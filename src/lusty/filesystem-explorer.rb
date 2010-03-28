@@ -181,7 +181,7 @@ class FilesystemExplorer < Explorer
     end
 
     def load_file(path_str, open_mode)
-      assert($curwin == @calling_window)
+      Lusty::assert($curwin == @calling_window)
       # Escape for Vim and remove leading ./ for files in pwd.
       escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
       sanitized = VIM::evaluate "fnamemodify('#{escaped}', ':.')"
@@ -195,7 +195,7 @@ class FilesystemExplorer < Explorer
             when :new_vsplit
 	      "vs"
             else
-              assert(false, "bad open mode")
+              Lusty::assert(false, "bad open mode")
             end
 
       VIM::command "silent #{cmd} #{sanitized}"

@@ -130,10 +130,10 @@ class BufferExplorer < Explorer
 
     def open_entry(entry, open_mode)
       cleanup()
-      assert($curwin == @calling_window)
+      Lusty::assert($curwin == @calling_window)
 
       number = entry.vim_buffer.number
-      assert(number)
+      Lusty::assert(number)
 
       cmd = case open_mode
             when :current_tab
@@ -147,7 +147,7 @@ class BufferExplorer < Explorer
             when :new_vsplit
 	      "vs | b"
             else
-              assert(false, "bad open mode")
+              Lusty::assert(false, "bad open mode")
             end
 
       VIM::command "silent #{cmd} #{number}"

@@ -727,7 +727,7 @@ class Explorer
       @settings.restore
       @running = false
       VIM::message ""
-      assert(@calling_window == $curwin)
+      Lusty::assert(@calling_window == $curwin)
     end
 end
 end
@@ -856,10 +856,10 @@ class BufferExplorer < Explorer
 
     def open_entry(entry, open_mode)
       cleanup()
-      assert($curwin == @calling_window)
+      Lusty::assert($curwin == @calling_window)
 
       number = entry.vim_buffer.number
-      assert(number)
+      Lusty::assert(number)
 
       cmd = case open_mode
             when :current_tab
@@ -873,7 +873,7 @@ class BufferExplorer < Explorer
             when :new_vsplit
 	      "vs | b"
             else
-              assert(false, "bad open mode")
+              Lusty::assert(false, "bad open mode")
             end
 
       VIM::command "silent #{cmd} #{number}"
@@ -1056,7 +1056,7 @@ class FilesystemExplorer < Explorer
     end
 
     def load_file(path_str, open_mode)
-      assert($curwin == @calling_window)
+      Lusty::assert($curwin == @calling_window)
       # Escape for Vim and remove leading ./ for files in pwd.
       escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
       sanitized = VIM::evaluate "fnamemodify('#{escaped}', ':.')"
@@ -1070,7 +1070,7 @@ class FilesystemExplorer < Explorer
             when :new_vsplit
 	      "vs"
             else
-              assert(false, "bad open mode")
+              Lusty::assert(false, "bad open mode")
             end
 
       VIM::command "silent #{cmd} #{sanitized}"

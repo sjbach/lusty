@@ -1,0 +1,20 @@
+spawn vim -N --noplugin -u ../vimrc -c "source ../../lusty-explorer.vim"
+expect {
+  timeout {exit 1}
+  "VIM - Vi IMproved"
+}
+send ":LustyBufferExplorer\r"
+# Launching should not have caused a backtrace and "Press ENTER ..." message
+expect {
+  "Press ENTER"  {exit 1}
+  timeout {exit 1}
+  ">>"
+}
+# Ctrl-C
+send \003
+send \003
+send \003
+send ":q\r"
+expect eof
+exit 0
+

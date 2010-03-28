@@ -112,50 +112,10 @@ class Explorer
     end
 
     def create_explorer_window
+      # Trim out the "::" in "Lusty::FooExplorer"
+      key_binding_prefix = self.class.to_s.sub(/::/,'')
 
-      @displayer.create
-
-      # Setup key mappings to reroute user input.
-
-      # Non-special printable characters.
-      printables =  '/!"#$%&\'()*+,-.0123456789:<=>?#@"' \
-                    'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
-                    '[]^_`abcdefghijklmnopqrstuvwxyz{}~'
-
-      map = "noremap <silent> <buffer>"
-      name = self.class.to_s.sub(/.*::/,'')  # Trim out "Lusty::"
-
-      printables.each_byte do |b|
-        VIM::command "#{map} <Char-#{b}> :call <SID>Lusty#{name}KeyPressed(#{b})<CR>"
-      end
-
-      # Special characters
-      VIM::command "#{map} <Tab>    :call <SID>Lusty#{name}KeyPressed(9)<CR>"
-      VIM::command "#{map} <Bslash> :call <SID>Lusty#{name}KeyPressed(92)<CR>"
-      VIM::command "#{map} <Space>  :call <SID>Lusty#{name}KeyPressed(32)<CR>"
-      VIM::command "#{map} \026|    :call <SID>Lusty#{name}KeyPressed(124)<CR>"
-
-      VIM::command "#{map} <BS>     :call <SID>Lusty#{name}KeyPressed(8)<CR>"
-      VIM::command "#{map} <Del>    :call <SID>Lusty#{name}KeyPressed(8)<CR>"
-      VIM::command "#{map} <C-h>    :call <SID>Lusty#{name}KeyPressed(8)<CR>"
-
-      VIM::command "#{map} <CR>     :call <SID>Lusty#{name}KeyPressed(13)<CR>"
-      VIM::command "#{map} <S-CR>   :call <SID>Lusty#{name}KeyPressed(10)<CR>"
-      VIM::command "#{map} <C-a>    :call <SID>Lusty#{name}KeyPressed(1)<CR>"
-
-      VIM::command "#{map} <Esc>    :call <SID>Lusty#{name}Cancel()<CR>"
-      VIM::command "#{map} <C-c>    :call <SID>Lusty#{name}Cancel()<CR>"
-      VIM::command "#{map} <C-g>    :call <SID>Lusty#{name}Cancel()<CR>"
-
-      VIM::command "#{map} <C-w>    :call <SID>Lusty#{name}KeyPressed(23)<CR>"
-      VIM::command "#{map} <C-n>    :call <SID>Lusty#{name}KeyPressed(14)<CR>"
-      VIM::command "#{map} <C-p>    :call <SID>Lusty#{name}KeyPressed(16)<CR>"
-      VIM::command "#{map} <C-o>    :call <SID>Lusty#{name}KeyPressed(15)<CR>"
-      VIM::command "#{map} <C-t>    :call <SID>Lusty#{name}KeyPressed(20)<CR>"
-      VIM::command "#{map} <C-v>    :call <SID>Lusty#{name}KeyPressed(22)<CR>"
-      VIM::command "#{map} <C-e>    :call <SID>Lusty#{name}KeyPressed(5)<CR>"
-      VIM::command "#{map} <C-r>    :call <SID>Lusty#{name}KeyPressed(18)<CR>"
-      VIM::command "#{map} <C-u>    :call <SID>Lusty#{name}KeyPressed(21)<CR>"
+      @displayer.create(key_binding_prefix)
     end
 
     def highlight_selected_index

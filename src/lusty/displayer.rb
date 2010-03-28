@@ -39,7 +39,8 @@ class Displayer
       @col_range_widths = {}
     end
 
-    def create
+    def create(prefix)
+
       # Make a window for the displayer and move there.
       # Start at size 1 to mitigate flashing effect when
       # we resize the window later.
@@ -48,7 +49,11 @@ class Displayer
       @window = $curwin
       @buffer = $curbuf
 
-      # Displayer buffer is special.
+      #
+      # Displayer buffer is special -- set options.
+      #
+
+      # Buffer-local.
       VIM::command "setlocal bufhidden=delete"
       VIM::command "setlocal buftype=nofile"
       VIM::command "setlocal nomodifiable"
@@ -62,6 +67,7 @@ class Displayer
       VIM::command "setlocal textwidth=0"
       VIM::command "setlocal noreadonly"
 
+      # Non-buffer-local (Vim is annoying).
       # (Update SavedSettings if adding to below.)
       VIM::set_option "timeoutlen=0"
       VIM::set_option "noinsertmode"
@@ -73,7 +79,13 @@ class Displayer
 
       # TODO -- cpoptions?
 
+      #
+      # Syntax highlighting.
+      #
+
       if VIM::has_syntax?
+        # Base highlighting -- other match strings are set during
+        # execution.
         VIM::command 'syn match LustyExpSlash "/" contained'
         VIM::command 'syn match LustyExpDir "\zs\%(\S\+ \)*\S\+/\ze" ' \
                                             'contains=LustyExpSlash'
@@ -98,6 +110,49 @@ class Displayer
         VIM::command 'highlight link LustyExpNoEntries ErrorMsg'
         VIM::command 'highlight link LustyExpTruncated Visual'
       end
+
+      #
+      # Key mappings - we need to reroute user input.
+      #
+
+      # Non-special printable characters.
+      printables =  '/!"#$%&\'()*+,-.0123456789:<=>?#@"' \
+                    'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
+                    '[]^_`abcdefghijklmnopqrstuvwxyz{}~'
+
+      map = "noremap <silent> <buffer>"
+
+      printables.each_byte do |b|
+        VIM::command "#{map} <Char-#{b}> :call <SID>#{prefix}KeyPressed(#{b})<CR>"
+      end
+
+      # Special characters
+      VIM::command "#{map} <Tab>    :call <SID>#{prefix}KeyPressed(9)<CR>"
+      VIM::command "#{map} <Bslash> :call <SID>#{prefix}KeyPressed(92)<CR>"
+      VIM::command "#{map} <Space>  :call <SID>#{prefix}KeyPressed(32)<CR>"
+      VIM::command "#{map} \026|    :call <SID>#{prefix}KeyPressed(124)<CR>"
+
+      VIM::command "#{map} <BS>     :call <SID>#{prefix}KeyPressed(8)<CR>"
+      VIM::command "#{map} <Del>    :call <SID>#{prefix}KeyPressed(8)<CR>"
+      VIM::command "#{map} <C-h>    :call <SID>#{prefix}KeyPressed(8)<CR>"
+
+      VIM::command "#{map} <CR>     :call <SID>#{prefix}KeyPressed(13)<CR>"
+      VIM::command "#{map} <S-CR>   :call <SID>#{prefix}KeyPressed(10)<CR>"
+      VIM::command "#{map} <C-a>    :call <SID>#{prefix}KeyPressed(1)<CR>"
+
+      VIM::command "#{map} <Esc>    :call <SID>#{prefix}Cancel()<CR>"
+      VIM::command "#{map} <C-c>    :call <SID>#{prefix}Cancel()<CR>"
+      VIM::command "#{map} <C-g>    :call <SID>#{prefix}Cancel()<CR>"
+
+      VIM::command "#{map} <C-w>    :call <SID>#{prefix}KeyPressed(23)<CR>"
+      VIM::command "#{map} <C-n>    :call <SID>#{prefix}KeyPressed(14)<CR>"
+      VIM::command "#{map} <C-p>    :call <SID>#{prefix}KeyPressed(16)<CR>"
+      VIM::command "#{map} <C-o>    :call <SID>#{prefix}KeyPressed(15)<CR>"
+      VIM::command "#{map} <C-t>    :call <SID>#{prefix}KeyPressed(20)<CR>"
+      VIM::command "#{map} <C-v>    :call <SID>#{prefix}KeyPressed(22)<CR>"
+      VIM::command "#{map} <C-e>    :call <SID>#{prefix}KeyPressed(5)<CR>"
+      VIM::command "#{map} <C-r>    :call <SID>#{prefix}KeyPressed(18)<CR>"
+      VIM::command "#{map} <C-u>    :call <SID>#{prefix}KeyPressed(21)<CR>"
     end
 
     def print(strings)

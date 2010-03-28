@@ -50,6 +50,12 @@ module VIM
     evaluate("getcwd()")
   end
 
+  def self.single_quote_escape(s)
+    # Everything in a Vim single-quoted string is literal, except single
+    # quotes.  Single quotes are escaped by doubling them.
+    s.gsub("'", "''")
+  end
+
   def self.filename_escape(s)
     # Escape slashes, open square braces, spaces, sharps, and double quotes.
     s.gsub(/\\/, '\\\\\\').gsub(/[\[ #"]/, '\\\\\0')

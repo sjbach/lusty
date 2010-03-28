@@ -11,13 +11,41 @@ send "'"
 expect {
   "Press ENTER"  {exit 1}
   timeout {exit 1}
-  "NO MATCHES"  # Success
+  "foo'"  # Success
 }
 # Ctrl-C
 send \003
+
+send ":LustyFilesystemExplorer\r"
+expect ">>"
+send "foo'\r"
+# Should not have caused a backtrace and "Press ENTER ..." message
+expect {
+  "Error detected"  {exit 1}
+  "E116"  {exit 1}
+  "E15"  {exit 1}
+  "E32"  {exit 1}
+  "Press ENTER"  {exit 1}
+  timeout {exit 1}
+  "opened!"  # Success -- contents of file
+}
+
+send ":LustyBufferExplorer\r"
+expect ">>"
+send "'\r"
+# Should not have caused a backtrace and "Press ENTER ..." message
+expect {
+  "Error detected"  {exit 1}
+  "E116"  {exit 1}
+  "E15"  {exit 1}
+  "E32"  {exit 1}
+  "Press ENTER"  {exit 1}
+  timeout {exit 1}
+  "'"  # Success
+}
 send \003
 send \003
-#send ":exec CheckForError()\r"
+send \003
 send ":q\r"
 expect eof
 exit 0

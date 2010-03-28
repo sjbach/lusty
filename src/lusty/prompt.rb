@@ -24,7 +24,9 @@ class Prompt
     end
 
     def print
-      VIM::pretty_msg("Comment", @@PROMPT, "None", @input, "Underlined", " ")
+      VIM::pretty_msg("Comment", @@PROMPT,
+                      "None", VIM::single_quote_escape(@input),
+                      "Underlined", " ")
     end
 
     def set!(s)

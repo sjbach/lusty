@@ -373,6 +373,12 @@ module VIM
     evaluate("getcwd()")
   end
 
+  def self.single_quote_escape(s)
+    # Everything in a Vim single-quoted string is literal, except single
+    # quotes.  Single quotes are escaped by doubling them.
+    s.gsub("'", "''")
+  end
+
   def self.filename_escape(s)
     # Escape slashes, open square braces, spaces, sharps, and double quotes.
     s.gsub(/\\/, '\\\\\\').gsub(/[\[ #"]/, '\\\\\0')
@@ -1058,8 +1064,9 @@ class FilesystemExplorer < Explorer
     def load_file(path_str, open_mode)
       Lusty::assert($curwin == @calling_window)
       # Escape for Vim and remove leading ./ for files in pwd.
-      escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
-      sanitized = VIM::evaluate "fnamemodify('#{escaped}', ':.')"
+      filename_escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
+      single_quote_escaped = VIM::single_quote_escape(filename_escaped)
+      sanitized = VIM::evaluate "fnamemodify('#{single_quote_escaped}', ':.')"
       cmd = case open_mode
             when :current_tab
               "e"
@@ -1096,7 +1103,9 @@ class Prompt
     end
 
     def print
-      VIM::pretty_msg("Comment", @@PROMPT, "None", @input, "Underlined", " ")
+      VIM::pretty_msg("Comment", @@PROMPT,
+                      "None", VIM::single_quote_escape(@input),
+                      "Underlined", " ")
     end
 
     def set!(s)

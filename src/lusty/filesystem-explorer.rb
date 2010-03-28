@@ -183,8 +183,9 @@ class FilesystemExplorer < Explorer
     def load_file(path_str, open_mode)
       Lusty::assert($curwin == @calling_window)
       # Escape for Vim and remove leading ./ for files in pwd.
-      escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
-      sanitized = VIM::evaluate "fnamemodify('#{escaped}', ':.')"
+      filename_escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
+      single_quote_escaped = VIM::single_quote_escape(filename_escaped)
+      sanitized = VIM::evaluate "fnamemodify('#{single_quote_escaped}', ':.')"
       cmd = case open_mode
             when :current_tab
               "e"

@@ -27,7 +27,7 @@ class VimSwaps
         @vim_r.each_line do |line|
           if line =~ /^ +file name: (.*)$/
             file = $1.chomp
-            @files_with_swaps << Pathname.new(File.simplify_path(file))
+            @files_with_swaps << Pathname.new(Lusty::simplify_path(file))
           end
         end
       else

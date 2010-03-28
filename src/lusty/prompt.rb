@@ -116,7 +116,7 @@ class FilesystemPrompt < Prompt
 
   def input
     if @dirty
-      @memoized = File.simplify_path(variable_expansion(@input))
+      @memoized = Lusty::simplify_path(variable_expansion(@input))
       @dirty = false
     end
 

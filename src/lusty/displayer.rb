@@ -58,6 +58,7 @@ class Displayer
       VIM::command "setlocal nospell"
       VIM::command "setlocal nobuflisted"
       VIM::command "setlocal textwidth=0"
+      VIM::command "setlocal noreadonly"
 
       # (Update SavedSettings if adding to below.)
       VIM::set_option "timeoutlen=0"

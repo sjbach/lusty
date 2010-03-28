@@ -1,6 +1,6 @@
-Cygwin and Windows compatibility fixes.  (Thanks to Brett DiFrischia)
-- Warn if &compatible mode is set.
-- Windows: show matches when at root (i.e. C:/).
-- Cygwin: workaround some missing POSIX stuff.
-- Cygwin: don't freeze when exploring root (weird Ruby bug).
+- Better matches window layout algorithm.
+- Put code in its own namespace to play better with other Ruby plugins.
+- Don't error when run in read-only mode.  (Thanks to Ali Asad Lotia)
+- Don't error if a file is treated as a dir.
+- Don't error when a single-quote is typed.
 

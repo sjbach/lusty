@@ -14,10 +14,10 @@
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
 "               Matt Tolton, Björn Winckler, sowill, David Brown
-"               Brett DiFrischia
+"               Brett DiFrischia, Ali Asad Lotia
 "
-" Release Date: March 26, 2010
-"      Version: 2.2.3
+" Release Date: March 28, 2010
+"      Version: 2.3.0
 "
 "        Usage: To launch the explorers:
 "

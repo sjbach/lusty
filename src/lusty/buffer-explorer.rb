@@ -98,7 +98,7 @@ class BufferExplorer < Explorer
 
         short_name = if full_name.nil?
                        '[No Name]'
-                     elsif full_name.starts_with?("scp://")
+                     elsif Lusty::starts_with?(full_name, "scp://")
                        full_name
                      else
                        base = Pathname.new(full_name).basename.to_s

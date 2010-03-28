@@ -11,8 +11,7 @@ VIM_FILE = src/plugin.vim
 
 #RUBY_FILES = $(shell find src/ -type f -name '*.rb')
 # Order matters.
-RUBY_FILES = src/string.rb \
-             src/vim.rb \
+RUBY_FILES = src/vim.rb \
              src/lusty.rb \
              src/liquid-metal.rb \
              src/lusty/entry.rb \

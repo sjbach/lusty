@@ -26,7 +26,7 @@ module Lusty
         # Special-case root so we don't add superfluous '/' characters,
         # as this can make Cygwin choke.
         s
-      elsif s.ends_with?(File::SEPARATOR)
+      elsif ends_with?(s, File::SEPARATOR)
         File.expand_path(s) + File::SEPARATOR
       else
         dirname_expanded = File.expand_path(File.dirname(s))
@@ -48,6 +48,16 @@ module Lusty
       result = IO.select([io], nil, nil, 0)
       result && (result.first.first == io)
     end
+  end
+
+  def self.ends_with?(s1, s2)
+    tail = s1[-s2.length, s2.length]
+    tail == s2
+  end
+
+  def self.starts_with?(s1, s2)
+    head = s1[0, s2.length]
+    head == s2
   end
 
   def self.option_set?(opt_name)

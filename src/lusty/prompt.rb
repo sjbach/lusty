@@ -42,7 +42,7 @@ class Prompt
     end
 
     def ends_with?(c)
-      @input.ends_with? c
+      Lusty::ends_with?(@input, c)
     end
 
     def add!(s)

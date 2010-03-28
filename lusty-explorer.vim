@@ -268,21 +268,6 @@ if $LUSTY_PROFILING
 end
 
 
-class String
-  # STEVE put in Lusty
-  def ends_with?(s)
-    tail = self[-s.length, s.length]
-    tail == s
-  end
-
-  # STEVE put in Lusty
-  def starts_with?(s)
-    head = self[0, s.length]
-    head == s
-  end
-end
-
-
 module VIM
   MOST_POSITIVE_INTEGER = 2**(32 - 1) - 2  # Vim ints are signed 32-bit.
 
@@ -386,7 +371,7 @@ module Lusty
         # Special-case root so we don't add superfluous '/' characters,
         # as this can make Cygwin choke.
         s
-      elsif s.ends_with?(File::SEPARATOR)
+      elsif ends_with?(s, File::SEPARATOR)
         File.expand_path(s) + File::SEPARATOR
       else
         dirname_expanded = File.expand_path(File.dirname(s))
@@ -408,6 +393,16 @@ module Lusty
       result = IO.select([io], nil, nil, 0)
       result && (result.first.first == io)
     end
+  end
+
+  def self.ends_with?(s1, s2)
+    tail = s1[-s2.length, s2.length]
+    tail == s2
+  end
+
+  def self.starts_with?(s1, s2)
+    head = s1[0, s2.length]
+    head == s2
   end
 
   def self.option_set?(opt_name)
@@ -827,7 +822,7 @@ class BufferExplorer < Explorer
 
         short_name = if full_name.nil?
                        '[No Name]'
-                     elsif full_name.starts_with?("scp://")
+                     elsif Lusty::starts_with?(full_name, "scp://")
                        full_name
                      else
                        base = Pathname.new(full_name).basename.to_s
@@ -1011,7 +1006,7 @@ class FilesystemExplorer < Explorer
         # Generate an array of the files
         entries = []
         view_str = view.to_s
-        unless view_str.ends_with?(File::SEPARATOR)
+        unless Lusty::ends_with?(view_str, File::SEPARATOR)
           # Don't double-up on '/' -- makes Cygwin sad.
           view_str << File::SEPARATOR
         end
@@ -1118,7 +1113,7 @@ class Prompt
     end
 
     def ends_with?(c)
-      @input.ends_with? c
+      Lusty::ends_with?(@input, c)
     end
 
     def add!(s)
@@ -1719,7 +1714,7 @@ class VimSwaps
 
   def file_names
     if @files_with_swaps.nil?
-      if ready_for_read?(@vim_r)
+      if Lusty::ready_for_read?(@vim_r)
         @files_with_swaps = []
         @vim_r.each_line do |line|
           if line =~ /^ +file name: (.*)$/

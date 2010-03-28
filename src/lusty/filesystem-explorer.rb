@@ -133,7 +133,7 @@ class FilesystemExplorer < Explorer
         # Generate an array of the files
         entries = []
         view_str = view.to_s
-        unless view_str.ends_with?(File::SEPARATOR)
+        unless Lusty::ends_with?(view_str, File::SEPARATOR)
           # Don't double-up on '/' -- makes Cygwin sad.
           view_str << File::SEPARATOR
         end

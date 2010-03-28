@@ -1,4 +1,5 @@
-spawn view -N --noplugin -u ../vimrc -c "source ../../lusty-explorer.vim"
+spawn view -N --noplugin -u ../vimrc
+set timeout 3
 expect {
   timeout {exit 1}
   "VIM - Vi IMproved"

@@ -1,5 +1,7 @@
 set nocompatible
 
+source ../../lusty-explorer.vim
+
 " Not too useful because a bug in Vim causes an E15 error
 " whenever a Ruby plugin is called. :-(
 function CheckForError()

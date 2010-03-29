@@ -924,12 +924,17 @@ class FilesystemExplorer < Explorer
       when 1, 10  # <C-a>, <Shift-Enter>
         cleanup()
         # Open all non-directories currently in view.
-        @ordered_matching_entries.each do |e|
+        @current_sorted_matches.each do |e|
           path_str = \
             if @prompt.at_dir?
               @prompt.input + e.name
             else
-              @prompt.dirname + File::SEPARATOR + e.name
+              dir = @prompt.dirname
+              if dir == '/'
+                dir + e.name
+              else
+                dir + File::SEPARATOR + e.name
+              end
             end
 
           load_file(path_str, :current_tab) unless File.directory?(path_str)

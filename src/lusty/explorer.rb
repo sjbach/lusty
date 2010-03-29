@@ -124,9 +124,11 @@ class Explorer
       entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
 
-      VIM::command "syn clear LustyExpSelected"
-      VIM::command "syn match LustyExpSelected " \
-	           "\"#{Displayer.vim_match_string(entry.name, false)}\" "
+      # STEVE
+      VIM::command 'syn clear LustyExpSelected'
+      VIM::command 'syn match LustyExpSelected ' \
+	           "\"#{Displayer.vim_match_string(entry.name, false)}\" " \
+                   'contains=LustyExpGrepMatch'
     end
 
     def choose(open_mode)

@@ -19,6 +19,7 @@ class GrepExplorer < Explorer
       super
       @prompt = Prompt.new
       @buffer_entries = []
+      @matched_strings = []
     end
 
     def run
@@ -35,7 +36,24 @@ class GrepExplorer < Explorer
       '[LustyExplorer-GrepBufferContents]'
     end
 
+    # STEVE also highlight name:##: part somewhere
+    # STEVE regular "dir/" highlighting should not apply
     def on_refresh
+      if VIM::has_syntax?
+
+      '\%(^\|' + @@COLUMN_SEPARATOR + '\)' \
+      '\zs' + VIM::regex_escape(s) + '\ze' \
+      '\%(\s*$\|' + @@COLUMN_SEPARATOR + '\)'
+
+
+        VIM::command 'syn clear LustyExpGrepMatch'
+
+        if not @matched_strings.empty?
+          sub_regexes = @matched_strings.map { |s| VIM::regex_escape(s) }
+          syntax_regex = '\%(' + sub_regexes.join('\|') + '\)'
+          VIM::command "syn match LustyExpGrepMatch \"#{syntax_regex}\""
+        end
+      end
     end
 
     # STEVE make it a class function?
@@ -102,6 +120,7 @@ class GrepExplorer < Explorer
                      end
 
         entry.short_name = short_name
+        entry.name = short_name  # overridden later
       end
 
       buffer_entries
@@ -111,15 +130,27 @@ class GrepExplorer < Explorer
       @prompt.input
     end
 
+    # STEVE spaces result in no match
     def compute_sorted_matches
       abbrev = current_abbreviation()
+      @matched_strings = []
 
-      if abbrev == ""
+      if abbrev == ''
         return @buffer_entries
       end
 
-      regex = Regexp.compile(abbrev, Regexp::EXTENDED | Regexp::IGNORECASE)
+      begin
+        regex = Regexp.compile(abbrev, Regexp::IGNORECASE)
+      rescue RegexpError => e
+        return []
+      end
 
+
+      # Used to avoid duplication
+      highlight_hash = {}
+
+      # Search through every line of every open buffer for the
+      # given expression.
       grep_entries = []
       @buffer_entries.each do |entry|
         vim_buffer = entry.vim_buffer
@@ -127,15 +158,46 @@ class GrepExplorer < Explorer
         (1..line_count). each do |i|
           match = regex.match(vim_buffer[i])
           if match
+            matched_str = match.to_s
+            context = shrink_surrounding_context(vim_buffer[i], matched_str)
+
             grep_entry = entry.clone()
             grep_entry.line_number = i
-            grep_entry.name = "#{grep_entry.short_name}:#{i}:#{match.to_s}"
+            grep_entry.name = "#{grep_entry.short_name}:#{i}:#{context}"
             grep_entries << grep_entry
+
+            # Keep track of all matched strings
+            unless highlight_hash[matched_str]
+              @matched_strings << matched_str
+              highlight_hash[matched_str] = true
+            end
           end
         end
       end
 
       return grep_entries
+    end
+
+    def shrink_surrounding_context(context, matched_str)
+      pos = context.index(matched_str)
+      Lusty::assert(pos) # STEVE remove
+
+      start_index = [0, pos - 8].max
+      end_index = [context.length, pos + matched_str.length + 8].min
+
+      if start_index == 0
+        if end_index == context.length
+          context
+        else
+          "#{context[0...end_index]}..."
+        end
+      else
+        if end_index == context.length
+          "...#{context[start_index...end_index]}"
+        else
+          "...#{context[start_index...end_index]}..."
+        end
+      end
     end
 
     def open_entry(entry, open_mode)
@@ -160,6 +222,7 @@ class GrepExplorer < Explorer
               Lusty::assert(false, "bad open mode")
             end
 
+      # Open buffer and go to the line number.
       VIM::command "silent #{cmd} #{number}"
       VIM::command "#{entry.line_number}"
     end

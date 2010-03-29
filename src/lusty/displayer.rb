@@ -16,10 +16,12 @@ class Displayer
     @@TRUNCATED_STRING = "-- TRUNCATED --"
 
   public
+    # STEVE should be vim_entry_match_string
     def self.vim_match_string(s, case_insensitive)
       # Create a match regex string for the given s.  This is for a Vim regex,
       # not for a Ruby regex.
 
+      # STEVE this is too general
       str = '\%(^\|' + @@COLUMN_SEPARATOR + '\)' \
             '\zs' + VIM::regex_escape(s) + '\%( \[+\]\)\?' + '\ze' \
             '\%(\s*$\|' + @@COLUMN_SEPARATOR + '\)'
@@ -105,6 +107,7 @@ class Displayer
         VIM::command 'highlight link LustyExpSelected Type'
         VIM::command 'highlight link LustyExpModified Special'
         VIM::command 'highlight link LustyExpCurrentBuffer Constant'
+        VIM::command 'highlight link LustyExpGrepMatch IncSearch'  # STEVE
         VIM::command 'highlight link LustyExpOpenedFile PreProc'
         VIM::command 'highlight link LustyExpFileWithSwap WarningMsg'
         VIM::command 'highlight link LustyExpNoEntries ErrorMsg'

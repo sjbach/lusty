@@ -12,6 +12,7 @@
 # - save grep entries and selection on cleanup and restore at next launch
 #   - so not have to retype everything to see next entry
 # - some way for user to indicate case-sensitive regex
+# - add slash highlighting back to file name
 module Lusty
 class GrepExplorer < Explorer
   public
@@ -44,10 +45,9 @@ class GrepExplorer < Explorer
 
       # Base syntax matching -- others are set on refresh.
 
-      # STEVE keepend
       grep_entry = Displayer.entry_syntaxify('.\{-}', false)
-      # STEVE transparent
       VIM::command "syn match LustyGrepEntry \"#{grep_entry}\" " \
+                                             'transparent ' \
                                              'contains=LustyGrepFileName'
 
       VIM::command 'syn match LustyGrepFileName "\zs.\{-}\ze:\d\+:" ' \
@@ -59,7 +59,6 @@ class GrepExplorer < Explorer
                                                   'contains=NONE ' \
                                                   'nextgroup=LustyGrepContext'
 
-      # STEVE keepend
       VIM::command 'syn match LustyGrepContext "\zs.\{-}\ze' +
                                                 Displayer::ENTRY_END_VIM_REGEX +
                                                 '" ' \
@@ -68,8 +67,6 @@ class GrepExplorer < Explorer
                                                'contains=LustyGrepMatch'
     end
 
-    # STEVE also highlight name:##: part somewhere
-    # STEVE regular "dir/" highlighting should not apply
     def on_refresh
       if VIM::has_syntax?
 
@@ -159,7 +156,6 @@ class GrepExplorer < Explorer
       @prompt.input
     end
 
-    # STEVE spaces result in no match
     def compute_sorted_matches
       abbrev = current_abbreviation()
       @matched_strings = []
@@ -175,7 +171,7 @@ class GrepExplorer < Explorer
       end
 
 
-      # Used to avoid duplication
+      # Used to avoid duplicating match strings, slowing down refresh
       highlight_hash = {}
 
       # Search through every line of every open buffer for the
@@ -188,7 +184,7 @@ class GrepExplorer < Explorer
           match = regex.match(vim_buffer[i])
           if match
             matched_str = match.to_s
-            context = shrink_surrounding_context(vim_buffer[i], matched_str)
+            context = crop_surrounding_context(vim_buffer[i], matched_str)
 
             grep_entry = entry.clone()
             grep_entry.line_number = i
@@ -207,7 +203,7 @@ class GrepExplorer < Explorer
       return grep_entries
     end
 
-    def shrink_surrounding_context(context, matched_str)
+    def crop_surrounding_context(context, matched_str)
       pos = context.index(matched_str)
       Lusty::assert(pos) # STEVE remove
 

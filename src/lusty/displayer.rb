@@ -23,7 +23,6 @@ class Displayer
       # Create a match regex string for the given s.  This is for a Vim regex,
       # not for a Ruby regex.
 
-      # STEVE this is too general
       str = "#{ENTRY_START_VIM_REGEX}\\zs#{s}\\ze#{ENTRY_END_VIM_REGEX}"
 
       str << '\c' if case_insensitive
@@ -101,12 +100,11 @@ class Displayer
         VIM::command 'highlight link LustyExpSelected Type'
         VIM::command 'highlight link LustyExpModified Special'
         VIM::command 'highlight link LustyExpCurrentBuffer Constant'
-        VIM::command 'highlight link LustyGrepMatch IncSearch'  # STEVE
-        VIM::command 'highlight link LustyGrepLineNumber Directory' # STEVE
-        VIM::command 'highlight link LustyGrepFileName Comment' # STEVE
-        VIM::command 'highlight link LustyGrepContext None' # STEVE
-        VIM::command 'highlight link LustyGrepFileName None' # STEVE
-        VIM::command 'highlight link LustyGrepEntry None' # STEVE
+        VIM::command 'highlight link LustyGrepMatch IncSearch'
+        VIM::command 'highlight link LustyGrepLineNumber Directory'
+        VIM::command 'highlight link LustyGrepFileName Comment'
+        VIM::command 'highlight link LustyGrepContext None' # transparent
+        VIM::command 'highlight link LustyGrepEntry None' # transparent
         VIM::command 'highlight link LustyExpOpenedFile PreProc'
         VIM::command 'highlight link LustyExpFileWithSwap WarningMsg'
         VIM::command 'highlight link LustyExpNoEntries ErrorMsg'

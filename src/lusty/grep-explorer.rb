@@ -8,9 +8,9 @@
 # software.
 
 # STEVE TODO:
+# - highlighted entry should not show match in file name
 # - save grep entries and selection on cleanup and restore at next launch
 #   - so not have to retype everything to see next entry
-# - show context
 # - some way for user to indicate case-sensitive regex
 module Lusty
 class GrepExplorer < Explorer
@@ -36,22 +36,51 @@ class GrepExplorer < Explorer
       '[LustyExplorer-GrepBufferContents]'
     end
 
+    def set_syntax_matching
+      VIM::command 'syn clear LustyGrepLineNumber'
+      VIM::command 'syn clear LustyGrepFileName'
+      VIM::command 'syn clear LustyGrepContext'
+      VIM::command 'syn clear LustyGrepEntry'
+
+      # Base syntax matching -- others are set on refresh.
+
+      # STEVE keepend
+      grep_entry = Displayer.entry_syntaxify('.\{-}', false)
+      # STEVE transparent
+      VIM::command "syn match LustyGrepEntry \"#{grep_entry}\" " \
+                                             'contains=LustyGrepFileName'
+
+      VIM::command 'syn match LustyGrepFileName "\zs.\{-}\ze:\d\+:" ' \
+                                                'contained ' \
+                                                'nextgroup=LustyGreplineNumber'
+
+      VIM::command 'syn match LustyGrepLineNumber ":\d\+:" ' \
+                                                  'contained ' \
+                                                  'contains=NONE ' \
+                                                  'nextgroup=LustyGrepContext'
+
+      # STEVE keepend
+      VIM::command 'syn match LustyGrepContext "\zs.\{-}\ze' +
+                                                Displayer::ENTRY_END_VIM_REGEX +
+                                                '" ' \
+                                               'transparent ' \
+                                               'contained ' \
+                                               'contains=LustyGrepMatch'
+    end
+
     # STEVE also highlight name:##: part somewhere
     # STEVE regular "dir/" highlighting should not apply
     def on_refresh
       if VIM::has_syntax?
 
-      '\%(^\|' + @@COLUMN_SEPARATOR + '\)' \
-      '\zs' + VIM::regex_escape(s) + '\ze' \
-      '\%(\s*$\|' + @@COLUMN_SEPARATOR + '\)'
-
-
-        VIM::command 'syn clear LustyExpGrepMatch'
+        VIM::command 'syn clear LustyGrepMatch'
 
         if not @matched_strings.empty?
           sub_regexes = @matched_strings.map { |s| VIM::regex_escape(s) }
           syntax_regex = '\%(' + sub_regexes.join('\|') + '\)'
-          VIM::command "syn match LustyExpGrepMatch \"#{syntax_regex}\""
+          VIM::command "syn match LustyGrepMatch \"#{syntax_regex}\" " \
+                                                    "contained " \
+                                                    "contains=NONE"
         end
       end
     end

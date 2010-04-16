@@ -16,15 +16,15 @@ class Displayer
     @@TRUNCATED_STRING = "-- TRUNCATED --"
 
   public
-    # STEVE should be vim_entry_match_string
-    def self.vim_match_string(s, case_insensitive)
+    ENTRY_START_VIM_REGEX = '\%(^\|' + @@COLUMN_SEPARATOR + '\)'
+    ENTRY_END_VIM_REGEX = '\%(\s*$\|' + @@COLUMN_SEPARATOR + '\)'
+
+    def self.entry_syntaxify(s, case_insensitive)
       # Create a match regex string for the given s.  This is for a Vim regex,
       # not for a Ruby regex.
 
       # STEVE this is too general
-      str = '\%(^\|' + @@COLUMN_SEPARATOR + '\)' \
-            '\zs' + VIM::regex_escape(s) + '\%( \[+\]\)\?' + '\ze' \
-            '\%(\s*$\|' + @@COLUMN_SEPARATOR + '\)'
+      str = "#{ENTRY_START_VIM_REGEX}\\zs#{s}\\ze#{ENTRY_END_VIM_REGEX}"
 
       str << '\c' if case_insensitive
 
@@ -86,28 +86,27 @@ class Displayer
       #
 
       if VIM::has_syntax?
-        # Base highlighting -- other match strings are set during
-        # execution.
-        VIM::command 'syn match LustyExpSlash "/" contained'
-        VIM::command 'syn match LustyExpDir "\zs\%(\S\+ \)*\S\+/\ze" ' \
-                                            'contains=LustyExpSlash'
-
-        VIM::command 'syn match LustyExpModified " \[+\]"'
-
+        # General syntax matching.
         VIM::command 'syn match LustyExpNoEntries "\%^\s*' \
                                                   "#{@@NO_MATCHES_STRING}" \
                                                   '\s*\%$"'
-
         VIM::command 'syn match LustyExpTruncated "^\s*' \
                                                   "#{@@TRUNCATED_STRING}" \
                                                   '\s*$"'
 
+        # STEVE rename without Exp
+        # Colour highlighting.
         VIM::command 'highlight link LustyExpDir Directory'
         VIM::command 'highlight link LustyExpSlash Function'
         VIM::command 'highlight link LustyExpSelected Type'
         VIM::command 'highlight link LustyExpModified Special'
         VIM::command 'highlight link LustyExpCurrentBuffer Constant'
-        VIM::command 'highlight link LustyExpGrepMatch IncSearch'  # STEVE
+        VIM::command 'highlight link LustyGrepMatch IncSearch'  # STEVE
+        VIM::command 'highlight link LustyGrepLineNumber Directory' # STEVE
+        VIM::command 'highlight link LustyGrepFileName Comment' # STEVE
+        VIM::command 'highlight link LustyGrepContext None' # STEVE
+        VIM::command 'highlight link LustyGrepFileName None' # STEVE
+        VIM::command 'highlight link LustyGrepEntry None' # STEVE
         VIM::command 'highlight link LustyExpOpenedFile PreProc'
         VIM::command 'highlight link LustyExpFileWithSwap WarningMsg'
         VIM::command 'highlight link LustyExpNoEntries ErrorMsg'

@@ -116,6 +116,7 @@ class Explorer
       key_binding_prefix = self.class.to_s.sub(/::/,'')
 
       @displayer.create(key_binding_prefix)
+      set_syntax_matching()
     end
 
     def highlight_selected_index
@@ -124,11 +125,13 @@ class Explorer
       entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
 
-      # STEVE
+      escaped = VIM::regex_escape(entry.name)
+      entry_match_string = Displayer.entry_syntaxify(escaped, false)
       VIM::command 'syn clear LustyExpSelected'
       VIM::command 'syn match LustyExpSelected ' \
-	           "\"#{Displayer.vim_match_string(entry.name, false)}\" " \
-                   'contains=LustyExpGrepMatch'
+	           "\"#{entry_match_string}\" " \
+                   'contains=LustyGrepMatch'
+      # STEVE ^^^^ call on_highlight
     end
 
     def choose(open_mode)
@@ -148,6 +151,7 @@ class Explorer
     end
 
     # Pure virtual methods
+    # - set_syntax_matching
     # - on_refresh
     # - open_entry
     # - compute_sorted_matches

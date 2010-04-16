@@ -78,7 +78,16 @@ class FilesystemExplorer < Explorer
 
   private
     def title
-    '[LustyExplorer-Files]'
+      '[LustyExplorer-Files]'
+    end
+
+    def set_syntax_matching
+      # Base highlighting -- more is set on refresh.
+      if VIM::has_syntax?
+        VIM::command 'syn match LustyExpSlash "/" contained'
+        VIM::command 'syn match LustyExpDir "\%(\S\+ \)*\S\+/" ' \
+                                            'contains=LustyExpSlash'
+      end
     end
 
     def on_refresh
@@ -89,7 +98,8 @@ class FilesystemExplorer < Explorer
         @vim_swaps.file_names.each do |file_with_swap|
           if file_with_swap.dirname == view
             base = file_with_swap.basename
-            match_str = Displayer.vim_match_string(base.to_s, false)
+            escaped = VIM::regex_escape(base.to_s)
+            match_str = Displayer.entry_syntaxify(escaped, false)
             VIM::command "syn match LustyExpFileWithSwap \"#{match_str}\""
           end
         end

@@ -683,6 +683,7 @@ class Explorer
       key_binding_prefix = self.class.to_s.sub(/::/,'')
 
       @displayer.create(key_binding_prefix)
+      set_syntax_matching()
     end
 
     def highlight_selected_index
@@ -691,11 +692,13 @@ class Explorer
       entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
 
-      # STEVE
+      escaped = VIM::regex_escape(entry.name)
+      entry_match_string = Displayer.entry_syntaxify(escaped, false)
       VIM::command 'syn clear LustyExpSelected'
       VIM::command 'syn match LustyExpSelected ' \
-	           "\"#{Displayer.vim_match_string(entry.name, false)}\" " \
-                   'contains=LustyExpGrepMatch'
+	           "\"#{entry_match_string}\" " \
+                   'contains=LustyGrepMatch'
+      # STEVE ^^^^ call on_highlight
     end
 
     def choose(open_mode)
@@ -715,6 +718,7 @@ class Explorer
     end
 
     # Pure virtual methods
+    # - set_syntax_matching
     # - on_refresh
     # - open_entry
     # - compute_sorted_matches
@@ -746,10 +750,21 @@ class BufferExplorer < Explorer
       '[LustyExplorer-Buffers]'
     end
 
+    def set_syntax_matching
+      # Base highlighting -- more is set on refresh.
+      if VIM::has_syntax?
+        VIM::command 'syn match LustyExpSlash "/" contained'
+        VIM::command 'syn match LustyExpDir "\%(\S\+ \)*\S\+/" ' \
+                                            'contains=LustyExpSlash'
+        VIM::command 'syn match LustyExpModified " \[+\]"'
+      end
+    end
+
     def curbuf_match_string
       curbuf = @buffer_entries.find { |x| x.vim_buffer == @curbuf_at_start }
       if curbuf
-        Displayer.vim_match_string(curbuf.name, @prompt.insensitive?)
+        escaped = VIM::regex_escape(curbuf.name)
+        Displayer.entry_syntaxify(escaped, @prompt.insensitive?)
       else
         ""
       end
@@ -959,7 +974,16 @@ class FilesystemExplorer < Explorer
 
   private
     def title
-    '[LustyExplorer-Files]'
+      '[LustyExplorer-Files]'
+    end
+
+    def set_syntax_matching
+      # Base highlighting -- more is set on refresh.
+      if VIM::has_syntax?
+        VIM::command 'syn match LustyExpSlash "/" contained'
+        VIM::command 'syn match LustyExpDir "\%(\S\+ \)*\S\+/" ' \
+                                            'contains=LustyExpSlash'
+      end
     end
 
     def on_refresh
@@ -970,7 +994,8 @@ class FilesystemExplorer < Explorer
         @vim_swaps.file_names.each do |file_with_swap|
           if file_with_swap.dirname == view
             base = file_with_swap.basename
-            match_str = Displayer.vim_match_string(base.to_s, false)
+            escaped = VIM::regex_escape(base.to_s)
+            match_str = Displayer.entry_syntaxify(escaped, false)
             VIM::command "syn match LustyExpFileWithSwap \"#{match_str}\""
           end
         end
@@ -1117,9 +1142,9 @@ end
 
 
 # STEVE TODO:
+# - highlighted entry should not show match in file name
 # - save grep entries and selection on cleanup and restore at next launch
 #   - so not have to retype everything to see next entry
-# - show context
 # - some way for user to indicate case-sensitive regex
 module Lusty
 class GrepExplorer < Explorer
@@ -1145,22 +1170,51 @@ class GrepExplorer < Explorer
       '[LustyExplorer-GrepBufferContents]'
     end
 
+    def set_syntax_matching
+      VIM::command 'syn clear LustyGrepLineNumber'
+      VIM::command 'syn clear LustyGrepFileName'
+      VIM::command 'syn clear LustyGrepContext'
+      VIM::command 'syn clear LustyGrepEntry'
+
+      # Base syntax matching -- others are set on refresh.
+
+      # STEVE keepend
+      grep_entry = Displayer.entry_syntaxify('.\{-}', false)
+      # STEVE transparent
+      VIM::command "syn match LustyGrepEntry \"#{grep_entry}\" " \
+                                             'contains=LustyGrepFileName'
+
+      VIM::command 'syn match LustyGrepFileName "\zs.\{-}\ze:\d\+:" ' \
+                                                'contained ' \
+                                                'nextgroup=LustyGreplineNumber'
+
+      VIM::command 'syn match LustyGrepLineNumber ":\d\+:" ' \
+                                                  'contained ' \
+                                                  'contains=NONE ' \
+                                                  'nextgroup=LustyGrepContext'
+
+      # STEVE keepend
+      VIM::command 'syn match LustyGrepContext "\zs.\{-}\ze' +
+                                                Displayer::ENTRY_END_VIM_REGEX +
+                                                '" ' \
+                                               'transparent ' \
+                                               'contained ' \
+                                               'contains=LustyGrepMatch'
+    end
+
     # STEVE also highlight name:##: part somewhere
     # STEVE regular "dir/" highlighting should not apply
     def on_refresh
       if VIM::has_syntax?
 
-      '\%(^\|' + @@COLUMN_SEPARATOR + '\)' \
-      '\zs' + VIM::regex_escape(s) + '\ze' \
-      '\%(\s*$\|' + @@COLUMN_SEPARATOR + '\)'
-
-
-        VIM::command 'syn clear LustyExpGrepMatch'
+        VIM::command 'syn clear LustyGrepMatch'
 
         if not @matched_strings.empty?
           sub_regexes = @matched_strings.map { |s| VIM::regex_escape(s) }
           syntax_regex = '\%(' + sub_regexes.join('\|') + '\)'
-          VIM::command "syn match LustyExpGrepMatch \"#{syntax_regex}\""
+          VIM::command "syn match LustyGrepMatch \"#{syntax_regex}\" " \
+                                                    "contained " \
+                                                    "contains=NONE"
         end
       end
     end
@@ -1574,15 +1628,15 @@ class Displayer
     @@TRUNCATED_STRING = "-- TRUNCATED --"
 
   public
-    # STEVE should be vim_entry_match_string
-    def self.vim_match_string(s, case_insensitive)
+    ENTRY_START_VIM_REGEX = '\%(^\|' + @@COLUMN_SEPARATOR + '\)'
+    ENTRY_END_VIM_REGEX = '\%(\s*$\|' + @@COLUMN_SEPARATOR + '\)'
+
+    def self.entry_syntaxify(s, case_insensitive)
       # Create a match regex string for the given s.  This is for a Vim regex,
       # not for a Ruby regex.
 
       # STEVE this is too general
-      str = '\%(^\|' + @@COLUMN_SEPARATOR + '\)' \
-            '\zs' + VIM::regex_escape(s) + '\%( \[+\]\)\?' + '\ze' \
-            '\%(\s*$\|' + @@COLUMN_SEPARATOR + '\)'
+      str = "#{ENTRY_START_VIM_REGEX}\\zs#{s}\\ze#{ENTRY_END_VIM_REGEX}"
 
       str << '\c' if case_insensitive
 
@@ -1644,28 +1698,27 @@ class Displayer
       #
 
       if VIM::has_syntax?
-        # Base highlighting -- other match strings are set during
-        # execution.
-        VIM::command 'syn match LustyExpSlash "/" contained'
-        VIM::command 'syn match LustyExpDir "\zs\%(\S\+ \)*\S\+/\ze" ' \
-                                            'contains=LustyExpSlash'
-
-        VIM::command 'syn match LustyExpModified " \[+\]"'
-
+        # General syntax matching.
         VIM::command 'syn match LustyExpNoEntries "\%^\s*' \
                                                   "#{@@NO_MATCHES_STRING}" \
                                                   '\s*\%$"'
-
         VIM::command 'syn match LustyExpTruncated "^\s*' \
                                                   "#{@@TRUNCATED_STRING}" \
                                                   '\s*$"'
 
+        # STEVE rename without Exp
+        # Colour highlighting.
         VIM::command 'highlight link LustyExpDir Directory'
         VIM::command 'highlight link LustyExpSlash Function'
         VIM::command 'highlight link LustyExpSelected Type'
         VIM::command 'highlight link LustyExpModified Special'
         VIM::command 'highlight link LustyExpCurrentBuffer Constant'
-        VIM::command 'highlight link LustyExpGrepMatch IncSearch'  # STEVE
+        VIM::command 'highlight link LustyGrepMatch IncSearch'  # STEVE
+        VIM::command 'highlight link LustyGrepLineNumber Directory' # STEVE
+        VIM::command 'highlight link LustyGrepFileName Comment' # STEVE
+        VIM::command 'highlight link LustyGrepContext None' # STEVE
+        VIM::command 'highlight link LustyGrepFileName None' # STEVE
+        VIM::command 'highlight link LustyGrepEntry None' # STEVE
         VIM::command 'highlight link LustyExpOpenedFile PreProc'
         VIM::command 'highlight link LustyExpFileWithSwap WarningMsg'
         VIM::command 'highlight link LustyExpNoEntries ErrorMsg'

@@ -30,10 +30,21 @@ class BufferExplorer < Explorer
       '[LustyExplorer-Buffers]'
     end
 
+    def set_syntax_matching
+      # Base highlighting -- more is set on refresh.
+      if VIM::has_syntax?
+        VIM::command 'syn match LustyExpSlash "/" contained'
+        VIM::command 'syn match LustyExpDir "\%(\S\+ \)*\S\+/" ' \
+                                            'contains=LustyExpSlash'
+        VIM::command 'syn match LustyExpModified " \[+\]"'
+      end
+    end
+
     def curbuf_match_string
       curbuf = @buffer_entries.find { |x| x.vim_buffer == @curbuf_at_start }
       if curbuf
-        Displayer.vim_match_string(curbuf.name, @prompt.insensitive?)
+        escaped = VIM::regex_escape(curbuf.name)
+        Displayer.entry_syntaxify(escaped, @prompt.insensitive?)
       else
         ""
       end

@@ -597,7 +597,6 @@ class Explorer
                                 else
                                   VIM::evaluate("bufnr(expand('#'))")
                                 end
-      @selected_index = 0
       create_explorer_window()
       refresh(:full)
     end
@@ -617,7 +616,6 @@ class Explorer
           @selected_index = 0
         when 9, 13            # Tab and Enter
           choose(:current_tab)
-          @selected_index = 0
         when 23               # C-w (delete 1 dir backward)
           @prompt.up_one_dir!
           @selected_index = 0
@@ -631,16 +629,13 @@ class Explorer
           refresh_mode = :no_recompute
         when 15               # C-o choose in new horizontal split
           choose(:new_split)
-          @selected_index = 0
         when 20               # C-t choose in new tab
           choose(:new_tab)
-          @selected_index = 0
         when 21               # C-u clear prompt
           @prompt.clear!
           @selected_index = 0
         when 22               # C-v choose in new vertical split
           choose(:new_vsplit)
-          @selected_index = 0
       end
 
       refresh(refresh_mode)
@@ -704,7 +699,6 @@ class Explorer
     def choose(open_mode)
       entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
-      @selected_index = 0
       open_entry(entry, open_mode)
     end
 
@@ -741,6 +735,7 @@ class BufferExplorer < Explorer
         @prompt.clear!
         @curbuf_at_start = VIM::Buffer.current
         @buffer_entries = compute_buffer_entries()
+        @selected_index = 0
         super
       end
     end
@@ -913,12 +908,16 @@ class FilesystemExplorer < Explorer
     end
 
     def run
+      return if @running
+
       FileMasks.create_glob_masks()
       @vim_swaps = VimSwaps.new
+      @selected_index = 0
       super
     end
 
     def run_from_here
+      return if @running
       start_path = if $curbuf.name.nil?
                      VIM::getcwd()
                    else
@@ -930,6 +929,7 @@ class FilesystemExplorer < Explorer
     end
 
     def run_from_wd
+      return if @running
       @prompt.set!(VIM::getcwd() + File::SEPARATOR)
       run()
     end
@@ -1143,8 +1143,9 @@ end
 
 # STEVE TODO:
 # - highlighted entry should not show match in file name
-# - save grep entries and selection on cleanup and restore at next launch
-#   - so not have to retype everything to see next entry
+# - highlighted entry should not also highlight entry in next column
+# - highlighted entry doesn't highlight on second+ column
+# - should not store grep entries from initial launch (i.e. buffer list)
 # - some way for user to indicate case-sensitive regex
 # - add slash highlighting back to file name
 module Lusty
@@ -1155,15 +1156,20 @@ class GrepExplorer < Explorer
       @prompt = Prompt.new
       @buffer_entries = []
       @matched_strings = []
+
+      @previous_prompt = ''
+      @previous_grep_entries = []
+      @previous_matched_strings = []
+      @previous_selected_index = 0
     end
 
     def run
-      unless @running
-        @prompt.clear!
-        @curbuf_at_start = VIM::Buffer.current
-        @buffer_entries = compute_buffer_entries()
-        super
-      end
+      return if @running
+
+      @prompt.set! @previous_prompt
+      @buffer_entries = compute_buffer_entries()
+      @selected_index = @previous_selected_index
+      super
     end
 
   private
@@ -1292,9 +1298,15 @@ class GrepExplorer < Explorer
 
     def compute_sorted_matches
       abbrev = current_abbreviation()
-      @matched_strings = []
 
-      if abbrev == ''
+      grep_entries = @previous_grep_entries
+      @matched_strings = @previous_matched_strings
+      @previous_grep_entries = []
+      @previous_matched_strings = []
+
+      if not grep_entries.empty?
+        return grep_entries
+      elsif abbrev == ''
         return @buffer_entries
       end
 
@@ -1304,13 +1316,11 @@ class GrepExplorer < Explorer
         return []
       end
 
-
       # Used to avoid duplicating match strings, slowing down refresh
       highlight_hash = {}
 
       # Search through every line of every open buffer for the
       # given expression.
-      grep_entries = []
       @buffer_entries.each do |entry|
         vim_buffer = entry.vim_buffer
         line_count = vim_buffer.count
@@ -1384,6 +1394,13 @@ class GrepExplorer < Explorer
       # Open buffer and go to the line number.
       VIM::command "silent #{cmd} #{number}"
       VIM::command "#{entry.line_number}"
+    end
+
+    def cleanup
+      @previous_grep_entries = @current_sorted_matches
+      @previous_matched_strings = @matched_strings
+      @previous_selected_index = @selected_index
+      super
     end
 end
 end

@@ -9,8 +9,9 @@
 
 # STEVE TODO:
 # - highlighted entry should not show match in file name
-# - save grep entries and selection on cleanup and restore at next launch
-#   - so not have to retype everything to see next entry
+# - highlighted entry should not also highlight entry in next column
+# - highlighted entry doesn't highlight on second+ column
+# - should not store grep entries from initial launch (i.e. buffer list)
 # - some way for user to indicate case-sensitive regex
 # - add slash highlighting back to file name
 module Lusty
@@ -21,15 +22,20 @@ class GrepExplorer < Explorer
       @prompt = Prompt.new
       @buffer_entries = []
       @matched_strings = []
+
+      @previous_prompt = ''
+      @previous_grep_entries = []
+      @previous_matched_strings = []
+      @previous_selected_index = 0
     end
 
     def run
-      unless @running
-        @prompt.clear!
-        @curbuf_at_start = VIM::Buffer.current
-        @buffer_entries = compute_buffer_entries()
-        super
-      end
+      return if @running
+
+      @prompt.set! @previous_prompt
+      @buffer_entries = compute_buffer_entries()
+      @selected_index = @previous_selected_index
+      super
     end
 
   private
@@ -158,9 +164,15 @@ class GrepExplorer < Explorer
 
     def compute_sorted_matches
       abbrev = current_abbreviation()
-      @matched_strings = []
 
-      if abbrev == ''
+      grep_entries = @previous_grep_entries
+      @matched_strings = @previous_matched_strings
+      @previous_grep_entries = []
+      @previous_matched_strings = []
+
+      if not grep_entries.empty?
+        return grep_entries
+      elsif abbrev == ''
         return @buffer_entries
       end
 
@@ -170,13 +182,11 @@ class GrepExplorer < Explorer
         return []
       end
 
-
       # Used to avoid duplicating match strings, slowing down refresh
       highlight_hash = {}
 
       # Search through every line of every open buffer for the
       # given expression.
-      grep_entries = []
       @buffer_entries.each do |entry|
         vim_buffer = entry.vim_buffer
         line_count = vim_buffer.count
@@ -250,6 +260,13 @@ class GrepExplorer < Explorer
       # Open buffer and go to the line number.
       VIM::command "silent #{cmd} #{number}"
       VIM::command "#{entry.line_number}"
+    end
+
+    def cleanup
+      @previous_grep_entries = @current_sorted_matches
+      @previous_matched_strings = @matched_strings
+      @previous_selected_index = @selected_index
+      super
     end
 end
 end

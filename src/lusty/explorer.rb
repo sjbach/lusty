@@ -30,7 +30,6 @@ class Explorer
                                 else
                                   VIM::evaluate("bufnr(expand('#'))")
                                 end
-      @selected_index = 0
       create_explorer_window()
       refresh(:full)
     end
@@ -50,7 +49,6 @@ class Explorer
           @selected_index = 0
         when 9, 13            # Tab and Enter
           choose(:current_tab)
-          @selected_index = 0
         when 23               # C-w (delete 1 dir backward)
           @prompt.up_one_dir!
           @selected_index = 0
@@ -64,16 +62,13 @@ class Explorer
           refresh_mode = :no_recompute
         when 15               # C-o choose in new horizontal split
           choose(:new_split)
-          @selected_index = 0
         when 20               # C-t choose in new tab
           choose(:new_tab)
-          @selected_index = 0
         when 21               # C-u clear prompt
           @prompt.clear!
           @selected_index = 0
         when 22               # C-v choose in new vertical split
           choose(:new_vsplit)
-          @selected_index = 0
       end
 
       refresh(refresh_mode)
@@ -137,7 +132,6 @@ class Explorer
     def choose(open_mode)
       entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
-      @selected_index = 0
       open_entry(entry, open_mode)
     end
 

@@ -17,12 +17,16 @@ class FilesystemExplorer < Explorer
     end
 
     def run
+      return if @running
+
       FileMasks.create_glob_masks()
       @vim_swaps = VimSwaps.new
+      @selected_index = 0
       super
     end
 
     def run_from_here
+      return if @running
       start_path = if $curbuf.name.nil?
                      VIM::getcwd()
                    else
@@ -34,6 +38,7 @@ class FilesystemExplorer < Explorer
     end
 
     def run_from_wd
+      return if @running
       @prompt.set!(VIM::getcwd() + File::SEPARATOR)
       run()
     end

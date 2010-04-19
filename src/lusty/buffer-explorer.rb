@@ -21,6 +21,7 @@ class BufferExplorer < Explorer
         @prompt.clear!
         @curbuf_at_start = VIM::Buffer.current
         @buffer_entries = compute_buffer_entries()
+        @selected_index = 0
         super
       end
     end

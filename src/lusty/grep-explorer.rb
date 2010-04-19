@@ -13,7 +13,9 @@
 # - highlighted entry doesn't highlight on second+ column
 # - should not store grep entries from initial launch (i.e. buffer list)
 # - some way for user to indicate case-sensitive regex
-# - add slash highlighting back to file name
+# - add slash highlighting back to file name?
+# - TRUNCATED and NO ENTRIES do not highlight
+
 module Lusty
 class GrepExplorer < Explorer
   public
@@ -23,7 +25,7 @@ class GrepExplorer < Explorer
       @buffer_entries = []
       @matched_strings = []
 
-      @previous_prompt = ''
+      @previous_input = ''
       @previous_grep_entries = []
       @previous_matched_strings = []
       @previous_selected_index = 0
@@ -32,7 +34,7 @@ class GrepExplorer < Explorer
     def run
       return if @running
 
-      @prompt.set! @previous_prompt
+      @prompt.set! @previous_input
       @buffer_entries = compute_buffer_entries()
       @selected_index = @previous_selected_index
       super
@@ -167,8 +169,11 @@ class GrepExplorer < Explorer
 
       grep_entries = @previous_grep_entries
       @matched_strings = @previous_matched_strings
+
+      @previous_input = ''
       @previous_grep_entries = []
       @previous_matched_strings = []
+      @previous_selected_index = 0
 
       if not grep_entries.empty?
         return grep_entries
@@ -263,6 +268,7 @@ class GrepExplorer < Explorer
     end
 
     def cleanup
+      @previous_input = @prompt.input
       @previous_grep_entries = @current_sorted_matches
       @previous_matched_strings = @matched_strings
       @previous_selected_index = @selected_index

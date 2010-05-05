@@ -14,7 +14,7 @@
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
 "               Matt Tolton, Björn Winckler, sowill, David Brown
-"               Brett DiFrischia, Ali Asad Lotia
+"               Brett DiFrischia, Ali Asad Lotia, Kenneth Love
 "
 " Release Date: March 28, 2010
 "      Version: 2.3.0
@@ -147,7 +147,10 @@ endif
 if exists("g:FuzzyFinderMode.TextMate")
   echohl WarningMsg
   echo "Warning: LustyExplorer detects the presence of fuzzyfinder_textmate;"
-  echo "that plugin sometimes interacts poorly with other Ruby plugins."
+  echo "that plugin often interacts poorly with other Ruby plugins."
+  echo "If LustyExplorer gives you an error, you can probably fix it by"
+  echo "renaming fuzzyfinder_textmate.vim to zzfuzzyfinder_textmate.vim so"
+  echo "that it is last in the load order."
   echohl none
 endif
 

@@ -323,7 +323,8 @@ class LustyJuggler
       exe "unmap <silent> <C-h>"
 
       @running = false
-      msg ""
+      msg ''
+      exe 'redraw'  # Prevents "Press ENTER to continue" message.
     end
 
   private

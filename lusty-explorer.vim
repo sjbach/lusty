@@ -1346,10 +1346,6 @@ class Displayer
       @title = title
       @window = nil
       @buffer = nil
-
-      # Hashes by range, e.g. 0..2, representing the width
-      # of the column bounded by that range.
-      @col_range_widths = {}
     end
 
     def create
@@ -1601,8 +1597,9 @@ class Displayer
       max_width = Displayer.max_width
       max_height = Displayer.max_height
 
-      # Creating a new hash is faster than clearing the old one.
-      @col_range_widths = {}
+      # Hashes by range, e.g. 0..2, representing the width
+      # of the column bounded by that range.
+      col_range_widths = {}
 
       # Binary search; find the lowest number of rows at which we
       # can fit all the strings.
@@ -1619,7 +1616,8 @@ class Displayer
 
         while col_end_index < strings.length
           total_width += \
-            compute_column_width(col_start_index..col_end_index, strings)
+            compute_column_width(col_start_index..col_end_index,
+                                 strings, col_range_widths)
 
           if total_width > max_width
             # Early exit.
@@ -1660,23 +1658,25 @@ class Displayer
       end
     end
 
-    def compute_column_width(range, strings)
+    def compute_column_width(range, strings, col_range_widths)
 
       if (range.first == range.last)
         return strings[range.first].length
       end
 
-      width = @col_range_widths[range]
+      width = col_range_widths[range]
 
       if width.nil?
         # Recurse for each half of the range.
         split_point = range.first + ((range.last - range.first) >> 1)
 
-        first_half = compute_column_width(range.first..split_point, strings)
-        second_half = compute_column_width(split_point+1..range.last, strings)
+        first_half = compute_column_width(range.first..split_point,
+                                          strings, col_range_widths)
+        second_half = compute_column_width(split_point+1..range.last,
+                                           strings, col_range_widths)
 
         width = [first_half, second_half].max
-        @col_range_widths[range] = width
+        col_range_widths[range] = width
       end
 
       width

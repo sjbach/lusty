@@ -1146,13 +1146,13 @@ end
 # - some way for user to indicate case-sensitive regex
 # - add slash highlighting back to file name?
 # - TRUNCATED and NO ENTRIES do not highlight
-# - restrict output to single column - show as much context as will fit
 
 module Lusty
 class GrepExplorer < Explorer
   public
     def initialize
       super
+      @displayer.single_column_mode = true
       @prompt = Prompt.new
       @buffer_entries = []
       @matched_strings = []
@@ -1324,7 +1324,7 @@ class GrepExplorer < Explorer
         return []
       end
 
-      # Used to avoid duplicating match strings, slowing down refresh
+      # Used to avoid duplicating match strings, which slows down refresh.
       highlight_hash = {}
 
       # Search through every line of every open buffer for the
@@ -1336,11 +1336,10 @@ class GrepExplorer < Explorer
           match = regex.match(vim_buffer[i])
           if match
             matched_str = match.to_s
-            context = crop_surrounding_context(vim_buffer[i], matched_str)
 
             grep_entry = entry.clone()
             grep_entry.line_number = i
-            grep_entry.name = "#{grep_entry.short_name}:#{i}:#{context}"
+            grep_entry.name = "#{grep_entry.short_name}:#{i}:#{vim_buffer[i]}"
             grep_entries << grep_entry
 
             # Keep track of all matched strings
@@ -1353,28 +1352,6 @@ class GrepExplorer < Explorer
       end
 
       return grep_entries
-    end
-
-    def crop_surrounding_context(context, matched_str)
-      pos = context.index(matched_str)
-      Lusty::assert(pos) # STEVE remove
-
-      start_index = [0, pos - 8].max
-      end_index = [context.length, pos + matched_str.length + 8].min
-
-      if start_index == 0
-        if end_index == context.length
-          context
-        else
-          "#{context[0...end_index]}..."
-        end
-      else
-        if end_index == context.length
-          "...#{context[start_index...end_index]}"
-        else
-          "...#{context[start_index...end_index]}..."
-        end
-      end
     end
 
     def open_entry(entry, open_mode)
@@ -1665,10 +1642,12 @@ class Displayer
       return str
     end
 
+    attr_writer :single_column_mode
     def initialize(title)
       @title = title
       @window = nil
       @buffer = nil
+      @single_column_mode = false
 
       # Hashes by range, e.g. 0..2, representing the width
       # of the column bounded by that range.
@@ -1856,11 +1835,18 @@ class Displayer
       # possible.
 
       max_width = Displayer.max_width()
+      max_height = Displayer.max_height()
       displayable_string_upper_bound = compute_displayable_upper_bound(strings)
 
       # Determine optimal row count.
       optimal_row_count, truncated = \
-        if strings.length > displayable_string_upper_bound
+        if @single_column_mode
+          if strings.length <= max_height
+            [strings.length, false]
+          else
+            [max_height - 1, true]
+          end
+        elsif strings.length > displayable_string_upper_bound
           # Use all available rows and truncate results.
           # The -1 is for the truncation indicator.
           [Displayer.max_height - 1, true]
@@ -1869,7 +1855,8 @@ class Displayer
             strings.inject(0) { |len, s|
               len + @@COLUMN_SEPARATOR.length + s.length
             }
-          if single_row_width <= max_width
+          if single_row_width <= max_width or \
+             strings.length == 1
             # All fits on a single row
             [1, false]
           else
@@ -1916,7 +1903,7 @@ class Displayer
       # Stretch the last line to the length of the window with whitespace so
       # that we can "hide" the cursor in the corner.
       last_line = $curbuf[$curbuf.count - 1]
-      last_line << (" " * ($curwin.width - last_line.length))
+      last_line << (" " * [$curwin.width - last_line.length,0].max)
       $curbuf[$curbuf.count - 1] = last_line
 
       # There's a blank line at the end of the buffer because of how

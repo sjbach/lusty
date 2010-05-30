@@ -31,10 +31,12 @@ class Displayer
       return str
     end
 
+    attr_writer :single_column_mode
     def initialize(title)
       @title = title
       @window = nil
       @buffer = nil
+      @single_column_mode = false
 
       # Hashes by range, e.g. 0..2, representing the width
       # of the column bounded by that range.
@@ -222,11 +224,18 @@ class Displayer
       # possible.
 
       max_width = Displayer.max_width()
+      max_height = Displayer.max_height()
       displayable_string_upper_bound = compute_displayable_upper_bound(strings)
 
       # Determine optimal row count.
       optimal_row_count, truncated = \
-        if strings.length > displayable_string_upper_bound
+        if @single_column_mode
+          if strings.length <= max_height
+            [strings.length, false]
+          else
+            [max_height - 1, true]
+          end
+        elsif strings.length > displayable_string_upper_bound
           # Use all available rows and truncate results.
           # The -1 is for the truncation indicator.
           [Displayer.max_height - 1, true]

@@ -283,7 +283,7 @@ class Displayer
       # Stretch the last line to the length of the window with whitespace so
       # that we can "hide" the cursor in the corner.
       last_line = $curbuf[$curbuf.count - 1]
-      last_line << (" " * ($curwin.width - last_line.length))
+      last_line << (" " * [$curwin.width - last_line.length,0].max)
       $curbuf[$curbuf.count - 1] = last_line
 
       # There's a blank line at the end of the buffer because of how

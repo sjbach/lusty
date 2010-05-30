@@ -22,7 +22,7 @@ RUBY_FILES = src/vim.rb \
              src/lusty/prompt.rb \
              src/lusty/window.rb \
              src/lusty/saved-settings.rb \
-             src/lusty/displayer.rb \
+             src/lusty/display.rb \
              src/lusty/file-masks.rb \
              src/lusty/vim-swaps.rb
 

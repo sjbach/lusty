@@ -9,8 +9,8 @@
 
 # Manage the explorer buffer.
 module Lusty
-# STEVE rename Display
-class Displayer
+
+class Display
   private
     @@COLUMN_SEPARATOR = "    "
     @@NO_MATCHES_STRING = "-- NO MATCHES --"
@@ -41,7 +41,7 @@ class Displayer
 
     def create(prefix)
 
-      # Make a window for the displayer and move there.
+      # Make a window for the display and move there.
       # Start at size 1 to mitigate flashing effect when
       # we resize the window later.
       VIM::command "silent! botright 1split #{@title}"
@@ -50,7 +50,7 @@ class Displayer
       @buffer = $curbuf
 
       #
-      # Displayer buffer is special -- set options.
+      # Display buffer is special -- set options.
       #
 
       # Buffer-local.
@@ -216,11 +216,11 @@ class Displayer
 
     def compute_optimal_layout(strings)
       # Compute optimal row count and corresponding column count.
-      # The displayer attempts to fit `strings' on as few rows as
+      # The display attempts to fit `strings' on as few rows as
       # possible.
 
-      max_width = Displayer.max_width()
-      max_height = Displayer.max_height()
+      max_width = Display.max_width()
+      max_height = Display.max_height()
       displayable_string_upper_bound = compute_displayable_upper_bound(strings)
 
       # Determine optimal row count.
@@ -234,7 +234,7 @@ class Displayer
         elsif strings.length > displayable_string_upper_bound
           # Use all available rows and truncate results.
           # The -1 is for the truncation indicator.
-          [Displayer.max_height - 1, true]
+          [Display.max_height - 1, true]
         else
           single_row_width = \
             strings.inject(0) { |len, s|
@@ -330,7 +330,7 @@ class Displayer
 
       row_width = longest_length + @@COLUMN_SEPARATOR.length
 
-      max_width = Displayer.max_width()
+      max_width = Display.max_width()
       column_count = 1
 
       sorted_by_shortest.each do |str|
@@ -343,12 +343,12 @@ class Displayer
         row_width += @@COLUMN_SEPARATOR.length
       end
 
-      column_count * Displayer.max_height()
+      column_count * Display.max_height()
     end
 
     def compute_optimal_row_count(strings)
-      max_width = Displayer.max_width
-      max_height = Displayer.max_height
+      max_width = Display.max_width
+      max_height = Display.max_height
 
       # Hashes by range, e.g. 0..2, representing the width
       # of the column bounded by that range.

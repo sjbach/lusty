@@ -20,7 +20,7 @@ class GrepExplorer < Explorer
   public
     def initialize
       super
-      @displayer.single_column_mode = true
+      @display.single_column_mode = true
       @prompt = Prompt.new
       @buffer_entries = []
       @matched_strings = []
@@ -53,14 +53,14 @@ class GrepExplorer < Explorer
 
       # Base syntax matching -- others are set on refresh.
 
-      grep_entry = Displayer.entry_syntaxify('.\{-}', false)
+      grep_entry = Display.entry_syntaxify('.\{-}', false)
       VIM::command \
         "syn match LustyGrepEntry \"#{grep_entry}\" " \
                                   'transparent ' \
                                   'contains=LustyGrepFileName'
 
       VIM::command \
-        'syn match LustyGrepFileName "' + Displayer::ENTRY_START_VIM_REGEX +
+        'syn match LustyGrepFileName "' + Display::ENTRY_START_VIM_REGEX +
                                           '\zs.\{-}\ze:\d\+:" ' \
                                           'contained ' \
                                           'contains=NONE ' \
@@ -74,7 +74,7 @@ class GrepExplorer < Explorer
 
       VIM::command \
         'syn match LustyGrepContext "\zs.\{-}\ze' +
-                                    Displayer::ENTRY_END_VIM_REGEX + '" ' \
+                                    Display::ENTRY_END_VIM_REGEX + '" ' \
                                     'transparent ' \
                                     'contained ' \
                                     'contains=LustyGrepMatch'

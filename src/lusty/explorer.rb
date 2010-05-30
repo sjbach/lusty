@@ -13,7 +13,7 @@ class Explorer
   public
     def initialize
       @settings = SavedSettings.new
-      @displayer = Displayer.new title()
+      @display = Display.new title()
       @prompt = nil
       @current_sorted_matches = []
       @running = false
@@ -102,7 +102,7 @@ class Explorer
 
       on_refresh()
       highlight_selected_index()
-      @displayer.print @current_sorted_matches.map { |x| x.name }
+      @display.print @current_sorted_matches.map { |x| x.name }
       @prompt.print
     end
 
@@ -110,7 +110,7 @@ class Explorer
       # Trim out the "::" in "Lusty::FooExplorer"
       key_binding_prefix = self.class.to_s.sub(/::/,'')
 
-      @displayer.create(key_binding_prefix)
+      @display.create(key_binding_prefix)
       set_syntax_matching()
     end
 
@@ -121,7 +121,7 @@ class Explorer
       return if entry.nil?
 
       escaped = VIM::regex_escape(entry.name)
-      entry_match_string = Displayer.entry_syntaxify(escaped, false)
+      entry_match_string = Display.entry_syntaxify(escaped, false)
       VIM::command 'syn clear LustyExpSelected'
       VIM::command "syn match LustyExpSelected \"#{entry_match_string}\" " \
                                                'contains=LustyGrepMatch'
@@ -134,7 +134,7 @@ class Explorer
     end
 
     def cleanup
-      @displayer.close
+      @display.close
       Window.select @calling_window
       @settings.restore
       @running = false

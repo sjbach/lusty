@@ -104,7 +104,7 @@ class FilesystemExplorer < Explorer
           if file_with_swap.dirname == view
             base = file_with_swap.basename
             escaped = VIM::regex_escape(base.to_s)
-            match_str = Displayer.entry_syntaxify(escaped, false)
+            match_str = Display.entry_syntaxify(escaped, false)
             VIM::command "syn match LustyExpFileWithSwap \"#{match_str}\""
           end
         end

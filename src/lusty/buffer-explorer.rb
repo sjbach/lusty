@@ -45,7 +45,7 @@ class BufferExplorer < Explorer
       curbuf = @buffer_entries.find { |x| x.vim_buffer == @curbuf_at_start }
       if curbuf
         escaped = VIM::regex_escape(curbuf.name)
-        Displayer.entry_syntaxify(escaped, @prompt.insensitive?)
+        Display.entry_syntaxify(escaped, @prompt.insensitive?)
       else
         ""
       end

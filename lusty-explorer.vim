@@ -583,7 +583,7 @@ class Explorer
   public
     def initialize
       @settings = SavedSettings.new
-      @displayer = Displayer.new title()
+      @display = Display.new title()
       @prompt = nil
       @current_sorted_matches = []
       @running = false
@@ -672,7 +672,7 @@ class Explorer
 
       on_refresh()
       highlight_selected_index()
-      @displayer.print @current_sorted_matches.map { |x| x.name }
+      @display.print @current_sorted_matches.map { |x| x.name }
       @prompt.print
     end
 
@@ -680,7 +680,7 @@ class Explorer
       # Trim out the "::" in "Lusty::FooExplorer"
       key_binding_prefix = self.class.to_s.sub(/::/,'')
 
-      @displayer.create(key_binding_prefix)
+      @display.create(key_binding_prefix)
       set_syntax_matching()
     end
 
@@ -691,7 +691,7 @@ class Explorer
       return if entry.nil?
 
       escaped = VIM::regex_escape(entry.name)
-      entry_match_string = Displayer.entry_syntaxify(escaped, false)
+      entry_match_string = Display.entry_syntaxify(escaped, false)
       VIM::command 'syn clear LustyExpSelected'
       VIM::command "syn match LustyExpSelected \"#{entry_match_string}\" " \
                                                'contains=LustyGrepMatch'
@@ -704,7 +704,7 @@ class Explorer
     end
 
     def cleanup
-      @displayer.close
+      @display.close
       Window.select @calling_window
       @settings.restore
       @running = false
@@ -760,7 +760,7 @@ class BufferExplorer < Explorer
       curbuf = @buffer_entries.find { |x| x.vim_buffer == @curbuf_at_start }
       if curbuf
         escaped = VIM::regex_escape(curbuf.name)
-        Displayer.entry_syntaxify(escaped, @prompt.insensitive?)
+        Display.entry_syntaxify(escaped, @prompt.insensitive?)
       else
         ""
       end
@@ -996,7 +996,7 @@ class FilesystemExplorer < Explorer
           if file_with_swap.dirname == view
             base = file_with_swap.basename
             escaped = VIM::regex_escape(base.to_s)
-            match_str = Displayer.entry_syntaxify(escaped, false)
+            match_str = Display.entry_syntaxify(escaped, false)
             VIM::command "syn match LustyExpFileWithSwap \"#{match_str}\""
           end
         end
@@ -1155,7 +1155,7 @@ class GrepExplorer < Explorer
   public
     def initialize
       super
-      @displayer.single_column_mode = true
+      @display.single_column_mode = true
       @prompt = Prompt.new
       @buffer_entries = []
       @matched_strings = []
@@ -1188,14 +1188,14 @@ class GrepExplorer < Explorer
 
       # Base syntax matching -- others are set on refresh.
 
-      grep_entry = Displayer.entry_syntaxify('.\{-}', false)
+      grep_entry = Display.entry_syntaxify('.\{-}', false)
       VIM::command \
         "syn match LustyGrepEntry \"#{grep_entry}\" " \
                                   'transparent ' \
                                   'contains=LustyGrepFileName'
 
       VIM::command \
-        'syn match LustyGrepFileName "' + Displayer::ENTRY_START_VIM_REGEX +
+        'syn match LustyGrepFileName "' + Display::ENTRY_START_VIM_REGEX +
                                           '\zs.\{-}\ze:\d\+:" ' \
                                           'contained ' \
                                           'contains=NONE ' \
@@ -1209,7 +1209,7 @@ class GrepExplorer < Explorer
 
       VIM::command \
         'syn match LustyGrepContext "\zs.\{-}\ze' +
-                                    Displayer::ENTRY_END_VIM_REGEX + '" ' \
+                                    Display::ENTRY_END_VIM_REGEX + '" ' \
                                     'transparent ' \
                                     'contained ' \
                                     'contains=LustyGrepMatch'
@@ -1623,8 +1623,8 @@ end
 
 # Manage the explorer buffer.
 module Lusty
-# STEVE rename Display
-class Displayer
+
+class Display
   private
     @@COLUMN_SEPARATOR = "    "
     @@NO_MATCHES_STRING = "-- NO MATCHES --"
@@ -1655,7 +1655,7 @@ class Displayer
 
     def create(prefix)
 
-      # Make a window for the displayer and move there.
+      # Make a window for the display and move there.
       # Start at size 1 to mitigate flashing effect when
       # we resize the window later.
       VIM::command "silent! botright 1split #{@title}"
@@ -1664,7 +1664,7 @@ class Displayer
       @buffer = $curbuf
 
       #
-      # Displayer buffer is special -- set options.
+      # Display buffer is special -- set options.
       #
 
       # Buffer-local.
@@ -1830,11 +1830,11 @@ class Displayer
 
     def compute_optimal_layout(strings)
       # Compute optimal row count and corresponding column count.
-      # The displayer attempts to fit `strings' on as few rows as
+      # The display attempts to fit `strings' on as few rows as
       # possible.
 
-      max_width = Displayer.max_width()
-      max_height = Displayer.max_height()
+      max_width = Display.max_width()
+      max_height = Display.max_height()
       displayable_string_upper_bound = compute_displayable_upper_bound(strings)
 
       # Determine optimal row count.
@@ -1848,7 +1848,7 @@ class Displayer
         elsif strings.length > displayable_string_upper_bound
           # Use all available rows and truncate results.
           # The -1 is for the truncation indicator.
-          [Displayer.max_height - 1, true]
+          [Display.max_height - 1, true]
         else
           single_row_width = \
             strings.inject(0) { |len, s|
@@ -1944,7 +1944,7 @@ class Displayer
 
       row_width = longest_length + @@COLUMN_SEPARATOR.length
 
-      max_width = Displayer.max_width()
+      max_width = Display.max_width()
       column_count = 1
 
       sorted_by_shortest.each do |str|
@@ -1957,12 +1957,12 @@ class Displayer
         row_width += @@COLUMN_SEPARATOR.length
       end
 
-      column_count * Displayer.max_height()
+      column_count * Display.max_height()
     end
 
     def compute_optimal_row_count(strings)
-      max_width = Displayer.max_width
-      max_height = Displayer.max_height
+      max_width = Display.max_width
+      max_height = Display.max_height
 
       # Hashes by range, e.g. 0..2, representing the width
       # of the column bounded by that range.

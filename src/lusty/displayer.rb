@@ -9,6 +9,7 @@
 
 # Manage the explorer buffer.
 module Lusty
+# STEVE rename Display
 class Displayer
   private
     @@COLUMN_SEPARATOR = "    "

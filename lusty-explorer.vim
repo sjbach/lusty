@@ -690,10 +690,8 @@ class Explorer
       escaped = VIM::regex_escape(entry.name)
       entry_match_string = Displayer.entry_syntaxify(escaped, false)
       VIM::command 'syn clear LustyExpSelected'
-      VIM::command 'syn match LustyExpSelected ' \
-	           "\"#{entry_match_string}\" " \
-                   'contains=LustyGrepMatch'
-      # STEVE ^^^^ call on_highlight
+      VIM::command "syn match LustyExpSelected \"#{entry_match_string}\" " \
+                                               'contains=LustyGrepMatch'
     end
 
     def choose(open_mode)
@@ -1143,12 +1141,12 @@ end
 
 # STEVE TODO:
 # - highlighted entry should not show match in file name
-# - highlighted entry should not also highlight entry in next column
 # - highlighted entry doesn't highlight on second+ column
 # - should not store grep entries from initial launch (i.e. buffer list)
 # - some way for user to indicate case-sensitive regex
 # - add slash highlighting back to file name?
 # - TRUNCATED and NO ENTRIES do not highlight
+# - restrict output to single column - show as much context as will fit
 
 module Lusty
 class GrepExplorer < Explorer
@@ -1180,33 +1178,38 @@ class GrepExplorer < Explorer
     end
 
     def set_syntax_matching
-      VIM::command 'syn clear LustyGrepLineNumber'
-      VIM::command 'syn clear LustyGrepFileName'
-      VIM::command 'syn clear LustyGrepContext'
       VIM::command 'syn clear LustyGrepEntry'
+      VIM::command 'syn clear LustyGrepFileName'
+      VIM::command 'syn clear LustyGrepLineNumber'
+      VIM::command 'syn clear LustyGrepContext'
 
       # Base syntax matching -- others are set on refresh.
 
       grep_entry = Displayer.entry_syntaxify('.\{-}', false)
-      VIM::command "syn match LustyGrepEntry \"#{grep_entry}\" " \
-                                             'transparent ' \
-                                             'contains=LustyGrepFileName'
+      VIM::command \
+        "syn match LustyGrepEntry \"#{grep_entry}\" " \
+                                  'transparent ' \
+                                  'contains=LustyGrepFileName'
 
-      VIM::command 'syn match LustyGrepFileName "\zs.\{-}\ze:\d\+:" ' \
-                                                'contained ' \
-                                                'nextgroup=LustyGreplineNumber'
+      VIM::command \
+        'syn match LustyGrepFileName "' + Displayer::ENTRY_START_VIM_REGEX +
+                                          '\zs.\{-}\ze:\d\+:" ' \
+                                          'contained ' \
+                                          'contains=NONE ' \
+                                          'nextgroup=LustyGrepLineNumber'
 
-      VIM::command 'syn match LustyGrepLineNumber ":\d\+:" ' \
-                                                  'contained ' \
-                                                  'contains=NONE ' \
-                                                  'nextgroup=LustyGrepContext'
+      VIM::command \
+        'syn match LustyGrepLineNumber ":\d\+:" ' \
+                                       'contained ' \
+                                       'contains=NONE ' \
+                                       'nextgroup=LustyGrepContext'
 
-      VIM::command 'syn match LustyGrepContext "\zs.\{-}\ze' +
-                                                Displayer::ENTRY_END_VIM_REGEX +
-                                                '" ' \
-                                               'transparent ' \
-                                               'contained ' \
-                                               'contains=LustyGrepMatch'
+      VIM::command \
+        'syn match LustyGrepContext "\zs.\{-}\ze' +
+                                    Displayer::ENTRY_END_VIM_REGEX + '" ' \
+                                    'transparent ' \
+                                    'contained ' \
+                                    'contains=LustyGrepMatch'
     end
 
     def on_refresh
@@ -1640,6 +1643,7 @@ end
 
 # Manage the explorer buffer.
 module Lusty
+# STEVE rename Display
 class Displayer
   private
     @@COLUMN_SEPARATOR = "    "

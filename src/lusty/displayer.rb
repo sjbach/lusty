@@ -9,6 +9,7 @@
 
 # Manage the explorer buffer.
 module Lusty
+# STEVE rename Display
 class Displayer
   private
     @@COLUMN_SEPARATOR = "    "
@@ -16,26 +17,30 @@ class Displayer
     @@TRUNCATED_STRING = "-- TRUNCATED --"
 
   public
-    def self.vim_match_string(s, case_insensitive)
+    ENTRY_START_VIM_REGEX = '\%(^\|' + @@COLUMN_SEPARATOR + '\)'
+    ENTRY_END_VIM_REGEX = '\%(\s*$\|' + @@COLUMN_SEPARATOR + '\)'
+
+    def self.entry_syntaxify(s, case_insensitive)
       # Create a match regex string for the given s.  This is for a Vim regex,
       # not for a Ruby regex.
 
-      str = '\%(^\|' + @@COLUMN_SEPARATOR + '\)' \
-            '\zs' + VIM::regex_escape(s) + '\%( \[+\]\)\?' + '\ze' \
-            '\%(\s*$\|' + @@COLUMN_SEPARATOR + '\)'
+      str = "#{ENTRY_START_VIM_REGEX}\\zs#{s}\\ze#{ENTRY_END_VIM_REGEX}"
 
       str << '\c' if case_insensitive
 
       return str
     end
 
+    attr_writer :single_column_mode
     def initialize(title)
       @title = title
       @window = nil
       @buffer = nil
+      @single_column_mode = false
     end
 
-    def create
+    def create(prefix)
+
       # Make a window for the displayer and move there.
       # Start at size 1 to mitigate flashing effect when
       # we resize the window later.
@@ -44,7 +49,11 @@ class Displayer
       @window = $curwin
       @buffer = $curbuf
 
-      # Displayer buffer is special.
+      #
+      # Displayer buffer is special -- set options.
+      #
+
+      # Buffer-local.
       VIM::command "setlocal bufhidden=delete"
       VIM::command "setlocal buftype=nofile"
       VIM::command "setlocal nomodifiable"
@@ -58,6 +67,7 @@ class Displayer
       VIM::command "setlocal textwidth=0"
       VIM::command "setlocal noreadonly"
 
+      # Non-buffer-local (Vim is annoying).
       # (Update SavedSettings if adding to below.)
       VIM::set_option "timeoutlen=0"
       VIM::set_option "noinsertmode"
@@ -69,31 +79,79 @@ class Displayer
 
       # TODO -- cpoptions?
 
+      #
+      # Syntax highlighting.
+      #
+
       if VIM::has_syntax?
-        VIM::command 'syn match LustyExpSlash "/" contained'
-        VIM::command 'syn match LustyExpDir "\zs\%(\S\+ \)*\S\+/\ze" ' \
-                                            'contains=LustyExpSlash'
-
-        VIM::command 'syn match LustyExpModified " \[+\]"'
-
+        # General syntax matching.
         VIM::command 'syn match LustyExpNoEntries "\%^\s*' \
                                                   "#{@@NO_MATCHES_STRING}" \
                                                   '\s*\%$"'
-
         VIM::command 'syn match LustyExpTruncated "^\s*' \
                                                   "#{@@TRUNCATED_STRING}" \
                                                   '\s*$"'
 
+        # STEVE rename without Exp
+        # Colour highlighting.
         VIM::command 'highlight link LustyExpDir Directory'
         VIM::command 'highlight link LustyExpSlash Function'
         VIM::command 'highlight link LustyExpSelected Type'
         VIM::command 'highlight link LustyExpModified Special'
         VIM::command 'highlight link LustyExpCurrentBuffer Constant'
+        VIM::command 'highlight link LustyGrepMatch IncSearch'
+        VIM::command 'highlight link LustyGrepLineNumber Directory'
+        VIM::command 'highlight link LustyGrepFileName Comment'
+        VIM::command 'highlight link LustyGrepContext None' # transparent
+        VIM::command 'highlight link LustyGrepEntry None' # transparent
         VIM::command 'highlight link LustyExpOpenedFile PreProc'
         VIM::command 'highlight link LustyExpFileWithSwap WarningMsg'
         VIM::command 'highlight link LustyExpNoEntries ErrorMsg'
         VIM::command 'highlight link LustyExpTruncated Visual'
       end
+
+      #
+      # Key mappings - we need to reroute user input.
+      #
+
+      # Non-special printable characters.
+      printables =  '/!"#$%&\'()*+,-.0123456789:<=>?#@"' \
+                    'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
+                    '[]^_`abcdefghijklmnopqrstuvwxyz{}~'
+
+      map = "noremap <silent> <buffer>"
+
+      printables.each_byte do |b|
+        VIM::command "#{map} <Char-#{b}> :call <SID>#{prefix}KeyPressed(#{b})<CR>"
+      end
+
+      # Special characters
+      VIM::command "#{map} <Tab>    :call <SID>#{prefix}KeyPressed(9)<CR>"
+      VIM::command "#{map} <Bslash> :call <SID>#{prefix}KeyPressed(92)<CR>"
+      VIM::command "#{map} <Space>  :call <SID>#{prefix}KeyPressed(32)<CR>"
+      VIM::command "#{map} \026|    :call <SID>#{prefix}KeyPressed(124)<CR>"
+
+      VIM::command "#{map} <BS>     :call <SID>#{prefix}KeyPressed(8)<CR>"
+      VIM::command "#{map} <Del>    :call <SID>#{prefix}KeyPressed(8)<CR>"
+      VIM::command "#{map} <C-h>    :call <SID>#{prefix}KeyPressed(8)<CR>"
+
+      VIM::command "#{map} <CR>     :call <SID>#{prefix}KeyPressed(13)<CR>"
+      VIM::command "#{map} <S-CR>   :call <SID>#{prefix}KeyPressed(10)<CR>"
+      VIM::command "#{map} <C-a>    :call <SID>#{prefix}KeyPressed(1)<CR>"
+
+      VIM::command "#{map} <Esc>    :call <SID>#{prefix}Cancel()<CR>"
+      VIM::command "#{map} <C-c>    :call <SID>#{prefix}Cancel()<CR>"
+      VIM::command "#{map} <C-g>    :call <SID>#{prefix}Cancel()<CR>"
+
+      VIM::command "#{map} <C-w>    :call <SID>#{prefix}KeyPressed(23)<CR>"
+      VIM::command "#{map} <C-n>    :call <SID>#{prefix}KeyPressed(14)<CR>"
+      VIM::command "#{map} <C-p>    :call <SID>#{prefix}KeyPressed(16)<CR>"
+      VIM::command "#{map} <C-o>    :call <SID>#{prefix}KeyPressed(15)<CR>"
+      VIM::command "#{map} <C-t>    :call <SID>#{prefix}KeyPressed(20)<CR>"
+      VIM::command "#{map} <C-v>    :call <SID>#{prefix}KeyPressed(22)<CR>"
+      VIM::command "#{map} <C-e>    :call <SID>#{prefix}KeyPressed(5)<CR>"
+      VIM::command "#{map} <C-r>    :call <SID>#{prefix}KeyPressed(18)<CR>"
+      VIM::command "#{map} <C-u>    :call <SID>#{prefix}KeyPressed(21)<CR>"
     end
 
     def print(strings)
@@ -162,11 +220,18 @@ class Displayer
       # possible.
 
       max_width = Displayer.max_width()
+      max_height = Displayer.max_height()
       displayable_string_upper_bound = compute_displayable_upper_bound(strings)
 
       # Determine optimal row count.
       optimal_row_count, truncated = \
-        if strings.length > displayable_string_upper_bound
+        if @single_column_mode
+          if strings.length <= max_height
+            [strings.length, false]
+          else
+            [max_height - 1, true]
+          end
+        elsif strings.length > displayable_string_upper_bound
           # Use all available rows and truncate results.
           # The -1 is for the truncation indicator.
           [Displayer.max_height - 1, true]
@@ -175,7 +240,8 @@ class Displayer
             strings.inject(0) { |len, s|
               len + @@COLUMN_SEPARATOR.length + s.length
             }
-          if single_row_width <= max_width
+          if single_row_width <= max_width or \
+             strings.length == 1
             # All fits on a single row
             [1, false]
           else
@@ -222,7 +288,7 @@ class Displayer
       # Stretch the last line to the length of the window with whitespace so
       # that we can "hide" the cursor in the corner.
       last_line = $curbuf[$curbuf.count - 1]
-      last_line << (" " * ($curwin.width - last_line.length))
+      last_line << (" " * [$curwin.width - last_line.length,0].max)
       $curbuf[$curbuf.count - 1] = last_line
 
       # There's a blank line at the end of the buffer because of how

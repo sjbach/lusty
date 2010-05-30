@@ -7,6 +7,9 @@
 # copyright holder be liable for any damages resulting from the use of this
 # software.
 
+# STEVE rename name to be something else; designation?
+# STEVE perhaps there should be a FilesystemEntry? so we don't need current_score in Entry
+
 # Used in FilesystemExplorer
 module Lusty
 class Entry
@@ -30,4 +33,20 @@ class BufferEntry < Entry
   end
 end
 end
+
+# Used in GrepExplorer
+module Lusty
+class GrepEntry < Entry
+  attr_accessor :full_name, :short_name, :vim_buffer, :line_number
+  def initialize(vim_buffer)
+    @full_name = vim_buffer.name
+    @vim_buffer = vim_buffer
+    @short_name = "::UNSET::"
+    @line_number = 0
+
+    @name = "::UNSET::"
+  end
+end
+end
+
 

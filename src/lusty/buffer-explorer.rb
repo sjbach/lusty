@@ -21,6 +21,7 @@ class BufferExplorer < Explorer
         @prompt.clear!
         @curbuf_at_start = VIM::Buffer.current
         @buffer_entries = compute_buffer_entries()
+        @selected_index = 0
         super
       end
     end
@@ -30,10 +31,21 @@ class BufferExplorer < Explorer
       '[LustyExplorer-Buffers]'
     end
 
+    def set_syntax_matching
+      # Base highlighting -- more is set on refresh.
+      if VIM::has_syntax?
+        VIM::command 'syn match LustyExpSlash "/" contained'
+        VIM::command 'syn match LustyExpDir "\%(\S\+ \)*\S\+/" ' \
+                                            'contains=LustyExpSlash'
+        VIM::command 'syn match LustyExpModified " \[+\]"'
+      end
+    end
+
     def curbuf_match_string
       curbuf = @buffer_entries.find { |x| x.vim_buffer == @curbuf_at_start }
       if curbuf
-        Displayer.vim_match_string(curbuf.name, @prompt.insensitive?)
+        escaped = VIM::regex_escape(curbuf.name)
+        Displayer.entry_syntaxify(escaped, @prompt.insensitive?)
       else
         ""
       end
@@ -124,8 +136,24 @@ class BufferExplorer < Explorer
       @prompt.input
     end
 
-    def all_entries
-      @buffer_entries
+    def compute_sorted_matches
+      abbrev = current_abbreviation()
+
+      if abbrev.length == 0
+        # Sort alphabetically if we have no abbreviation.
+        @buffer_entries.sort { |x, y| x.name <=> y.name }
+      else
+        matching_entries = \
+          @buffer_entries.select { |x|
+            x.current_score = LiquidMetal.score(x.name, abbrev)
+            x.current_score != 0.0
+          }
+
+        # Sort by score.
+        matching_entries.sort! { |x, y|
+          y.current_score <=> x.current_score
+        }
+      end
     end
 
     def open_entry(entry, open_mode)

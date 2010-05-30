@@ -15,7 +15,7 @@ class Explorer
       @settings = SavedSettings.new
       @displayer = Displayer.new title()
       @prompt = nil
-      @ordered_matching_entries = []
+      @current_sorted_matches = []
       @running = false
     end
 
@@ -30,7 +30,6 @@ class Explorer
                                 else
                                   VIM::evaluate("bufnr(expand('#'))")
                                 end
-      @selected_index = 0
       create_explorer_window()
       refresh(:full)
     end
@@ -50,30 +49,26 @@ class Explorer
           @selected_index = 0
         when 9, 13            # Tab and Enter
           choose(:current_tab)
-          @selected_index = 0
         when 23               # C-w (delete 1 dir backward)
           @prompt.up_one_dir!
           @selected_index = 0
         when 14               # C-n (select next)
           @selected_index = \
-            (@selected_index + 1) % @ordered_matching_entries.size
+            (@selected_index + 1) % @current_sorted_matches.size
           refresh_mode = :no_recompute
         when 16               # C-p (select previous)
           @selected_index = \
-            (@selected_index - 1) % @ordered_matching_entries.size
+            (@selected_index - 1) % @current_sorted_matches.size
           refresh_mode = :no_recompute
         when 15               # C-o choose in new horizontal split
           choose(:new_split)
-          @selected_index = 0
         when 20               # C-t choose in new tab
           choose(:new_tab)
-          @selected_index = 0
         when 21               # C-u clear prompt
           @prompt.clear!
           @selected_index = 0
         when 22               # C-v choose in new vertical split
           choose(:new_vsplit)
-          @selected_index = 0
       end
 
       refresh(refresh_mode)
@@ -102,99 +97,39 @@ class Explorer
       return if not @running
 
       if mode == :full
-        @ordered_matching_entries = compute_ordered_matching_entries()
+        @current_sorted_matches = compute_sorted_matches()
       end
 
       on_refresh()
       highlight_selected_index()
-      @displayer.print @ordered_matching_entries.map { |x| x.name }
+      @displayer.print @current_sorted_matches.map { |x| x.name }
       @prompt.print
     end
 
     def create_explorer_window
+      # Trim out the "::" in "Lusty::FooExplorer"
+      key_binding_prefix = self.class.to_s.sub(/::/,'')
 
-      @displayer.create
-
-      # Setup key mappings to reroute user input.
-
-      # Non-special printable characters.
-      printables =  '/!"#$%&\'()*+,-.0123456789:<=>?#@"' \
-                    'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
-                    '[]^_`abcdefghijklmnopqrstuvwxyz{}~'
-
-      map = "noremap <silent> <buffer>"
-      name = self.class.to_s.sub(/.*::/,'')  # Trim out "Lusty::"
-
-      printables.each_byte do |b|
-        VIM::command "#{map} <Char-#{b}> :call <SID>Lusty#{name}KeyPressed(#{b})<CR>"
-      end
-
-      # Special characters
-      VIM::command "#{map} <Tab>    :call <SID>Lusty#{name}KeyPressed(9)<CR>"
-      VIM::command "#{map} <Bslash> :call <SID>Lusty#{name}KeyPressed(92)<CR>"
-      VIM::command "#{map} <Space>  :call <SID>Lusty#{name}KeyPressed(32)<CR>"
-      VIM::command "#{map} \026|    :call <SID>Lusty#{name}KeyPressed(124)<CR>"
-
-      VIM::command "#{map} <BS>     :call <SID>Lusty#{name}KeyPressed(8)<CR>"
-      VIM::command "#{map} <Del>    :call <SID>Lusty#{name}KeyPressed(8)<CR>"
-      VIM::command "#{map} <C-h>    :call <SID>Lusty#{name}KeyPressed(8)<CR>"
-
-      VIM::command "#{map} <CR>     :call <SID>Lusty#{name}KeyPressed(13)<CR>"
-      VIM::command "#{map} <S-CR>   :call <SID>Lusty#{name}KeyPressed(10)<CR>"
-      VIM::command "#{map} <C-a>    :call <SID>Lusty#{name}KeyPressed(1)<CR>"
-
-      VIM::command "#{map} <Esc>    :call <SID>Lusty#{name}Cancel()<CR>"
-      VIM::command "#{map} <C-c>    :call <SID>Lusty#{name}Cancel()<CR>"
-      VIM::command "#{map} <C-g>    :call <SID>Lusty#{name}Cancel()<CR>"
-
-      VIM::command "#{map} <C-w>    :call <SID>Lusty#{name}KeyPressed(23)<CR>"
-      VIM::command "#{map} <C-n>    :call <SID>Lusty#{name}KeyPressed(14)<CR>"
-      VIM::command "#{map} <C-p>    :call <SID>Lusty#{name}KeyPressed(16)<CR>"
-      VIM::command "#{map} <C-o>    :call <SID>Lusty#{name}KeyPressed(15)<CR>"
-      VIM::command "#{map} <C-t>    :call <SID>Lusty#{name}KeyPressed(20)<CR>"
-      VIM::command "#{map} <C-v>    :call <SID>Lusty#{name}KeyPressed(22)<CR>"
-      VIM::command "#{map} <C-e>    :call <SID>Lusty#{name}KeyPressed(5)<CR>"
-      VIM::command "#{map} <C-r>    :call <SID>Lusty#{name}KeyPressed(18)<CR>"
-      VIM::command "#{map} <C-u>    :call <SID>Lusty#{name}KeyPressed(21)<CR>"
+      @displayer.create(key_binding_prefix)
+      set_syntax_matching()
     end
 
     def highlight_selected_index
       return unless VIM::has_syntax?
 
-      entry = @ordered_matching_entries[@selected_index]
+      entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
 
-      VIM::command "syn clear LustyExpSelected"
-      VIM::command "syn match LustyExpSelected " \
-	           "\"#{Displayer.vim_match_string(entry.name, false)}\" "
-    end
-
-    def compute_ordered_matching_entries
-      abbrev = current_abbreviation()
-      unordered = matching_entries()
-
-      # Sort alphabetically if there's just a dot or we have no abbreviation,
-      # otherwise it just looks weird.
-      if abbrev.length == 0 or abbrev == '.'
-        unordered.sort! { |x, y| x.name <=> y.name }
-      else
-        # Sort by score.
-        unordered.sort! { |x, y| y.current_score <=> x.current_score }
-      end
-    end
-
-    def matching_entries
-      abbrev = current_abbreviation()
-      all_entries().select { |x|
-        x.current_score = LiquidMetal.score(x.name, abbrev)
-        x.current_score != 0.0
-      }
+      escaped = VIM::regex_escape(entry.name)
+      entry_match_string = Displayer.entry_syntaxify(escaped, false)
+      VIM::command 'syn clear LustyExpSelected'
+      VIM::command "syn match LustyExpSelected \"#{entry_match_string}\" " \
+                                               'contains=LustyGrepMatch'
     end
 
     def choose(open_mode)
-      entry = @ordered_matching_entries[@selected_index]
+      entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
-      @selected_index = 0
       open_entry(entry, open_mode)
     end
 
@@ -206,6 +141,13 @@ class Explorer
       VIM::message ""
       Lusty::assert(@calling_window == $curwin)
     end
+
+    # Pure virtual methods
+    # - set_syntax_matching
+    # - on_refresh
+    # - open_entry
+    # - compute_sorted_matches
+
 end
 end
 

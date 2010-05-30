@@ -13,16 +13,20 @@ class FilesystemExplorer < Explorer
     def initialize
       super
       @prompt = FilesystemPrompt.new
-      @memoized_entries = {}
+      @memoized_dir_contents = {}
     end
 
     def run
+      return if @running
+
       FileMasks.create_glob_masks()
       @vim_swaps = VimSwaps.new
+      @selected_index = 0
       super
     end
 
     def run_from_here
+      return if @running
       start_path = if $curbuf.name.nil?
                      VIM::getcwd()
                    else
@@ -34,6 +38,7 @@ class FilesystemExplorer < Explorer
     end
 
     def run_from_wd
+      return if @running
       @prompt.set!(VIM::getcwd() + File::SEPARATOR)
       run()
     end
@@ -45,12 +50,17 @@ class FilesystemExplorer < Explorer
       when 1, 10  # <C-a>, <Shift-Enter>
         cleanup()
         # Open all non-directories currently in view.
-        @ordered_matching_entries.each do |e|
+        @current_sorted_matches.each do |e|
           path_str = \
             if @prompt.at_dir?
               @prompt.input + e.name
             else
-              @prompt.dirname + File::SEPARATOR + e.name
+              dir = @prompt.dirname
+              if dir == '/'
+                dir + e.name
+              else
+                dir + File::SEPARATOR + e.name
+              end
             end
 
           load_file(path_str, :current_tab) unless File.directory?(path_str)
@@ -60,11 +70,11 @@ class FilesystemExplorer < Explorer
           cleanup()
           # Force a reread of this directory so that the new file will
           # show up (as long as it is saved before the next run).
-          @memoized_entries.delete(view_path())
+          @memoized_dir_contents.delete(view_path())
           load_file(@prompt.input, :current_tab)
         end
       when 18     # <C-r> refresh
-        @memoized_entries.delete(view_path())
+        @memoized_dir_contents.delete(view_path())
         refresh(:full)
       else
         super
@@ -73,7 +83,16 @@ class FilesystemExplorer < Explorer
 
   private
     def title
-    '[LustyExplorer-Files]'
+      '[LustyExplorer-Files]'
+    end
+
+    def set_syntax_matching
+      # Base highlighting -- more is set on refresh.
+      if VIM::has_syntax?
+        VIM::command 'syn match LustyExpSlash "/" contained'
+        VIM::command 'syn match LustyExpDir "\%(\S\+ \)*\S\+/" ' \
+                                            'contains=LustyExpSlash'
+      end
     end
 
     def on_refresh
@@ -84,7 +103,8 @@ class FilesystemExplorer < Explorer
         @vim_swaps.file_names.each do |file_with_swap|
           if file_with_swap.dirname == view
             base = file_with_swap.basename
-            match_str = Displayer.vim_match_string(base.to_s, false)
+            escaped = VIM::regex_escape(base.to_s)
+            match_str = Displayer.entry_syntaxify(escaped, false)
             VIM::command "syn match LustyExpFileWithSwap \"#{match_str}\""
           end
         end
@@ -118,10 +138,10 @@ class FilesystemExplorer < Explorer
       return path
     end
 
-    def all_entries
+    def all_files_at_view
       view = view_path()
 
-      unless @memoized_entries.has_key?(view)
+      unless @memoized_dir_contents.has_key?(view)
 
         if not view.directory?
           return []
@@ -150,10 +170,10 @@ class FilesystemExplorer < Explorer
           end
           entries << Entry.new(name)
         end
-        @memoized_entries[view] = entries
+        @memoized_dir_contents[view] = entries
       end
 
-      all = @memoized_entries[view]
+      all = @memoized_dir_contents[view]
 
       if Lusty::option_set?("AlwaysShowDotFiles") or \
          current_abbreviation()[0] == ?.
@@ -162,6 +182,31 @@ class FilesystemExplorer < Explorer
         # Filter out dotfiles if the current abbreviation doesn't start with
         # '.'.
         all.select { |x| x.name[0] != ?. }
+      end
+    end
+
+    def compute_sorted_matches
+      abbrev = current_abbreviation()
+
+      unsorted = all_files_at_view()
+
+      if abbrev.length == 0
+        # Sort alphabetically if we have no abbreviation.
+        unsorted.sort { |x, y| x.name <=> y.name }
+      else
+        matches = \
+          unsorted.select { |x|
+            x.current_score = LiquidMetal.score(x.name, abbrev)
+            x.current_score != 0.0
+          }
+
+        if abbrev == '.'
+          # Sort alphabetically, otherwise it just looks weird.
+          matches.sort! { |x, y| x.name <=> y.name }
+        else
+          # Sort by score.
+          matches.sort! { |x, y| y.current_score <=> x.current_score }
+        end
       end
     end
 

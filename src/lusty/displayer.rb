@@ -235,7 +235,8 @@ class Displayer
             strings.inject(0) { |len, s|
               len + @@COLUMN_SEPARATOR.length + s.length
             }
-          if single_row_width <= max_width
+          if single_row_width <= max_width or \
+             strings.length == 1
             # All fits on a single row
             [1, false]
           else

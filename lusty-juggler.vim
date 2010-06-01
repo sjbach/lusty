@@ -690,7 +690,11 @@ class BufferStack
     end
 
     def buf_name(i)
-      eva("bufname(#{i})")
+      if VIM::nonzero? eva("empty(bufname(#{i}))")
+        "<Unknown #{i}>"
+      else
+        eva("bufname(#{i})")
+      end
     end
 
     def shorten_paths(buffer_names)

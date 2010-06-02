@@ -10,7 +10,7 @@
 " Name Of File: lusty-juggler.vim
 "  Description: Dynamic Buffer Switcher Vim Plugin
 "   Maintainer: Stephen Bach <this-file@sjbach.com>
-" Contributors: Juan Frias, Bartosz Leper
+" Contributors: Juan Frias, Bartosz Leper, Marco Barberis
 "
 " Release Date: March 4, 2010
 "      Version: 1.1.3

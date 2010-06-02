@@ -9,7 +9,10 @@
 
 # Utility functions.
 module Lusty
-  MOST_POSITIVE_FIXNUM = 2**(0.size * 8 -2) -1
+
+  unless const_defined? "MOST_POSITIVE_FIXNUM"
+    MOST_POSITIVE_FIXNUM = 2**(0.size * 8 -2) -1
+  end
 
   def self.simplify_path(s)
     s = s.gsub(/\/+/, '/')  # Remove redundant '/' characters

@@ -191,7 +191,7 @@ if !has("ruby") || version < 700
     echo "         # make && make install"
 
     echo "(If you just wish to stifle this message, set the following option:"
-    echo "  let g:LustyJugglerSuppressRubyWarning = 1)"
+    echo "  let g:LustyExplorerSuppressRubyWarning = 1)"
     echohl none
   endif
   endif
@@ -300,7 +300,10 @@ end
 
 
 module VIM
-  MOST_POSITIVE_INTEGER = 2**(32 - 1) - 2  # Vim ints are signed 32-bit.
+
+  unless const_defined? "MOST_POSITIVE_INTEGER"
+    MOST_POSITIVE_INTEGER = 2**(32 - 1) - 2  # Vim ints are signed 32-bit.
+  end
 
   def self.zero?(var)
     # In Vim 7.2 and older, VIM::evaluate returns Strings for boolean
@@ -384,7 +387,10 @@ end
 
 # Utility functions.
 module Lusty
-  MOST_POSITIVE_FIXNUM = 2**(0.size * 8 -2) -1
+
+  unless const_defined? "MOST_POSITIVE_FIXNUM"
+    MOST_POSITIVE_FIXNUM = 2**(0.size * 8 -2) -1
+  end
 
   def self.simplify_path(s)
     s = s.gsub(/\/+/, '/')  # Remove redundant '/' characters

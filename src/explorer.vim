@@ -191,7 +191,7 @@ if !has("ruby") || version < 700
     echo "         # make && make install"
 
     echo "(If you just wish to stifle this message, set the following option:"
-    echo "  let g:LustyJugglerSuppressRubyWarning = 1)"
+    echo "  let g:LustyExplorerSuppressRubyWarning = 1)"
     echohl none
   endif
   endif

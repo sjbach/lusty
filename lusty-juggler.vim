@@ -12,8 +12,8 @@
 "   Maintainer: Stephen Bach <this-file@sjbach.com>
 " Contributors: Juan Frias, Bartosz Leper, Marco Barberis
 "
-" Release Date: March 4, 2010
-"      Version: 1.1.3
+" Release Date: June 2, 2010
+"      Version: 1.1.4
 "
 "        Usage: To launch the juggler:
 "

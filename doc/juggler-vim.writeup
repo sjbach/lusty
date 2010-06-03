@@ -8,11 +8,9 @@ Annotated snapshot progression:
 
       http://viewglob.sourceforge.net/lusty-juggler-annotated.png
 
-Launch the juggler with either of these key combos:
+Launch the juggler with this key combo:
 
       <Leader>lj
-      or
-      <Leader>lg
 
 The command bar at bottom is replaced with a new bar showing the names of your currently opened buffers in most-recently-used order.
 

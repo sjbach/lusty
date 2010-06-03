@@ -1,2 +1,3 @@
-- Fix portability with the updated Vim->Ruby data type conversion in devhead Vim.
-- Fix portability with Ruby 1.9.
+- don't error if ENTER is pressed before selection
+- avoid a "Press ENTER to continue" message.  (Thanks to Bartosz Leper)
+- don't error when the QuickFix buffer is open.  (Thanks to Marco Barberis)

@@ -53,13 +53,13 @@ class FilesystemExplorer < Explorer
         @current_sorted_matches.each do |e|
           path_str = \
             if @prompt.at_dir?
-              @prompt.input + e.name
+              @prompt.input + e.label
             else
               dir = @prompt.dirname
               if dir == '/'
-                dir + e.name
+                dir + e.label
               else
-                dir + File::SEPARATOR + e.name
+                dir + File::SEPARATOR + e.label
               end
             end
 
@@ -181,7 +181,7 @@ class FilesystemExplorer < Explorer
       else
         # Filter out dotfiles if the current abbreviation doesn't start with
         # '.'.
-        all.select { |x| x.name[0] != ?. }
+        all.select { |x| x.label[0] != ?. }
       end
     end
 
@@ -192,17 +192,17 @@ class FilesystemExplorer < Explorer
 
       if abbrev.length == 0
         # Sort alphabetically if we have no abbreviation.
-        unsorted.sort { |x, y| x.name <=> y.name }
+        unsorted.sort { |x, y| x.label <=> y.label }
       else
         matches = \
           unsorted.select { |x|
-            x.current_score = LiquidMetal.score(x.name, abbrev)
+            x.current_score = LiquidMetal.score(x.label, abbrev)
             x.current_score != 0.0
           }
 
         if abbrev == '.'
           # Sort alphabetically, otherwise it just looks weird.
-          matches.sort! { |x, y| x.name <=> y.name }
+          matches.sort! { |x, y| x.label <=> y.label }
         else
           # Sort by score.
           matches.sort! { |x, y| y.current_score <=> x.current_score }
@@ -211,12 +211,12 @@ class FilesystemExplorer < Explorer
     end
 
     def open_entry(entry, open_mode)
-      path = view_path() + entry.name
+      path = view_path() + entry.label
 
       if File.directory?(path)
         # Recurse into the directory instead of opening it.
         @prompt.set!(path.to_s)
-      elsif entry.name.include?(File::SEPARATOR)
+      elsif entry.label.include?(File::SEPARATOR)
         # Don't open a fake file/buffer with "/" in its name.
         return
       else

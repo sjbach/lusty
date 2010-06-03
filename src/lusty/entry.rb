@@ -7,24 +7,21 @@
 # copyright holder be liable for any damages resulting from the use of this
 # software.
 
-# STEVE rename name to be something else; designation?
-# STEVE perhaps there should be a FilesystemEntry? so we don't need current_score in Entry
-
 module Lusty
 
 # Abstract base class.
 class Entry
-  attr_accessor :name
-  def initialize(name)
-    @name = name
+  attr_accessor :label
+  def initialize(label)
+    @label = label
   end
 end
 
 # Used in FilesystemExplorer
 class FilesystemEntry < Entry
   attr_accessor :current_score
-  def initialize(name)
-    super(name)
+  def initialize(label)
+    super(label)
     @current_score = 0.0
   end
 end
@@ -47,7 +44,7 @@ class GrepEntry < Entry
     super("::UNSET::")
     @full_name = vim_buffer.name
     @vim_buffer = vim_buffer
-    @short_name = "::UNSET::"  # STEVE << necessary?
+    @short_name = "::UNSET::"
     @line_number = 0
   end
 end

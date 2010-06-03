@@ -44,7 +44,7 @@ class BufferExplorer < Explorer
     def curbuf_match_string
       curbuf = @buffer_entries.find { |x| x.vim_buffer == @curbuf_at_start }
       if curbuf
-        escaped = VIM::regex_escape(curbuf.name)
+        escaped = VIM::regex_escape(curbuf.label)
         Display.entry_syntaxify(escaped, @prompt.insensitive?)
       else
         ""
@@ -126,7 +126,7 @@ class BufferExplorer < Explorer
         # Show modification indicator
         short_name << (entry.vim_buffer.modified? ? " [+]" : "")
 
-        entry.name = short_name
+        entry.label = short_name
       end
 
       buffer_entries
@@ -141,11 +141,11 @@ class BufferExplorer < Explorer
 
       if abbrev.length == 0
         # Sort alphabetically if we have no abbreviation.
-        @buffer_entries.sort { |x, y| x.name <=> y.name }
+        @buffer_entries.sort { |x, y| x.label <=> y.label }
       else
         matching_entries = \
           @buffer_entries.select { |x|
-            x.current_score = LiquidMetal.score(x.name, abbrev)
+            x.current_score = LiquidMetal.score(x.label, abbrev)
             x.current_score != 0.0
           }
 

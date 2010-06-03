@@ -161,7 +161,7 @@ class GrepExplorer < Explorer
                      end
 
         entry.short_name = short_name
-        entry.name = short_name  # overridden later
+        entry.label = short_name  # overridden later
       end
 
       buffer_entries
@@ -209,7 +209,7 @@ class GrepExplorer < Explorer
 
             grep_entry = entry.clone()
             grep_entry.line_number = i
-            grep_entry.name = "#{grep_entry.short_name}:#{i}:#{vim_buffer[i]}"
+            grep_entry.label = "#{grep_entry.short_name}:#{i}:#{vim_buffer[i]}"
             grep_entries << grep_entry
 
             # Keep track of all matched strings

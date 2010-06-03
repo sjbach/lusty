@@ -547,24 +547,21 @@ module LiquidMetal
 end
 
 
-# STEVE rename name to be something else; designation?
-# STEVE perhaps there should be a FilesystemEntry? so we don't need current_score in Entry
-
 module Lusty
 
 # Abstract base class.
 class Entry
-  attr_accessor :name
-  def initialize(name)
-    @name = name
+  attr_accessor :label
+  def initialize(label)
+    @label = label
   end
 end
 
 # Used in FilesystemExplorer
 class FilesystemEntry < Entry
   attr_accessor :current_score
-  def initialize(name)
-    super(name)
+  def initialize(label)
+    super(label)
     @current_score = 0.0
   end
 end
@@ -587,7 +584,7 @@ class GrepEntry < Entry
     super("::UNSET::")
     @full_name = vim_buffer.name
     @vim_buffer = vim_buffer
-    @short_name = "::UNSET::"  # STEVE << necessary?
+    @short_name = "::UNSET::"
     @line_number = 0
   end
 end
@@ -690,7 +687,7 @@ class Explorer
 
       on_refresh()
       highlight_selected_index()
-      @display.print @current_sorted_matches.map { |x| x.name }
+      @display.print @current_sorted_matches.map { |x| x.label }
       @prompt.print
     end
 
@@ -708,10 +705,10 @@ class Explorer
       entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
 
-      escaped = VIM::regex_escape(entry.name)
-      entry_match_string = Display.entry_syntaxify(escaped, false)
+      escaped = VIM::regex_escape(entry.label)
+      label_match_string = Display.entry_syntaxify(escaped, false)
       VIM::command 'syn clear LustySelected'
-      VIM::command "syn match LustySelected \"#{entry_match_string}\" " \
+      VIM::command "syn match LustySelected \"#{label_match_string}\" " \
                                             'contains=LustyGrepMatch'
     end
 
@@ -777,7 +774,7 @@ class BufferExplorer < Explorer
     def curbuf_match_string
       curbuf = @buffer_entries.find { |x| x.vim_buffer == @curbuf_at_start }
       if curbuf
-        escaped = VIM::regex_escape(curbuf.name)
+        escaped = VIM::regex_escape(curbuf.label)
         Display.entry_syntaxify(escaped, @prompt.insensitive?)
       else
         ""
@@ -859,7 +856,7 @@ class BufferExplorer < Explorer
         # Show modification indicator
         short_name << (entry.vim_buffer.modified? ? " [+]" : "")
 
-        entry.name = short_name
+        entry.label = short_name
       end
 
       buffer_entries
@@ -874,11 +871,11 @@ class BufferExplorer < Explorer
 
       if abbrev.length == 0
         # Sort alphabetically if we have no abbreviation.
-        @buffer_entries.sort { |x, y| x.name <=> y.name }
+        @buffer_entries.sort { |x, y| x.label <=> y.label }
       else
         matching_entries = \
           @buffer_entries.select { |x|
-            x.current_score = LiquidMetal.score(x.name, abbrev)
+            x.current_score = LiquidMetal.score(x.label, abbrev)
             x.current_score != 0.0
           }
 
@@ -963,13 +960,13 @@ class FilesystemExplorer < Explorer
         @current_sorted_matches.each do |e|
           path_str = \
             if @prompt.at_dir?
-              @prompt.input + e.name
+              @prompt.input + e.label
             else
               dir = @prompt.dirname
               if dir == '/'
-                dir + e.name
+                dir + e.label
               else
-                dir + File::SEPARATOR + e.name
+                dir + File::SEPARATOR + e.label
               end
             end
 
@@ -1091,7 +1088,7 @@ class FilesystemExplorer < Explorer
       else
         # Filter out dotfiles if the current abbreviation doesn't start with
         # '.'.
-        all.select { |x| x.name[0] != ?. }
+        all.select { |x| x.label[0] != ?. }
       end
     end
 
@@ -1102,17 +1099,17 @@ class FilesystemExplorer < Explorer
 
       if abbrev.length == 0
         # Sort alphabetically if we have no abbreviation.
-        unsorted.sort { |x, y| x.name <=> y.name }
+        unsorted.sort { |x, y| x.label <=> y.label }
       else
         matches = \
           unsorted.select { |x|
-            x.current_score = LiquidMetal.score(x.name, abbrev)
+            x.current_score = LiquidMetal.score(x.label, abbrev)
             x.current_score != 0.0
           }
 
         if abbrev == '.'
           # Sort alphabetically, otherwise it just looks weird.
-          matches.sort! { |x, y| x.name <=> y.name }
+          matches.sort! { |x, y| x.label <=> y.label }
         else
           # Sort by score.
           matches.sort! { |x, y| y.current_score <=> x.current_score }
@@ -1121,12 +1118,12 @@ class FilesystemExplorer < Explorer
     end
 
     def open_entry(entry, open_mode)
-      path = view_path() + entry.name
+      path = view_path() + entry.label
 
       if File.directory?(path)
         # Recurse into the directory instead of opening it.
         @prompt.set!(path.to_s)
-      elsif entry.name.include?(File::SEPARATOR)
+      elsif entry.label.include?(File::SEPARATOR)
         # Don't open a fake file/buffer with "/" in its name.
         return
       else
@@ -1167,6 +1164,8 @@ end
 # - some way for user to indicate case-sensitive regex
 # - add slash highlighting back to file name?
 # - TRUNCATED and NO ENTRIES do not highlight
+# - highlighting stopped working consistently
+# - stop search when we've gone over the maximum viewable?
 
 module Lusty
 class GrepExplorer < Explorer
@@ -1312,7 +1311,7 @@ class GrepExplorer < Explorer
                      end
 
         entry.short_name = short_name
-        entry.name = short_name  # overridden later
+        entry.label = short_name  # overridden later
       end
 
       buffer_entries
@@ -1360,7 +1359,7 @@ class GrepExplorer < Explorer
 
             grep_entry = entry.clone()
             grep_entry.line_number = i
-            grep_entry.name = "#{grep_entry.short_name}:#{i}:#{vim_buffer[i]}"
+            grep_entry.label = "#{grep_entry.short_name}:#{i}:#{vim_buffer[i]}"
             grep_entries << grep_entry
 
             # Keep track of all matched strings

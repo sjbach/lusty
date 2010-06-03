@@ -102,7 +102,7 @@ class Explorer
 
       on_refresh()
       highlight_selected_index()
-      @display.print @current_sorted_matches.map { |x| x.name }
+      @display.print @current_sorted_matches.map { |x| x.label }
       @prompt.print
     end
 
@@ -120,10 +120,10 @@ class Explorer
       entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
 
-      escaped = VIM::regex_escape(entry.name)
-      entry_match_string = Display.entry_syntaxify(escaped, false)
+      escaped = VIM::regex_escape(entry.label)
+      label_match_string = Display.entry_syntaxify(escaped, false)
       VIM::command 'syn clear LustySelected'
-      VIM::command "syn match LustySelected \"#{entry_match_string}\" " \
+      VIM::command "syn match LustySelected \"#{label_match_string}\" " \
                                             'contains=LustyGrepMatch'
     end
 

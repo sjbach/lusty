@@ -26,7 +26,6 @@ class FileMasks
     end
 
     def FileMasks.masked?(str)
-      # STEVE create a single regex instead of looping
       @@glob_masks.each do |mask|
         return true if File.fnmatch(mask, str)
       end

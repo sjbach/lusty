@@ -14,6 +14,8 @@
 # - some way for user to indicate case-sensitive regex
 # - add slash highlighting back to file name?
 # - TRUNCATED and NO ENTRIES do not highlight
+# - highlighting stopped working consistently
+# - stop search when we've gone over the maximum viewable?
 
 module Lusty
 class GrepExplorer < Explorer

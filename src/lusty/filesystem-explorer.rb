@@ -168,7 +168,7 @@ class FilesystemExplorer < Explorer
           if FileTest.directory?(view_str + name)
             name << File::SEPARATOR
           end
-          entries << Entry.new(name)
+          entries << FilesystemEntry.new(name)
         end
         @memoized_dir_contents[view] = entries
       end

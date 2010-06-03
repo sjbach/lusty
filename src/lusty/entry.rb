@@ -10,43 +10,47 @@
 # STEVE rename name to be something else; designation?
 # STEVE perhaps there should be a FilesystemEntry? so we don't need current_score in Entry
 
-# Used in FilesystemExplorer
 module Lusty
+
+# Abstract base class.
 class Entry
-  attr_accessor :name, :current_score
+  attr_accessor :name
   def initialize(name)
     @name = name
-    @current_score = 0.0
   end
 end
+
+# Used in FilesystemExplorer
+class FilesystemEntry < Entry
+  attr_accessor :current_score
+  def initialize(name)
+    super(name)
+    @current_score = 0.0
+  end
 end
 
 # Used in BufferExplorer
-module Lusty
 class BufferEntry < Entry
-  attr_accessor :full_name, :vim_buffer
+  attr_accessor :full_name, :vim_buffer, :current_score
   def initialize(vim_buffer)
+    super("::UNSET::")
     @full_name = vim_buffer.name
     @vim_buffer = vim_buffer
-    @name = "::UNSET::"
     @current_score = 0.0
   end
 end
-end
 
 # Used in GrepExplorer
-module Lusty
 class GrepEntry < Entry
   attr_accessor :full_name, :short_name, :vim_buffer, :line_number
   def initialize(vim_buffer)
+    super("::UNSET::")
     @full_name = vim_buffer.name
     @vim_buffer = vim_buffer
-    @short_name = "::UNSET::"
+    @short_name = "::UNSET::"  # STEVE << necessary?
     @line_number = 0
-
-    @name = "::UNSET::"
   end
 end
-end
 
+end
 

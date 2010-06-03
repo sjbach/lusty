@@ -272,6 +272,14 @@ module VIM
     evaluate("getcwd()")
   end
 
+  def self.bufname(i)
+    if evaluate_bool("empty(bufname(#{i}))")
+      "<Unknown #{i}>"
+    else
+      evaluate("bufname(#{i})")
+    end
+  end
+
   def self.single_quote_escape(s)
     # Everything in a Vim single-quoted string is literal, except single
     # quotes.  Single quotes are escaped by doubling them.
@@ -871,7 +879,7 @@ class BufferStack
       # the name as necessary to differentiate between buffers of
       # the same name.
       cull!
-      names = @stack.collect { |i| buf_name(i) }.reverse[0,10]
+      names = @stack.collect { |i| VIM::bufname(i) }.reverse[0,10]
       shorten_paths(names)
     end
 
@@ -901,14 +909,7 @@ class BufferStack
       @stack.delete_if { |x| not VIM::evaluate_bool("bufexists(#{x})") }
     end
 
-    def buf_name(i)
-      if VIM::evaluate_bool("empty(bufname(#{i}))")
-        "<Unknown #{i}>"
-      else
-        VIM::evaluate("bufname(#{i})")
-      end
-    end
-
+    # STEVE to Lusty:: to be common with explorer
     def shorten_paths(buffer_names)
       # Shorten each buffer name by removing all path elements which are not
       # needed to differentiate a given name from other names.  This usually
@@ -939,6 +940,7 @@ class BufferStack
       }
     end
 
+    # STEVE to Lusty:: to be common with explorer
     def common_prefix(paths)
       prefix = paths[0]
       for path in paths

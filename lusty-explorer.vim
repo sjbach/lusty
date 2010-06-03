@@ -346,6 +346,14 @@ module VIM
     evaluate("getcwd()")
   end
 
+  def self.bufname(i)
+    if evaluate_bool("empty(bufname(#{i}))")
+      "<Unknown #{i}>"
+    else
+      evaluate("bufname(#{i})")
+    end
+  end
+
   def self.single_quote_escape(s)
     # Everything in a Vim single-quoted string is literal, except single
     # quotes.  Single quotes are escaped by doubling them.

@@ -122,9 +122,9 @@ class Explorer
 
       escaped = VIM::regex_escape(entry.name)
       entry_match_string = Display.entry_syntaxify(escaped, false)
-      VIM::command 'syn clear LustyExpSelected'
-      VIM::command "syn match LustyExpSelected \"#{entry_match_string}\" " \
-                                               'contains=LustyGrepMatch'
+      VIM::command 'syn clear LustySelected'
+      VIM::command "syn match LustySelected \"#{entry_match_string}\" " \
+                                            'contains=LustyGrepMatch'
     end
 
     def choose(open_mode)

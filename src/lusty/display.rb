@@ -85,29 +85,29 @@ class Display
 
       if VIM::has_syntax?
         # General syntax matching.
-        VIM::command 'syn match LustyExpNoEntries "\%^\s*' \
-                                                  "#{@@NO_MATCHES_STRING}" \
-                                                  '\s*\%$"'
-        VIM::command 'syn match LustyExpTruncated "^\s*' \
-                                                  "#{@@TRUNCATED_STRING}" \
-                                                  '\s*$"'
+        VIM::command 'syn match LustyNoEntries "\%^\s*' \
+                                               "#{@@NO_MATCHES_STRING}" \
+                                               '\s*\%$"'
+        VIM::command 'syn match LustyTruncated "^\s*' \
+                                               "#{@@TRUNCATED_STRING}" \
+                                               '\s*$"'
 
         # STEVE rename without Exp
         # Colour highlighting.
-        VIM::command 'highlight link LustyExpDir Directory'
-        VIM::command 'highlight link LustyExpSlash Function'
-        VIM::command 'highlight link LustyExpSelected Type'
-        VIM::command 'highlight link LustyExpModified Special'
-        VIM::command 'highlight link LustyExpCurrentBuffer Constant'
+        VIM::command 'highlight link LustyDir Directory'
+        VIM::command 'highlight link LustySlash Function'
+        VIM::command 'highlight link LustySelected Type'
+        VIM::command 'highlight link LustyModified Special'
+        VIM::command 'highlight link LustyCurrentBuffer Constant'
         VIM::command 'highlight link LustyGrepMatch IncSearch'
         VIM::command 'highlight link LustyGrepLineNumber Directory'
         VIM::command 'highlight link LustyGrepFileName Comment'
         VIM::command 'highlight link LustyGrepContext None' # transparent
         VIM::command 'highlight link LustyGrepEntry None' # transparent
-        VIM::command 'highlight link LustyExpOpenedFile PreProc'
-        VIM::command 'highlight link LustyExpFileWithSwap WarningMsg'
-        VIM::command 'highlight link LustyExpNoEntries ErrorMsg'
-        VIM::command 'highlight link LustyExpTruncated Visual'
+        VIM::command 'highlight link LustyOpenedFile PreProc'
+        VIM::command 'highlight link LustyFileWithSwap WarningMsg'
+        VIM::command 'highlight link LustyNoEntries ErrorMsg'
+        VIM::command 'highlight link LustyTruncated Visual'
       end
 
       #

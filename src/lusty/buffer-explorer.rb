@@ -34,10 +34,10 @@ class BufferExplorer < Explorer
     def set_syntax_matching
       # Base highlighting -- more is set on refresh.
       if VIM::has_syntax?
-        VIM::command 'syn match LustyExpSlash "/" contained'
-        VIM::command 'syn match LustyExpDir "\%(\S\+ \)*\S\+/" ' \
-                                            'contains=LustyExpSlash'
-        VIM::command 'syn match LustyExpModified " \[+\]"'
+        VIM::command 'syn match LustySlash "/" contained'
+        VIM::command 'syn match LustyDir "\%(\S\+ \)*\S\+/" ' \
+                                         'contains=LustySlash'
+        VIM::command 'syn match LustyModified " \[+\]"'
       end
     end
 
@@ -54,10 +54,10 @@ class BufferExplorer < Explorer
     def on_refresh
       # Highlighting for the current buffer name.
       if VIM::has_syntax?
-        VIM::command 'syn clear LustyExpCurrentBuffer'
-        VIM::command 'syn match LustyExpCurrentBuffer ' \
+        VIM::command 'syn clear LustyCurrentBuffer'
+        VIM::command 'syn match LustyCurrentBuffer ' \
                      "\"#{curbuf_match_string()}\" " \
-                     'contains=LustyExpModified'
+                     'contains=LustyModified'
       end
     end
 

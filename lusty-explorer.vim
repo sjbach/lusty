@@ -706,9 +706,9 @@ class Explorer
 
       escaped = VIM::regex_escape(entry.name)
       entry_match_string = Display.entry_syntaxify(escaped, false)
-      VIM::command 'syn clear LustyExpSelected'
-      VIM::command "syn match LustyExpSelected \"#{entry_match_string}\" " \
-                                               'contains=LustyGrepMatch'
+      VIM::command 'syn clear LustySelected'
+      VIM::command "syn match LustySelected \"#{entry_match_string}\" " \
+                                            'contains=LustyGrepMatch'
     end
 
     def choose(open_mode)
@@ -763,10 +763,10 @@ class BufferExplorer < Explorer
     def set_syntax_matching
       # Base highlighting -- more is set on refresh.
       if VIM::has_syntax?
-        VIM::command 'syn match LustyExpSlash "/" contained'
-        VIM::command 'syn match LustyExpDir "\%(\S\+ \)*\S\+/" ' \
-                                            'contains=LustyExpSlash'
-        VIM::command 'syn match LustyExpModified " \[+\]"'
+        VIM::command 'syn match LustySlash "/" contained'
+        VIM::command 'syn match LustyDir "\%(\S\+ \)*\S\+/" ' \
+                                         'contains=LustySlash'
+        VIM::command 'syn match LustyModified " \[+\]"'
       end
     end
 
@@ -783,10 +783,10 @@ class BufferExplorer < Explorer
     def on_refresh
       # Highlighting for the current buffer name.
       if VIM::has_syntax?
-        VIM::command 'syn clear LustyExpCurrentBuffer'
-        VIM::command 'syn match LustyExpCurrentBuffer ' \
+        VIM::command 'syn clear LustyCurrentBuffer'
+        VIM::command 'syn match LustyCurrentBuffer ' \
                      "\"#{curbuf_match_string()}\" " \
-                     'contains=LustyExpModified'
+                     'contains=LustyModified'
       end
     end
 
@@ -995,15 +995,15 @@ class FilesystemExplorer < Explorer
     def set_syntax_matching
       # Base highlighting -- more is set on refresh.
       if VIM::has_syntax?
-        VIM::command 'syn match LustyExpSlash "/" contained'
-        VIM::command 'syn match LustyExpDir "\%(\S\+ \)*\S\+/" ' \
-                                            'contains=LustyExpSlash'
+        VIM::command 'syn match LustySlash "/" contained'
+        VIM::command 'syn match LustyDir "\%(\S\+ \)*\S\+/" ' \
+                                         'contains=LustySlash'
       end
     end
 
     def on_refresh
       if VIM::has_syntax?
-        VIM::command 'syn clear LustyExpFileWithSwap'
+        VIM::command 'syn clear LustyFileWithSwap'
 
         view = view_path()
         @vim_swaps.file_names.each do |file_with_swap|
@@ -1011,7 +1011,7 @@ class FilesystemExplorer < Explorer
             base = file_with_swap.basename
             escaped = VIM::regex_escape(base.to_s)
             match_str = Display.entry_syntaxify(escaped, false)
-            VIM::command "syn match LustyExpFileWithSwap \"#{match_str}\""
+            VIM::command "syn match LustyFileWithSwap \"#{match_str}\""
           end
         end
       end
@@ -1713,29 +1713,29 @@ class Display
 
       if VIM::has_syntax?
         # General syntax matching.
-        VIM::command 'syn match LustyExpNoEntries "\%^\s*' \
-                                                  "#{@@NO_MATCHES_STRING}" \
-                                                  '\s*\%$"'
-        VIM::command 'syn match LustyExpTruncated "^\s*' \
-                                                  "#{@@TRUNCATED_STRING}" \
-                                                  '\s*$"'
+        VIM::command 'syn match LustyNoEntries "\%^\s*' \
+                                               "#{@@NO_MATCHES_STRING}" \
+                                               '\s*\%$"'
+        VIM::command 'syn match LustyTruncated "^\s*' \
+                                               "#{@@TRUNCATED_STRING}" \
+                                               '\s*$"'
 
         # STEVE rename without Exp
         # Colour highlighting.
-        VIM::command 'highlight link LustyExpDir Directory'
-        VIM::command 'highlight link LustyExpSlash Function'
-        VIM::command 'highlight link LustyExpSelected Type'
-        VIM::command 'highlight link LustyExpModified Special'
-        VIM::command 'highlight link LustyExpCurrentBuffer Constant'
+        VIM::command 'highlight link LustyDir Directory'
+        VIM::command 'highlight link LustySlash Function'
+        VIM::command 'highlight link LustySelected Type'
+        VIM::command 'highlight link LustyModified Special'
+        VIM::command 'highlight link LustyCurrentBuffer Constant'
         VIM::command 'highlight link LustyGrepMatch IncSearch'
         VIM::command 'highlight link LustyGrepLineNumber Directory'
         VIM::command 'highlight link LustyGrepFileName Comment'
         VIM::command 'highlight link LustyGrepContext None' # transparent
         VIM::command 'highlight link LustyGrepEntry None' # transparent
-        VIM::command 'highlight link LustyExpOpenedFile PreProc'
-        VIM::command 'highlight link LustyExpFileWithSwap WarningMsg'
-        VIM::command 'highlight link LustyExpNoEntries ErrorMsg'
-        VIM::command 'highlight link LustyExpTruncated Visual'
+        VIM::command 'highlight link LustyOpenedFile PreProc'
+        VIM::command 'highlight link LustyFileWithSwap WarningMsg'
+        VIM::command 'highlight link LustyNoEntries ErrorMsg'
+        VIM::command 'highlight link LustyTruncated Visual'
       end
 
       #

@@ -35,11 +35,11 @@ JUGGLER_RUBY_FILES = src/vim.rb \
 		     src/lusty/name-bar.rb \
 		     src/lusty/buffer-stack.rb
 
-all: lusty-explorer.vim lusty-juggler.vim
+all: plugin/lusty-explorer.vim plugin/lusty-juggler.vim
 
 # Concatenate the Ruby files, removing redundant copyrights, and insert
 # the result into the vimscript file.
-lusty-explorer.vim: $(EXPLORER_VIM_FILE) $(EXPLORER_RUBY_FILES)
+plugin/lusty-explorer.vim: $(EXPLORER_VIM_FILE) $(EXPLORER_RUBY_FILES)
 	for file in $(EXPLORER_RUBY_FILES); do \
 	  cat $$file | sed '1,/^$$/d' ;\
 	  echo ; \
@@ -47,12 +47,12 @@ lusty-explorer.vim: $(EXPLORER_VIM_FILE) $(EXPLORER_RUBY_FILES)
 	( sed '/{{RUBY_CODE_INSERTION_POINT}}/,$$d' $(EXPLORER_VIM_FILE) ; \
 	  cat ruby-content.tmp ; \
 	  sed '1,/{{RUBY_CODE_INSERTION_POINT}}/d' $(EXPLORER_VIM_FILE) ) > \
-	lusty-explorer.vim
+	plugin/lusty-explorer.vim
 	rm -f ruby-content.tmp
 
 # Concatenate the Ruby files, removing redundant copyrights, and insert
 # the result into the vimscript file.
-lusty-juggler.vim: $(JUGGLER_VIM_FILE) $(JUGGLER_RUBY_FILES)
+plugin/lusty-juggler.vim: $(JUGGLER_VIM_FILE) $(JUGGLER_RUBY_FILES)
 	for file in $(JUGGLER_RUBY_FILES); do \
 	  cat $$file | sed '1,/^$$/d' ;\
 	  echo ; \
@@ -60,8 +60,9 @@ lusty-juggler.vim: $(JUGGLER_VIM_FILE) $(JUGGLER_RUBY_FILES)
 	( sed '/{{RUBY_CODE_INSERTION_POINT}}/,$$d' $(JUGGLER_VIM_FILE) ; \
 	  cat ruby-content.tmp ; \
 	  sed '1,/{{RUBY_CODE_INSERTION_POINT}}/d' $(JUGGLER_VIM_FILE) ) > \
-	lusty-juggler.vim
+	plugin/lusty-juggler.vim
 	rm -f ruby-content.tmp
 clean:
-	rm -f ruby-content.tmp lusty-explorer.vim lusty-juggler.vim
+	rm -f ruby-content.tmp plugin/lusty-explorer.vim \
+              plugin/lusty-juggler.vim
 

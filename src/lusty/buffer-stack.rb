@@ -63,7 +63,7 @@ class BufferStack
       @stack.delete_if { |x| not VIM::evaluate_bool("bufexists(#{x})") }
     end
 
-    # STEVE to Lusty:: to be common with explorer
+    # NOTE: very similar to Entry::compute_buffer_entries()
     def shorten_paths(buffer_names)
       # Shorten each buffer name by removing all path elements which are not
       # needed to differentiate a given name from other names.  This usually

@@ -36,7 +36,6 @@ expect {
 
 send \033
 
-# Ctrl-C
 send ":qa!\r"
 expect {
   timeout {exit 1}

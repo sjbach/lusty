@@ -24,11 +24,13 @@ expect {
   timeout {exit 1}
   "home"
 }
-# Ctrl-C
-send \003
-send \003
-send \003
+
+# ESC
+send \033
 send ":q\r"
-expect eof
+expect {
+  timeout {exit 1}
+  eof
+}
 exit 0
 

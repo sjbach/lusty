@@ -99,23 +99,6 @@ class GrepExplorer < Explorer
 
     # STEVE make it a class function?
     # STEVE duplicated from BufferExplorer
-    def common_prefix(entries)
-      prefix = entries[0].full_name
-      entries.each do |entry|
-        full_name = entry.full_name
-        for i in 0...prefix.length
-          if full_name.length <= i or prefix[i] != full_name[i]
-            prefix = prefix[0...i]
-            prefix = prefix[0..(prefix.rindex('/') or -1)]
-            break
-          end
-        end
-      end
-      return prefix
-    end
-
-    # STEVE make it a class function?
-    # STEVE duplicated from BufferExplorer
     def compute_buffer_entries
       buffer_entries = []
       (0..VIM::Buffer.count-1).each do |i|
@@ -140,7 +123,8 @@ class GrepExplorer < Explorer
       basename_to_prefix = {}
       common_base.each do |base, entries|
         if entries.length > 1
-          basename_to_prefix[base] = common_prefix(entries)
+          full_names = entries.map { |e| e.full_name }
+          basename_to_prefix[base] = Lusty::longest_common_prefix(full_names)
         end
       end
 

@@ -356,6 +356,21 @@ module Lusty
     end
   end
 
+  def self.longest_common_prefix(paths)
+    prefix = paths[0]
+    paths.each do |path|
+      for i in 0...prefix.length
+        if path.length <= i or prefix[i] != path[i]
+          prefix = prefix[0...i]
+          prefix = prefix[0..(prefix.rindex('/') or -1)]
+          break
+        end
+      end
+    end
+
+    prefix
+  end
+
   def self.ready_for_read?(io)
     if io.respond_to? :ready?
       ready?
@@ -927,7 +942,7 @@ class BufferStack
       basename_to_prefix = {}
       common_base.each do |k, names|
         if names.length > 1
-          basename_to_prefix[k] = common_prefix(names)
+          basename_to_prefix[k] = Lusty::longest_common_prefix(names)
         end
       end
 
@@ -938,21 +953,6 @@ class BufferStack
         prefix ? name[prefix.length..-1] \
                : base
       }
-    end
-
-    # STEVE to Lusty:: to be common with explorer
-    def common_prefix(paths)
-      prefix = paths[0]
-      for path in paths
-        for i in 0...prefix.length
-          if path.length <= i or prefix[i] != path[i]
-            prefix = prefix[0...i]
-            prefix = prefix[0..(prefix.rindex('/') or -1)]
-            break
-          end
-        end
-      end
-      return prefix
     end
 end
 

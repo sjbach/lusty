@@ -430,6 +430,21 @@ module Lusty
     end
   end
 
+  def self.longest_common_prefix(paths)
+    prefix = paths[0]
+    paths.each do |path|
+      for i in 0...prefix.length
+        if path.length <= i or prefix[i] != path[i]
+          prefix = prefix[0...i]
+          prefix = prefix[0..(prefix.rindex('/') or -1)]
+          break
+        end
+      end
+    end
+
+    prefix
+  end
+
   def self.ready_for_read?(io)
     if io.respond_to? :ready?
       ready?
@@ -791,21 +806,7 @@ class BufferExplorer < Explorer
       end
     end
 
-    def common_prefix(entries)
-      prefix = entries[0].full_name
-      entries.each do |entry|
-        full_name = entry.full_name
-        for i in 0...prefix.length
-          if full_name.length <= i or prefix[i] != full_name[i]
-            prefix = prefix[0...i]
-            prefix = prefix[0..(prefix.rindex('/') or -1)]
-            break
-          end
-        end
-      end
-      return prefix
-    end
-
+    # STEVE duplicated 
     def compute_buffer_entries
       buffer_entries = []
       (0..VIM::Buffer.count-1).each do |i|
@@ -830,7 +831,8 @@ class BufferExplorer < Explorer
       basename_to_prefix = {}
       common_base.each do |base, entries|
         if entries.length > 1
-          basename_to_prefix[base] = common_prefix(entries)
+          full_names = entries.map { |e| e.full_name }
+          basename_to_prefix[base] = Lusty::longest_common_prefix(full_names)
         end
       end
 
@@ -1249,23 +1251,6 @@ class GrepExplorer < Explorer
 
     # STEVE make it a class function?
     # STEVE duplicated from BufferExplorer
-    def common_prefix(entries)
-      prefix = entries[0].full_name
-      entries.each do |entry|
-        full_name = entry.full_name
-        for i in 0...prefix.length
-          if full_name.length <= i or prefix[i] != full_name[i]
-            prefix = prefix[0...i]
-            prefix = prefix[0..(prefix.rindex('/') or -1)]
-            break
-          end
-        end
-      end
-      return prefix
-    end
-
-    # STEVE make it a class function?
-    # STEVE duplicated from BufferExplorer
     def compute_buffer_entries
       buffer_entries = []
       (0..VIM::Buffer.count-1).each do |i|
@@ -1290,7 +1275,8 @@ class GrepExplorer < Explorer
       basename_to_prefix = {}
       common_base.each do |base, entries|
         if entries.length > 1
-          basename_to_prefix[base] = common_prefix(entries)
+          full_names = entries.map { |e| e.full_name }
+          basename_to_prefix[base] = Lusty::longest_common_prefix(full_names)
         end
       end
 

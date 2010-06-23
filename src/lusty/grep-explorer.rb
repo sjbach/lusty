@@ -37,7 +37,7 @@ class GrepExplorer < Explorer
       return if @running
 
       @prompt.set! @previous_input
-      @buffer_entries = compute_buffer_entries()
+      @buffer_entries = GrepEntry::compute_buffer_entries()
       @selected_index = @previous_selected_index
       super
     end
@@ -97,60 +97,6 @@ class GrepExplorer < Explorer
       end
     end
 
-    # STEVE make it a class function?
-    # STEVE duplicated from BufferExplorer
-    def compute_buffer_entries
-      buffer_entries = []
-      (0..VIM::Buffer.count-1).each do |i|
-        buffer_entries << GrepEntry.new(VIM::Buffer[i])
-      end
-
-      # Shorten each buffer name by removing all path elements which are not
-      # needed to differentiate a given name from other names.  This usually
-      # results in only the basename shown, but if several buffers of the
-      # same basename are opened, there will be more.
-
-      # Group the buffers by common basename
-      common_base = Hash.new { |hash, k| hash[k] = [] }
-      buffer_entries.each do |entry|
-        if entry.full_name
-          basename = Pathname.new(entry.full_name).basename.to_s
-          common_base[basename] << entry
-        end
-      end
-
-      # Determine the longest common prefix for each basename group.
-      basename_to_prefix = {}
-      common_base.each do |base, entries|
-        if entries.length > 1
-          full_names = entries.map { |e| e.full_name }
-          basename_to_prefix[base] = Lusty::longest_common_prefix(full_names)
-        end
-      end
-
-      # Compute shortened buffer names by removing prefix, if possible.
-      buffer_entries.each do |entry|
-        full_name = entry.full_name
-
-        short_name = if full_name.nil?
-                       '[No Name]'
-                     elsif Lusty::starts_with?(full_name, "scp://")
-                       full_name
-                     else
-                       base = Pathname.new(full_name).basename.to_s
-                       prefix = basename_to_prefix[base]
-
-                       prefix ? full_name[prefix.length..-1] \
-                              : base
-                     end
-
-        entry.short_name = short_name
-        entry.label = short_name  # overridden later
-      end
-
-      buffer_entries
-    end
-
     def current_abbreviation
       @prompt.input
     end
@@ -193,7 +139,7 @@ class GrepExplorer < Explorer
 
             grep_entry = entry.clone()
             grep_entry.line_number = i
-            grep_entry.label = "#{grep_entry.short_name}:#{i}:#{vim_buffer[i]}"
+            grep_entry.label += ":#{i}:#{vim_buffer[i]}"
             grep_entries << grep_entry
 
             # Keep track of all matched strings

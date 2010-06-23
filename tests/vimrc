@@ -3,7 +3,7 @@ set hidden
 set nobackup
 set noswapfile
 
-source ../../lusty-explorer.vim
+source ../../plugin/lusty-explorer.vim
 
 " Not too useful because a bug in Vim causes an E15 error
 " whenever a Ruby plugin is called. :-(

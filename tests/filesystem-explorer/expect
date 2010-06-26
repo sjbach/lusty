@@ -8,6 +8,8 @@ send ":LustyFilesystemExplorer\r"
 # Launching should not have caused a backtrace and "Press ENTER ..." message
 expect {
   "Press ENTER"  {exit 1}
+  "Error"  {exit 1}
+  "Warning"  {exit 1}
   timeout {exit 1}
   ">>"
 }

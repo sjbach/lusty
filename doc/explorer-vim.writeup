@@ -1,16 +1,14 @@
-LustyExplorer is a fast and responsive way to manage files and buffers in Vim.  It includes both a filesystem explorer (for opening new files) and a buffer explorer (for switching between currently open files) through a mostly common interface.
+LustyExplorer is a fast and responsive way to manage files and buffers in Vim.  It includes a filesystem explorer, a buffer switcher, and a buffer grep for searching through and switching between files and buffers quickly, all through a mostly common interface.
 
-Here's an animated gif showing it in action:
+A short video someone made:
 
-      http://viewglob.sourceforge.net/lusty-explorer-animated.gif (from 1.x)
-      (Note: 2.0+ uses fuzzy matching instead of tab completion)
+      http://www.youtube.com/watch?v=dLMKVYqdarY
 
-Annotated snapshot progression:
+      Some old stuff (pre v2.0 - we now use fuzzy matching instead of tab completion):
+      http://viewglob.sourceforge.net/lusty-explorer-animated.gif
+      http://viewglob.sourceforge.net/lusty-explorer-annotated.png
 
-      http://viewglob.sourceforge.net/lusty-explorer-annotated.png (from 1.x)
-      (Note: 2.0+ uses fuzzy matching instead of tab completion)
-
-Instructions for use:
+Instructions:
 
       <Leader>lf  - Opens filesystem explorer.
       <Leader>lr  - Opens filesystem explorer at the directory of the current file.

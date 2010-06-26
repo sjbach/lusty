@@ -28,13 +28,27 @@ class BufferStack
       VIM::command "b #{buf}"
     end
 
-    def names
-      # Get the last 10 buffer names by MRU.  Show only as much of
+    def names(n = :all)
+      # Get the last n buffer names by MRU.  Show only as much of
       # the name as necessary to differentiate between buffers of
       # the same name.
       cull!
-      names = @stack.collect { |i| VIM::bufname(i) }.reverse[0,10]
+      names = @stack.collect { |i| VIM::bufname(i) }.reverse
+      if n != :all
+        names = names[0,n]
+      end
       shorten_paths(names)
+    end
+
+    def numbers(n = :all)
+      # Get the last n buffer numbers by MRU.
+      cull!
+      numbers = @stack.reverse
+      if n == :all
+        numbers
+      else
+        numbers[0,n]
+      end
     end
 
     def num_at_pos(i)

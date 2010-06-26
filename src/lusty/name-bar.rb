@@ -35,7 +35,7 @@ class NameBar
 
 
     def create_items
-      names = $buffer_stack.names
+      names = $lj_buffer_stack.names(10)
 
       items = names.inject([]) { |array, name|
         key = if VIM::exists?("g:LustyJugglerShowKeys")

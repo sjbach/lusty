@@ -41,7 +41,7 @@ class LustyJuggler
     def run
       return if @running
 
-      if $buffer_stack.length <= 1
+      if $lj_buffer_stack.length <= 1
         VIM::pretty_msg("PreProc", "No other buffers")
         return
       end
@@ -126,7 +126,7 @@ class LustyJuggler
       @name_bar.selected_buffer = \
         if highlighted_entry
           # Correct for zero-based array.
-          [highlighted_entry, $buffer_stack.length].min - 1
+          [highlighted_entry, $lj_buffer_stack.length].min - 1
         else
           nil
         end
@@ -135,7 +135,7 @@ class LustyJuggler
     end
 
     def choose(i)
-      buf = $buffer_stack.num_at_pos(i)
+      buf = $lj_buffer_stack.num_at_pos(i)
       VIM::command "b #{buf}"
     end
 end

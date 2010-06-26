@@ -103,8 +103,7 @@
 "  - Uses Ruby-style regexes instead of Vim style.  This means:
 "
 "    - \b instead of \< or \> for beginning/end of word.
-"    - (foo|bar) instead of \(foo\|bar\).
-"    - (foo|bar) instead of \(foo\|bar\).
+"    - (foo|bar) instead of \(foo\|bar\)
 "    - {2,5} instead of \{2,5}
 "    - + instead of \+
 "    - Generally, fewer backslashes. :-)
@@ -302,6 +301,14 @@ function! s:LustyBufferGrepKeyPressed(code_arg)
   ruby Lusty::profile() { $lusty_buffer_grep.key_pressed }
 endfunction
 
+" Setup the autocommands that handle buffer MRU ordering.
+augroup LustyExplorer
+  autocmd!
+  autocmd BufEnter * ruby Lusty::profile() { $le_buffer_stack.push }
+  autocmd BufDelete * ruby Lusty::profile() { $le_buffer_stack.pop }
+  autocmd BufWipeout * ruby Lusty::profile() { $le_buffer_stack.pop }
+augroup End
+
 ruby << EOF
 
 require 'pathname'
@@ -393,6 +400,16 @@ module VIM
   class Buffer
     def modified?
       VIM::nonzero? VIM::evaluate("getbufvar(#{number()}, '&modified')")
+    end
+
+    def self.obj_for_bufnr(n)
+      # There's gotta be a better way to do this...
+      (0..VIM::Buffer.count-1).each do |i|
+        obj = VIM::Buffer[i]
+        return obj if obj.number == n
+      end
+
+      Lusty::assert(false, "couldn't find buffer #{n}")
     end
   end
 
@@ -596,9 +613,14 @@ class Entry
 
   def self.compute_buffer_entries()
     buffer_entries = []
-    (0..VIM::Buffer.count-1).each do |i|
-      buffer_entries << self.new(VIM::Buffer[i])
+
+    $le_buffer_stack.numbers.each do |n|
+      o = VIM::Buffer.obj_for_bufnr(n)
+      buffer_entries << self.new(o, n)
     end
+
+    # Put the current buffer at the end of the list.
+    buffer_entries << buffer_entries.shift
 
     # Shorten each buffer name by removing all path elements which are not
     # needed to differentiate a given name from other names.  This usually
@@ -657,20 +679,22 @@ end
 
 # Used in BufferExplorer
 class BufferEntry < Entry
-  attr_accessor :vim_buffer, :current_score
-  def initialize(vim_buffer)
+  attr_accessor :vim_buffer, :mru_placement, :current_score
+  def initialize(vim_buffer, mru_placement)
     super(vim_buffer.name, "::UNSET::", "::UNSET::")
     @vim_buffer = vim_buffer
+    @mru_placement = mru_placement
     @current_score = 0.0
   end
 end
 
 # Used in BufferGrep
 class GrepEntry < Entry
-  attr_accessor :vim_buffer, :line_number
-  def initialize(vim_buffer)
+  attr_accessor :vim_buffer, :mru_placement, :line_number
+  def initialize(vim_buffer, mru_placement)
     super(vim_buffer.name, "::UNSET::", "::UNSET::")
     @vim_buffer = vim_buffer
+    @mru_placement = mru_placement
     @line_number = 0
   end
 end
@@ -893,18 +917,22 @@ class BufferExplorer < Explorer
       abbrev = current_abbreviation()
 
       if abbrev.length == 0
-        # Sort alphabetically if we have no abbreviation.
-        @buffer_entries.sort { |x, y| x.label <=> y.label }
+        # Take (current) MRU order if we have no abbreviation.
+        @buffer_entries
       else
         matching_entries = \
           @buffer_entries.select { |x|
-            x.current_score = LiquidMetal.score(x.label, abbrev)
+            x.current_score = LiquidMetal.score(x.short_name, abbrev)
             x.current_score != 0.0
           }
 
         # Sort by score.
         matching_entries.sort! { |x, y|
-          y.current_score <=> x.current_score
+          if x.current_score == y.current_score
+            x.mru_placement <=> y.mru_placement
+          else
+            y.current_score <=> x.current_score
+          end
         }
       end
     end
@@ -2088,10 +2116,116 @@ end
 end
 
 
+# Maintain MRU ordering.
+module Lusty
+class BufferStack
+  public
+    def initialize
+      @stack = []
+
+      (0..VIM::Buffer.count-1).each do |i|
+        @stack << VIM::Buffer[i].number
+      end
+    end
+
+    # Switch to the previous buffer (the one you were using before the
+    # current one).  This is basically a smarter replacement for :b#,
+    # accounting for the situation where your previous buffer no longer
+    # exists.
+    def juggle_previous
+      buf = num_at_pos(2)
+      VIM::command "b #{buf}"
+    end
+
+    def names(n = :all)
+      # Get the last n buffer names by MRU.  Show only as much of
+      # the name as necessary to differentiate between buffers of
+      # the same name.
+      cull!
+      names = @stack.collect { |i| VIM::bufname(i) }.reverse
+      if n != :all
+        names = names[0,n]
+      end
+      shorten_paths(names)
+    end
+
+    def numbers(n = :all)
+      # Get the last n buffer numbers by MRU.
+      cull!
+      numbers = @stack.reverse
+      if n == :all
+        numbers
+      else
+        numbers[0,n]
+      end
+    end
+
+    def num_at_pos(i)
+      cull!
+      return @stack[-i] ? @stack[-i] : @stack.first
+    end
+
+    def length
+      cull!
+      return @stack.length
+    end
+
+    def push
+      @stack.delete $curbuf.number
+      @stack << $curbuf.number
+    end
+
+    def pop
+      number = VIM::evaluate('bufnr(expand("<afile>"))')
+      @stack.delete number
+    end
+
+  private
+    def cull!
+      # Remove empty buffers.
+      @stack.delete_if { |x| not VIM::evaluate_bool("bufexists(#{x})") }
+    end
+
+    # NOTE: very similar to Entry::compute_buffer_entries()
+    def shorten_paths(buffer_names)
+      # Shorten each buffer name by removing all path elements which are not
+      # needed to differentiate a given name from other names.  This usually
+      # results in only the basename shown, but if several buffers of the
+      # same basename are opened, there will be more.
+
+      # Group the buffers by common basename
+      common_base = Hash.new { |hash, k| hash[k] = [] }
+      buffer_names.each do |name|
+        basename = Pathname.new(name).basename.to_s
+        common_base[basename] << name
+      end
+
+      # Determine the longest common prefix for each basename group.
+      basename_to_prefix = {}
+      common_base.each do |k, names|
+        if names.length > 1
+          basename_to_prefix[k] = Lusty::longest_common_prefix(names)
+        end
+      end
+
+      # Shorten each buffer_name by removing the prefix.
+      buffer_names.map { |name|
+        base = Pathname.new(name).basename.to_s
+        prefix = basename_to_prefix[base]
+        prefix ? name[prefix.length..-1] \
+               : base
+      }
+    end
+end
+
+end
+
+
 
 $lusty_buffer_explorer = Lusty::BufferExplorer.new
 $lusty_filesystem_explorer = Lusty::FilesystemExplorer.new
 $lusty_buffer_grep = Lusty::BufferGrep.new
+$le_buffer_stack = Lusty::BufferStack.new
 
 EOF
 

@@ -20,9 +20,14 @@ class Entry
 
   def self.compute_buffer_entries()
     buffer_entries = []
-    (0..VIM::Buffer.count-1).each do |i|
-      buffer_entries << self.new(VIM::Buffer[i])
+
+    $le_buffer_stack.numbers.each do |n|
+      o = VIM::Buffer.obj_for_bufnr(n)
+      buffer_entries << self.new(o, n)
     end
+
+    # Put the current buffer at the end of the list.
+    buffer_entries << buffer_entries.shift
 
     # Shorten each buffer name by removing all path elements which are not
     # needed to differentiate a given name from other names.  This usually
@@ -81,20 +86,22 @@ end
 
 # Used in BufferExplorer
 class BufferEntry < Entry
-  attr_accessor :vim_buffer, :current_score
-  def initialize(vim_buffer)
+  attr_accessor :vim_buffer, :mru_placement, :current_score
+  def initialize(vim_buffer, mru_placement)
     super(vim_buffer.name, "::UNSET::", "::UNSET::")
     @vim_buffer = vim_buffer
+    @mru_placement = mru_placement
     @current_score = 0.0
   end
 end
 
 # Used in BufferGrep
 class GrepEntry < Entry
-  attr_accessor :vim_buffer, :line_number
-  def initialize(vim_buffer)
+  attr_accessor :vim_buffer, :mru_placement, :line_number
+  def initialize(vim_buffer, mru_placement)
     super(vim_buffer.name, "::UNSET::", "::UNSET::")
     @vim_buffer = vim_buffer
+    @mru_placement = mru_placement
     @line_number = 0
   end
 end

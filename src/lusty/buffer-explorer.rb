@@ -77,18 +77,22 @@ class BufferExplorer < Explorer
       abbrev = current_abbreviation()
 
       if abbrev.length == 0
-        # Sort alphabetically if we have no abbreviation.
-        @buffer_entries.sort { |x, y| x.label <=> y.label }
+        # Take (current) MRU order if we have no abbreviation.
+        @buffer_entries
       else
         matching_entries = \
           @buffer_entries.select { |x|
-            x.current_score = LiquidMetal.score(x.label, abbrev)
+            x.current_score = LiquidMetal.score(x.short_name, abbrev)
             x.current_score != 0.0
           }
 
         # Sort by score.
         matching_entries.sort! { |x, y|
-          y.current_score <=> x.current_score
+          if x.current_score == y.current_score
+            x.mru_placement <=> y.mru_placement
+          else
+            y.current_score <=> x.current_score
+          end
         }
       end
     end

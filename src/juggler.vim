@@ -202,15 +202,15 @@ function! s:LustyJugglerCancel()
 endfunction
 
 function! s:LustyJugglePreviousRun()
-  ruby Lusty::profile() { $buffer_stack.juggle_previous }
+  ruby Lusty::profile() { $lj_buffer_stack.juggle_previous }
 endfunction
 
 " Setup the autocommands that handle buffer MRU ordering.
 augroup LustyJuggler
   autocmd!
-  autocmd BufEnter * ruby Lusty::profile() { $buffer_stack.push }
-  autocmd BufDelete * ruby Lusty::profile() { $buffer_stack.pop }
-  autocmd BufWipeout * ruby Lusty::profile() { $buffer_stack.pop }
+  autocmd BufEnter * ruby Lusty::profile() { $lj_buffer_stack.push }
+  autocmd BufDelete * ruby Lusty::profile() { $lj_buffer_stack.pop }
+  autocmd BufWipeout * ruby Lusty::profile() { $lj_buffer_stack.pop }
 augroup End
 
 ruby << EOF
@@ -228,7 +228,7 @@ end
 {{RUBY_CODE_INSERTION_POINT}}
 
 $lusty_juggler = Lusty::LustyJuggler.new
-$buffer_stack = Lusty::BufferStack.new
+$lj_buffer_stack = Lusty::BufferStack.new
 
 EOF
 

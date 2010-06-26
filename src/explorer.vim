@@ -103,8 +103,7 @@
 "  - Uses Ruby-style regexes instead of Vim style.  This means:
 "
 "    - \b instead of \< or \> for beginning/end of word.
-"    - (foo|bar) instead of \(foo\|bar\).
-"    - (foo|bar) instead of \(foo\|bar\).
+"    - (foo|bar) instead of \(foo\|bar\)
 "    - {2,5} instead of \{2,5}
 "    - + instead of \+
 "    - Generally, fewer backslashes. :-)
@@ -302,6 +301,14 @@ function! s:LustyBufferGrepKeyPressed(code_arg)
   ruby Lusty::profile() { $lusty_buffer_grep.key_pressed }
 endfunction
 
+" Setup the autocommands that handle buffer MRU ordering.
+augroup LustyExplorer
+  autocmd!
+  autocmd BufEnter * ruby Lusty::profile() { $le_buffer_stack.push }
+  autocmd BufDelete * ruby Lusty::profile() { $le_buffer_stack.pop }
+  autocmd BufWipeout * ruby Lusty::profile() { $le_buffer_stack.pop }
+augroup End
+
 ruby << EOF
 
 require 'pathname'
@@ -325,6 +332,7 @@ end
 $lusty_buffer_explorer = Lusty::BufferExplorer.new
 $lusty_filesystem_explorer = Lusty::FilesystemExplorer.new
 $lusty_buffer_grep = Lusty::BufferGrep.new
+$le_buffer_stack = Lusty::BufferStack.new
 
 EOF
 

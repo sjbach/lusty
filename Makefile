@@ -23,7 +23,8 @@ EXPLORER_RUBY_FILES = src/vim.rb \
                       src/lusty/saved-settings.rb \
                       src/lusty/display.rb \
                       src/lusty/file-masks.rb \
-                      src/lusty/vim-swaps.rb
+                      src/lusty/vim-swaps.rb \
+                      src/lusty/buffer-stack.rb
 
 JUGGLER_VIM_FILE = src/juggler.vim
 

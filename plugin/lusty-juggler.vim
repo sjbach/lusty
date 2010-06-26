@@ -202,15 +202,15 @@ function! s:LustyJugglerCancel()
 endfunction
 
 function! s:LustyJugglePreviousRun()
-  ruby Lusty::profile() { $buffer_stack.juggle_previous }
+  ruby Lusty::profile() { $lj_buffer_stack.juggle_previous }
 endfunction
 
 " Setup the autocommands that handle buffer MRU ordering.
 augroup LustyJuggler
   autocmd!
-  autocmd BufEnter * ruby Lusty::profile() { $buffer_stack.push }
-  autocmd BufDelete * ruby Lusty::profile() { $buffer_stack.pop }
-  autocmd BufWipeout * ruby Lusty::profile() { $buffer_stack.pop }
+  autocmd BufEnter * ruby Lusty::profile() { $lj_buffer_stack.push }
+  autocmd BufDelete * ruby Lusty::profile() { $lj_buffer_stack.pop }
+  autocmd BufWipeout * ruby Lusty::profile() { $lj_buffer_stack.pop }
 augroup End
 
 ruby << EOF
@@ -298,6 +298,16 @@ module VIM
   class Buffer
     def modified?
       VIM::nonzero? VIM::evaluate("getbufvar(#{number()}, '&modified')")
+    end
+
+    def self.obj_for_bufnr(n)
+      # There's gotta be a better way to do this...
+      (0..VIM::Buffer.count-1).each do |i|
+        obj = VIM::Buffer[i]
+        return obj if obj.number == n
+      end
+
+      Lusty::assert(false, "couldn't find buffer #{n}")
     end
   end
 
@@ -467,7 +477,7 @@ class LustyJuggler
     def run
       return if @running
 
-      if $buffer_stack.length <= 1
+      if $lj_buffer_stack.length <= 1
         VIM::pretty_msg("PreProc", "No other buffers")
         return
       end
@@ -552,7 +562,7 @@ class LustyJuggler
       @name_bar.selected_buffer = \
         if highlighted_entry
           # Correct for zero-based array.
-          [highlighted_entry, $buffer_stack.length].min - 1
+          [highlighted_entry, $lj_buffer_stack.length].min - 1
         else
           nil
         end
@@ -561,7 +571,7 @@ class LustyJuggler
     end
 
     def choose(i)
-      buf = $buffer_stack.num_at_pos(i)
+      buf = $lj_buffer_stack.num_at_pos(i)
       VIM::command "b #{buf}"
     end
 end
@@ -721,7 +731,7 @@ class NameBar
 
 
     def create_items
-      names = $buffer_stack.names
+      names = $lj_buffer_stack.names(10)
 
       items = names.inject([]) { |array, name|
         key = if VIM::exists?("g:LustyJugglerShowKeys")
@@ -889,13 +899,27 @@ class BufferStack
       VIM::command "b #{buf}"
     end
 
-    def names
-      # Get the last 10 buffer names by MRU.  Show only as much of
+    def names(n = :all)
+      # Get the last n buffer names by MRU.  Show only as much of
       # the name as necessary to differentiate between buffers of
       # the same name.
       cull!
-      names = @stack.collect { |i| VIM::bufname(i) }.reverse[0,10]
+      names = @stack.collect { |i| VIM::bufname(i) }.reverse
+      if n != :all
+        names = names[0,n]
+      end
       shorten_paths(names)
+    end
+
+    def numbers(n = :all)
+      # Get the last n buffer numbers by MRU.
+      cull!
+      numbers = @stack.reverse
+      if n == :all
+        numbers
+      else
+        numbers[0,n]
+      end
     end
 
     def num_at_pos(i)
@@ -961,7 +985,7 @@ end
 
 
 $lusty_juggler = Lusty::LustyJuggler.new
-$buffer_stack = Lusty::BufferStack.new
+$lj_buffer_stack = Lusty::BufferStack.new
 
 EOF
 

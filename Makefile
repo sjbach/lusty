@@ -17,7 +17,7 @@ EXPLORER_RUBY_FILES = src/vim.rb \
                       src/lusty/explorer.rb \
                       src/lusty/buffer-explorer.rb \
                       src/lusty/filesystem-explorer.rb \
-                      src/lusty/grep-explorer.rb \
+                      src/lusty/buffer-grep.rb \
                       src/lusty/prompt.rb \
                       src/lusty/window.rb \
                       src/lusty/saved-settings.rb \

@@ -7,7 +7,7 @@
 # copyright holder be liable for any damages resulting from the use of this
 # software.
 
-module Lusty
+module LustyM
 
 # Abstract base class.
 class Entry
@@ -48,7 +48,7 @@ class Entry
     common_base.each do |base, entries|
       if entries.length > 1
         full_names = entries.map { |e| e.full_name }
-        basename_to_prefix[base] = Lusty::longest_common_prefix(full_names)
+        basename_to_prefix[base] = LustyM::longest_common_prefix(full_names)
       end
     end
 
@@ -58,7 +58,7 @@ class Entry
 
       short_name = if full_name.nil?
                      '[No Name]'
-                   elsif Lusty::starts_with?(full_name, "scp://")
+                   elsif LustyM::starts_with?(full_name, "scp://")
                      full_name
                    else
                      base = Pathname.new(full_name).basename.to_s

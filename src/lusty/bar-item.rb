@@ -8,7 +8,7 @@
 # software.
 
 # An item (delimiter/separator or buffer name) on the NameBar.
-module Lusty
+module LustyM
 class BarItem
   def initialize(str, color)
     @str = str

@@ -7,7 +7,7 @@
 # copyright holder be liable for any damages resulting from the use of this
 # software.
 
-module Lusty
+module LustyM
 class FilesystemExplorer < Explorer
   public
     def initialize
@@ -153,14 +153,14 @@ class FilesystemExplorer < Explorer
         # Generate an array of the files
         entries = []
         view_str = view.to_s
-        unless Lusty::ends_with?(view_str, File::SEPARATOR)
+        unless LustyM::ends_with?(view_str, File::SEPARATOR)
           # Don't double-up on '/' -- makes Cygwin sad.
           view_str << File::SEPARATOR
         end
 
         Dir.foreach(view_str) do |name|
           next if name == "."   # Skip pwd
-          next if name == ".." and Lusty::option_set?("AlwaysShowDotFiles")
+          next if name == ".." and LustyM::option_set?("AlwaysShowDotFiles")
 
           # Hide masked files.
           next if FileMasks.masked?(name)
@@ -175,7 +175,7 @@ class FilesystemExplorer < Explorer
 
       all = @memoized_dir_contents[view]
 
-      if Lusty::option_set?("AlwaysShowDotFiles") or \
+      if LustyM::option_set?("AlwaysShowDotFiles") or \
          current_abbreviation()[0] == ?.
         all
       else
@@ -227,7 +227,7 @@ class FilesystemExplorer < Explorer
     end
 
     def load_file(path_str, open_mode)
-      Lusty::assert($curwin == @calling_window)
+      LustyM::assert($curwin == @calling_window)
       # Escape for Vim and remove leading ./ for files in pwd.
       filename_escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
       single_quote_escaped = VIM::single_quote_escape(filename_escaped)
@@ -242,7 +242,7 @@ class FilesystemExplorer < Explorer
             when :new_vsplit
 	      "vs"
             else
-              Lusty::assert(false, "bad open mode")
+              LustyM::assert(false, "bad open mode")
             end
 
       VIM::command "silent #{cmd} #{sanitized}"

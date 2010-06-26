@@ -11,7 +11,7 @@
 # - some way for user to indicate case-sensitive regex
 # - add slash highlighting back to file name?
 
-module Lusty
+module LustyM
 class BufferGrep < Explorer
   public
     def initialize
@@ -166,10 +166,10 @@ class BufferGrep < Explorer
 
     def open_entry(entry, open_mode)
       cleanup()
-      Lusty::assert($curwin == @calling_window)
+      LustyM::assert($curwin == @calling_window)
 
       number = entry.vim_buffer.number
-      Lusty::assert(number)
+      LustyM::assert(number)
 
       cmd = case open_mode
             when :current_tab
@@ -183,7 +183,7 @@ class BufferGrep < Explorer
             when :new_vsplit
 	      "vs | b"
             else
-              Lusty::assert(false, "bad open mode")
+              LustyM::assert(false, "bad open mode")
             end
 
       # Open buffer and go to the line number.

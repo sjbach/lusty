@@ -39,25 +39,26 @@ JUGGLER_RUBY_FILES = src/vim.rb \
 all: plugin/lusty-explorer.vim plugin/lusty-juggler.vim
 
 # Concatenate the Ruby files, removing redundant copyrights, and insert
-# the result into the vimscript file.
+# the results into the vimscript files.  Change LustyM module references to
+# LustyE or LustyJ, so that using out-of-sync versions of lusty-explorer and
+# lusty-juggler is less likely to cause monkey patching issues.
+
 plugin/lusty-explorer.vim: $(EXPLORER_VIM_FILE) $(EXPLORER_RUBY_FILES)
 	for file in $(EXPLORER_RUBY_FILES); do \
 	  cat $$file | sed '1,/^$$/d' ;\
 	  echo ; \
-	done > ruby-content.tmp
+	done | sed 's/\<LustyM\>/LustyE/g' > ruby-content.tmp
 	( sed '/{{RUBY_CODE_INSERTION_POINT}}/,$$d' $(EXPLORER_VIM_FILE) ; \
 	  cat ruby-content.tmp ; \
 	  sed '1,/{{RUBY_CODE_INSERTION_POINT}}/d' $(EXPLORER_VIM_FILE) ) > \
 	plugin/lusty-explorer.vim
 	rm -f ruby-content.tmp
 
-# Concatenate the Ruby files, removing redundant copyrights, and insert
-# the result into the vimscript file.
 plugin/lusty-juggler.vim: $(JUGGLER_VIM_FILE) $(JUGGLER_RUBY_FILES)
 	for file in $(JUGGLER_RUBY_FILES); do \
 	  cat $$file | sed '1,/^$$/d' ;\
 	  echo ; \
-	done > ruby-content.tmp
+	done | sed 's/\<LustyM\>/LustyJ/g' > ruby-content.tmp
 	( sed '/{{RUBY_CODE_INSERTION_POINT}}/,$$d' $(JUGGLER_VIM_FILE) ; \
 	  cat ruby-content.tmp ; \
 	  sed '1,/{{RUBY_CODE_INSERTION_POINT}}/d' $(JUGGLER_VIM_FILE) ) > \

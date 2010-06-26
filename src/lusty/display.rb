@@ -8,7 +8,7 @@
 # software.
 
 # Manage the explorer buffer.
-module Lusty
+module LustyM
 
 class Display
   private
@@ -372,7 +372,7 @@ class Display
 
           if total_width > max_width
             # Early exit.
-            total_width = Lusty::MOST_POSITIVE_FIXNUM
+            total_width = LustyM::MOST_POSITIVE_FIXNUM
             break
           end
 

@@ -261,51 +261,51 @@ nmap <silent> <Leader>lg :LustyBufferGrep<CR>
 
 " Vim-to-ruby function calls.
 function! s:LustyFilesystemExplorerStart()
-  ruby Lusty::profile() { $lusty_filesystem_explorer.run_from_wd }
+  ruby LustyE::profile() { $lusty_filesystem_explorer.run_from_wd }
 endfunction
 
 function! s:LustyFilesystemExplorerFromHereStart()
-  ruby Lusty::profile() { $lusty_filesystem_explorer.run_from_here }
+  ruby LustyE::profile() { $lusty_filesystem_explorer.run_from_here }
 endfunction
 
 function! s:LustyBufferExplorerStart()
-  ruby Lusty::profile() { $lusty_buffer_explorer.run }
+  ruby LustyE::profile() { $lusty_buffer_explorer.run }
 endfunction
 
 function! s:LustyBufferGrepStart()
-  ruby Lusty::profile() { $lusty_buffer_grep.run }
+  ruby LustyE::profile() { $lusty_buffer_grep.run }
 endfunction
 
 function! s:LustyFilesystemExplorerCancel()
-  ruby Lusty::profile() { $lusty_filesystem_explorer.cancel }
+  ruby LustyE::profile() { $lusty_filesystem_explorer.cancel }
 endfunction
 
 function! s:LustyBufferExplorerCancel()
-  ruby Lusty::profile() { $lusty_buffer_explorer.cancel }
+  ruby LustyE::profile() { $lusty_buffer_explorer.cancel }
 endfunction
 
 function! s:LustyBufferGrepCancel()
-  ruby Lusty::profile() { $lusty_buffer_grep.cancel }
+  ruby LustyE::profile() { $lusty_buffer_grep.cancel }
 endfunction
 
 function! s:LustyFilesystemExplorerKeyPressed(code_arg)
-  ruby Lusty::profile() { $lusty_filesystem_explorer.key_pressed }
+  ruby LustyE::profile() { $lusty_filesystem_explorer.key_pressed }
 endfunction
 
 function! s:LustyBufferExplorerKeyPressed(code_arg)
-  ruby Lusty::profile() { $lusty_buffer_explorer.key_pressed }
+  ruby LustyE::profile() { $lusty_buffer_explorer.key_pressed }
 endfunction
 
 function! s:LustyBufferGrepKeyPressed(code_arg)
-  ruby Lusty::profile() { $lusty_buffer_grep.key_pressed }
+  ruby LustyE::profile() { $lusty_buffer_grep.key_pressed }
 endfunction
 
 " Setup the autocommands that handle buffer MRU ordering.
 augroup LustyExplorer
   autocmd!
-  autocmd BufEnter * ruby Lusty::profile() { $le_buffer_stack.push }
-  autocmd BufDelete * ruby Lusty::profile() { $le_buffer_stack.pop }
-  autocmd BufWipeout * ruby Lusty::profile() { $le_buffer_stack.pop }
+  autocmd BufEnter * ruby LustyE::profile() { $le_buffer_stack.push }
+  autocmd BufDelete * ruby LustyE::profile() { $le_buffer_stack.pop }
+  autocmd BufWipeout * ruby LustyE::profile() { $le_buffer_stack.pop }
 augroup End
 
 ruby << EOF
@@ -328,10 +328,10 @@ end
 
 {{RUBY_CODE_INSERTION_POINT}}
 
-$lusty_buffer_explorer = Lusty::BufferExplorer.new
-$lusty_filesystem_explorer = Lusty::FilesystemExplorer.new
-$lusty_buffer_grep = Lusty::BufferGrep.new
-$le_buffer_stack = Lusty::BufferStack.new
+$lusty_buffer_explorer = LustyE::BufferExplorer.new
+$lusty_filesystem_explorer = LustyE::FilesystemExplorer.new
+$lusty_buffer_grep = LustyE::BufferGrep.new
+$le_buffer_stack = LustyE::BufferStack.new
 
 EOF
 

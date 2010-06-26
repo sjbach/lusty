@@ -8,7 +8,7 @@
 # software.
 
 # Abstract base class; extended as BufferExplorer, FilesystemExplorer
-module Lusty
+module LustyM
 class Explorer
   public
     def initialize
@@ -107,8 +107,8 @@ class Explorer
     end
 
     def create_explorer_window
-      # Trim out the "::" in "Lusty::FooExplorer"
-      key_binding_prefix = self.class.to_s.sub(/::/,'')
+      # Trim out the "::" in "LustyM::FooExplorer"
+      key_binding_prefix = 'Lusty' + self.class.to_s.sub(/.*::/,'')
 
       @display.create(key_binding_prefix)
       set_syntax_matching()
@@ -139,7 +139,7 @@ class Explorer
       @settings.restore
       @running = false
       VIM::message ""
-      Lusty::assert(@calling_window == $curwin)
+      LustyM::assert(@calling_window == $curwin)
     end
 
     # Pure virtual methods

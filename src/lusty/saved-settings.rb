@@ -8,7 +8,7 @@
 # software.
 
 # Save and restore settings when creating the explorer buffer.
-module Lusty
+module LustyM
 class SavedSettings
   def initialize
     save()

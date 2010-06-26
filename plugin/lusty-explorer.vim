@@ -261,51 +261,51 @@ nmap <silent> <Leader>lg :LustyBufferGrep<CR>
 
 " Vim-to-ruby function calls.
 function! s:LustyFilesystemExplorerStart()
-  ruby Lusty::profile() { $lusty_filesystem_explorer.run_from_wd }
+  ruby LustyE::profile() { $lusty_filesystem_explorer.run_from_wd }
 endfunction
 
 function! s:LustyFilesystemExplorerFromHereStart()
-  ruby Lusty::profile() { $lusty_filesystem_explorer.run_from_here }
+  ruby LustyE::profile() { $lusty_filesystem_explorer.run_from_here }
 endfunction
 
 function! s:LustyBufferExplorerStart()
-  ruby Lusty::profile() { $lusty_buffer_explorer.run }
+  ruby LustyE::profile() { $lusty_buffer_explorer.run }
 endfunction
 
 function! s:LustyBufferGrepStart()
-  ruby Lusty::profile() { $lusty_buffer_grep.run }
+  ruby LustyE::profile() { $lusty_buffer_grep.run }
 endfunction
 
 function! s:LustyFilesystemExplorerCancel()
-  ruby Lusty::profile() { $lusty_filesystem_explorer.cancel }
+  ruby LustyE::profile() { $lusty_filesystem_explorer.cancel }
 endfunction
 
 function! s:LustyBufferExplorerCancel()
-  ruby Lusty::profile() { $lusty_buffer_explorer.cancel }
+  ruby LustyE::profile() { $lusty_buffer_explorer.cancel }
 endfunction
 
 function! s:LustyBufferGrepCancel()
-  ruby Lusty::profile() { $lusty_buffer_grep.cancel }
+  ruby LustyE::profile() { $lusty_buffer_grep.cancel }
 endfunction
 
 function! s:LustyFilesystemExplorerKeyPressed(code_arg)
-  ruby Lusty::profile() { $lusty_filesystem_explorer.key_pressed }
+  ruby LustyE::profile() { $lusty_filesystem_explorer.key_pressed }
 endfunction
 
 function! s:LustyBufferExplorerKeyPressed(code_arg)
-  ruby Lusty::profile() { $lusty_buffer_explorer.key_pressed }
+  ruby LustyE::profile() { $lusty_buffer_explorer.key_pressed }
 endfunction
 
 function! s:LustyBufferGrepKeyPressed(code_arg)
-  ruby Lusty::profile() { $lusty_buffer_grep.key_pressed }
+  ruby LustyE::profile() { $lusty_buffer_grep.key_pressed }
 endfunction
 
 " Setup the autocommands that handle buffer MRU ordering.
 augroup LustyExplorer
   autocmd!
-  autocmd BufEnter * ruby Lusty::profile() { $le_buffer_stack.push }
-  autocmd BufDelete * ruby Lusty::profile() { $le_buffer_stack.pop }
-  autocmd BufWipeout * ruby Lusty::profile() { $le_buffer_stack.pop }
+  autocmd BufEnter * ruby LustyE::profile() { $le_buffer_stack.push }
+  autocmd BufDelete * ruby LustyE::profile() { $le_buffer_stack.pop }
+  autocmd BufWipeout * ruby LustyE::profile() { $le_buffer_stack.pop }
 augroup End
 
 ruby << EOF
@@ -341,7 +341,7 @@ module VIM
     when Fixnum
       var == 0
     else
-      Lusty::assert(false, "unexpected type: #{var.class}")
+      LustyE::assert(false, "unexpected type: #{var.class}")
     end
   end
 
@@ -408,7 +408,7 @@ module VIM
         return obj if obj.number == n
       end
 
-      Lusty::assert(false, "couldn't find buffer #{n}")
+      LustyE::assert(false, "couldn't find buffer #{n}")
     end
   end
 
@@ -431,7 +431,7 @@ end
 
 
 # Utility functions.
-module Lusty
+module LustyE
 
   unless const_defined? "MOST_POSITIVE_FIXNUM"
     MOST_POSITIVE_FIXNUM = 2**(0.size * 8 -2) -1
@@ -599,7 +599,7 @@ module LiquidMetal
 end
 
 
-module Lusty
+module LustyE
 
 # Abstract base class.
 class Entry
@@ -640,7 +640,7 @@ class Entry
     common_base.each do |base, entries|
       if entries.length > 1
         full_names = entries.map { |e| e.full_name }
-        basename_to_prefix[base] = Lusty::longest_common_prefix(full_names)
+        basename_to_prefix[base] = LustyE::longest_common_prefix(full_names)
       end
     end
 
@@ -650,7 +650,7 @@ class Entry
 
       short_name = if full_name.nil?
                      '[No Name]'
-                   elsif Lusty::starts_with?(full_name, "scp://")
+                   elsif LustyE::starts_with?(full_name, "scp://")
                      full_name
                    else
                      base = Pathname.new(full_name).basename.to_s
@@ -702,7 +702,7 @@ end
 
 
 # Abstract base class; extended as BufferExplorer, FilesystemExplorer
-module Lusty
+module LustyE
 class Explorer
   public
     def initialize
@@ -801,8 +801,8 @@ class Explorer
     end
 
     def create_explorer_window
-      # Trim out the "::" in "Lusty::FooExplorer"
-      key_binding_prefix = self.class.to_s.sub(/::/,'')
+      # Trim out the "::" in "LustyE::FooExplorer"
+      key_binding_prefix = 'Lusty' + self.class.to_s.sub(/.*::/,'')
 
       @display.create(key_binding_prefix)
       set_syntax_matching()
@@ -833,7 +833,7 @@ class Explorer
       @settings.restore
       @running = false
       VIM::message ""
-      Lusty::assert(@calling_window == $curwin)
+      LustyE::assert(@calling_window == $curwin)
     end
 
     # Pure virtual methods
@@ -846,7 +846,7 @@ end
 end
 
 
-module Lusty
+module LustyE
 class BufferExplorer < Explorer
   public
     def initialize
@@ -938,10 +938,10 @@ class BufferExplorer < Explorer
 
     def open_entry(entry, open_mode)
       cleanup()
-      Lusty::assert($curwin == @calling_window)
+      LustyE::assert($curwin == @calling_window)
 
       number = entry.vim_buffer.number
-      Lusty::assert(number)
+      LustyE::assert(number)
 
       cmd = case open_mode
             when :current_tab
@@ -955,7 +955,7 @@ class BufferExplorer < Explorer
             when :new_vsplit
 	      "vs | b"
             else
-              Lusty::assert(false, "bad open mode")
+              LustyE::assert(false, "bad open mode")
             end
 
       VIM::command "silent #{cmd} #{number}"
@@ -964,7 +964,7 @@ end
 end
 
 
-module Lusty
+module LustyE
 class FilesystemExplorer < Explorer
   public
     def initialize
@@ -1110,14 +1110,14 @@ class FilesystemExplorer < Explorer
         # Generate an array of the files
         entries = []
         view_str = view.to_s
-        unless Lusty::ends_with?(view_str, File::SEPARATOR)
+        unless LustyE::ends_with?(view_str, File::SEPARATOR)
           # Don't double-up on '/' -- makes Cygwin sad.
           view_str << File::SEPARATOR
         end
 
         Dir.foreach(view_str) do |name|
           next if name == "."   # Skip pwd
-          next if name == ".." and Lusty::option_set?("AlwaysShowDotFiles")
+          next if name == ".." and LustyE::option_set?("AlwaysShowDotFiles")
 
           # Hide masked files.
           next if FileMasks.masked?(name)
@@ -1132,7 +1132,7 @@ class FilesystemExplorer < Explorer
 
       all = @memoized_dir_contents[view]
 
-      if Lusty::option_set?("AlwaysShowDotFiles") or \
+      if LustyE::option_set?("AlwaysShowDotFiles") or \
          current_abbreviation()[0] == ?.
         all
       else
@@ -1184,7 +1184,7 @@ class FilesystemExplorer < Explorer
     end
 
     def load_file(path_str, open_mode)
-      Lusty::assert($curwin == @calling_window)
+      LustyE::assert($curwin == @calling_window)
       # Escape for Vim and remove leading ./ for files in pwd.
       filename_escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
       single_quote_escaped = VIM::single_quote_escape(filename_escaped)
@@ -1199,7 +1199,7 @@ class FilesystemExplorer < Explorer
             when :new_vsplit
 	      "vs"
             else
-              Lusty::assert(false, "bad open mode")
+              LustyE::assert(false, "bad open mode")
             end
 
       VIM::command "silent #{cmd} #{sanitized}"
@@ -1212,7 +1212,7 @@ end
 # - some way for user to indicate case-sensitive regex
 # - add slash highlighting back to file name?
 
-module Lusty
+module LustyE
 class BufferGrep < Explorer
   public
     def initialize
@@ -1367,10 +1367,10 @@ class BufferGrep < Explorer
 
     def open_entry(entry, open_mode)
       cleanup()
-      Lusty::assert($curwin == @calling_window)
+      LustyE::assert($curwin == @calling_window)
 
       number = entry.vim_buffer.number
-      Lusty::assert(number)
+      LustyE::assert(number)
 
       cmd = case open_mode
             when :current_tab
@@ -1384,7 +1384,7 @@ class BufferGrep < Explorer
             when :new_vsplit
 	      "vs | b"
             else
-              Lusty::assert(false, "bad open mode")
+              LustyE::assert(false, "bad open mode")
             end
 
       # Open buffer and go to the line number.
@@ -1403,7 +1403,7 @@ end
 end
 
 
-module Lusty
+module LustyE
 
 # Used in BufferExplorer
 class Prompt
@@ -1438,7 +1438,7 @@ class Prompt
     end
 
     def ends_with?(c)
-      Lusty::ends_with?(@input, c)
+      LustyE::ends_with?(@input, c)
     end
 
     def add!(s)
@@ -1512,7 +1512,7 @@ class FilesystemPrompt < Prompt
 
   def input
     if @dirty
-      @memoized = Lusty::simplify_path(variable_expansion(@input))
+      @memoized = LustyE::simplify_path(variable_expansion(@input))
       @dirty = false
     end
 
@@ -1549,7 +1549,7 @@ end
 
 
 # Simplify switching between windows.
-module Lusty
+module LustyE
 class Window
     def self.select(window)
       return true if window == $curwin
@@ -1575,7 +1575,7 @@ end
 
 
 # Save and restore settings when creating the explorer buffer.
-module Lusty
+module LustyE
 class SavedSettings
   def initialize
     save()
@@ -1630,7 +1630,7 @@ end
 
 
 # Manage the explorer buffer.
-module Lusty
+module LustyE
 
 class Display
   private
@@ -1994,7 +1994,7 @@ class Display
 
           if total_width > max_width
             # Early exit.
-            total_width = Lusty::MOST_POSITIVE_FIXNUM
+            total_width = LustyE::MOST_POSITIVE_FIXNUM
             break
           end
 
@@ -2058,7 +2058,7 @@ end
 end
 
 
-module Lusty
+module LustyE
 class FileMasks
   private
     @@glob_masks = []
@@ -2087,7 +2087,7 @@ end
 end
 
 
-module Lusty
+module LustyE
 class VimSwaps
   def initialize
     if VIM::has_syntax?
@@ -2102,12 +2102,12 @@ class VimSwaps
 
   def file_names
     if @files_with_swaps.nil?
-      if Lusty::ready_for_read?(@vim_r)
+      if LustyE::ready_for_read?(@vim_r)
         @files_with_swaps = []
         @vim_r.each_line do |line|
           if line =~ /^ +file name: (.*)$/
             file = $1.chomp
-            @files_with_swaps << Pathname.new(Lusty::simplify_path(file))
+            @files_with_swaps << Pathname.new(LustyE::simplify_path(file))
           end
         end
       else
@@ -2122,7 +2122,7 @@ end
 
 
 # Maintain MRU ordering.
-module Lusty
+module LustyE
 class BufferStack
   public
     def initialize
@@ -2209,7 +2209,7 @@ class BufferStack
       basename_to_prefix = {}
       common_base.each do |k, names|
         if names.length > 1
-          basename_to_prefix[k] = Lusty::longest_common_prefix(names)
+          basename_to_prefix[k] = LustyE::longest_common_prefix(names)
         end
       end
 
@@ -2227,10 +2227,10 @@ end
 
 
 
-$lusty_buffer_explorer = Lusty::BufferExplorer.new
-$lusty_filesystem_explorer = Lusty::FilesystemExplorer.new
-$lusty_buffer_grep = Lusty::BufferGrep.new
-$le_buffer_stack = Lusty::BufferStack.new
+$lusty_buffer_explorer = LustyE::BufferExplorer.new
+$lusty_filesystem_explorer = LustyE::FilesystemExplorer.new
+$lusty_buffer_grep = LustyE::BufferGrep.new
+$le_buffer_stack = LustyE::BufferStack.new
 
 EOF
 

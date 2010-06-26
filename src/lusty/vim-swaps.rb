@@ -7,7 +7,7 @@
 # copyright holder be liable for any damages resulting from the use of this
 # software.
 
-module Lusty
+module LustyM
 class VimSwaps
   def initialize
     if VIM::has_syntax?
@@ -22,12 +22,12 @@ class VimSwaps
 
   def file_names
     if @files_with_swaps.nil?
-      if Lusty::ready_for_read?(@vim_r)
+      if LustyM::ready_for_read?(@vim_r)
         @files_with_swaps = []
         @vim_r.each_line do |line|
           if line =~ /^ +file name: (.*)$/
             file = $1.chomp
-            @files_with_swaps << Pathname.new(Lusty::simplify_path(file))
+            @files_with_swaps << Pathname.new(LustyM::simplify_path(file))
           end
         end
       else

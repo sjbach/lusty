@@ -8,7 +8,7 @@
 # software.
 
 # Maintain MRU ordering.
-module Lusty
+module LustyM
 class BufferStack
   public
     def initialize
@@ -95,7 +95,7 @@ class BufferStack
       basename_to_prefix = {}
       common_base.each do |k, names|
         if names.length > 1
-          basename_to_prefix[k] = Lusty::longest_common_prefix(names)
+          basename_to_prefix[k] = LustyM::longest_common_prefix(names)
         end
       end
 

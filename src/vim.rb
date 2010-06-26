@@ -22,7 +22,7 @@ module VIM
     when Fixnum
       var == 0
     else
-      Lusty::assert(false, "unexpected type: #{var.class}")
+      LustyM::assert(false, "unexpected type: #{var.class}")
     end
   end
 
@@ -89,7 +89,7 @@ module VIM
         return obj if obj.number == n
       end
 
-      Lusty::assert(false, "couldn't find buffer #{n}")
+      LustyM::assert(false, "couldn't find buffer #{n}")
     end
   end
 

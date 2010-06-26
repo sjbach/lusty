@@ -7,7 +7,7 @@
 # copyright holder be liable for any damages resulting from the use of this
 # software.
 
-module Lusty
+module LustyM
 class BufferExplorer < Explorer
   public
     def initialize
@@ -99,10 +99,10 @@ class BufferExplorer < Explorer
 
     def open_entry(entry, open_mode)
       cleanup()
-      Lusty::assert($curwin == @calling_window)
+      LustyM::assert($curwin == @calling_window)
 
       number = entry.vim_buffer.number
-      Lusty::assert(number)
+      LustyM::assert(number)
 
       cmd = case open_mode
             when :current_tab
@@ -116,7 +116,7 @@ class BufferExplorer < Explorer
             when :new_vsplit
 	      "vs | b"
             else
-              Lusty::assert(false, "bad open mode")
+              LustyM::assert(false, "bad open mode")
             end
 
       VIM::command "silent #{cmd} #{number}"

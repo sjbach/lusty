@@ -8,7 +8,7 @@
 # software.
 
 # Simplify switching between windows.
-module Lusty
+module LustyM
 class Window
     def self.select(window)
       return true if window == $curwin

@@ -190,27 +190,27 @@ nmap <silent> <Leader>lj :LustyJuggler<CR>
 
 " Vim-to-ruby function calls.
 function! s:LustyJugglerStart()
-  ruby Lusty::profile() { $lusty_juggler.run }
+  ruby LustyJ::profile() { $lusty_juggler.run }
 endfunction
 
 function! s:LustyJugglerKeyPressed(code_arg)
-  ruby Lusty::profile() { $lusty_juggler.key_pressed }
+  ruby LustyJ::profile() { $lusty_juggler.key_pressed }
 endfunction
 
 function! s:LustyJugglerCancel()
-  ruby Lusty::profile() { $lusty_juggler.cleanup }
+  ruby LustyJ::profile() { $lusty_juggler.cleanup }
 endfunction
 
 function! s:LustyJugglePreviousRun()
-  ruby Lusty::profile() { $lj_buffer_stack.juggle_previous }
+  ruby LustyJ::profile() { $lj_buffer_stack.juggle_previous }
 endfunction
 
 " Setup the autocommands that handle buffer MRU ordering.
 augroup LustyJuggler
   autocmd!
-  autocmd BufEnter * ruby Lusty::profile() { $lj_buffer_stack.push }
-  autocmd BufDelete * ruby Lusty::profile() { $lj_buffer_stack.pop }
-  autocmd BufWipeout * ruby Lusty::profile() { $lj_buffer_stack.pop }
+  autocmd BufEnter * ruby LustyJ::profile() { $lj_buffer_stack.push }
+  autocmd BufDelete * ruby LustyJ::profile() { $lj_buffer_stack.pop }
+  autocmd BufWipeout * ruby LustyJ::profile() { $lj_buffer_stack.pop }
 augroup End
 
 ruby << EOF
@@ -240,7 +240,7 @@ module VIM
     when Fixnum
       var == 0
     else
-      Lusty::assert(false, "unexpected type: #{var.class}")
+      LustyJ::assert(false, "unexpected type: #{var.class}")
     end
   end
 
@@ -307,7 +307,7 @@ module VIM
         return obj if obj.number == n
       end
 
-      Lusty::assert(false, "couldn't find buffer #{n}")
+      LustyJ::assert(false, "couldn't find buffer #{n}")
     end
   end
 
@@ -330,7 +330,7 @@ end
 
 
 # Utility functions.
-module Lusty
+module LustyJ
 
   unless const_defined? "MOST_POSITIVE_FIXNUM"
     MOST_POSITIVE_FIXNUM = 2**(0.size * 8 -2) -1
@@ -443,7 +443,7 @@ module Lusty
 end
 
 
-module Lusty
+module LustyJ
 class LustyJuggler
   private
     @@KEYS = { "a" => 1,
@@ -579,7 +579,7 @@ end
 
 
 # An item (delimiter/separator or buffer name) on the NameBar.
-module Lusty
+module LustyJ
 class BarItem
   def initialize(str, color)
     @str = str
@@ -704,7 +704,7 @@ end
 
 
 # A one-line display of the open buffers, appearing in the command display.
-module Lusty
+module LustyJ
 class NameBar
   public
     def initialize
@@ -879,7 +879,7 @@ end
 
 
 # Maintain MRU ordering.
-module Lusty
+module LustyJ
 class BufferStack
   public
     def initialize
@@ -966,7 +966,7 @@ class BufferStack
       basename_to_prefix = {}
       common_base.each do |k, names|
         if names.length > 1
-          basename_to_prefix[k] = Lusty::longest_common_prefix(names)
+          basename_to_prefix[k] = LustyJ::longest_common_prefix(names)
         end
       end
 
@@ -984,8 +984,8 @@ end
 
 
 
-$lusty_juggler = Lusty::LustyJuggler.new
-$lj_buffer_stack = Lusty::BufferStack.new
+$lusty_juggler = LustyJ::LustyJuggler.new
+$lj_buffer_stack = LustyJ::BufferStack.new
 
 EOF
 

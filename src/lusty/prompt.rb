@@ -7,7 +7,7 @@
 # copyright holder be liable for any damages resulting from the use of this
 # software.
 
-module Lusty
+module LustyM
 
 # Used in BufferExplorer
 class Prompt
@@ -42,7 +42,7 @@ class Prompt
     end
 
     def ends_with?(c)
-      Lusty::ends_with?(@input, c)
+      LustyM::ends_with?(@input, c)
     end
 
     def add!(s)
@@ -116,7 +116,7 @@ class FilesystemPrompt < Prompt
 
   def input
     if @dirty
-      @memoized = Lusty::simplify_path(variable_expansion(@input))
+      @memoized = LustyM::simplify_path(variable_expansion(@input))
       @dirty = false
     end
 

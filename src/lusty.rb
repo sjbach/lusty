@@ -8,7 +8,7 @@
 # software.
 
 # Utility functions.
-module Lusty
+module LustyM
 
   unless const_defined? "MOST_POSITIVE_FIXNUM"
     MOST_POSITIVE_FIXNUM = 2**(0.size * 8 -2) -1

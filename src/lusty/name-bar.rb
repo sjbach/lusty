@@ -8,7 +8,7 @@
 # software.
 
 # A one-line display of the open buffers, appearing in the command display.
-module Lusty
+module LustyM
 class NameBar
   public
     def initialize

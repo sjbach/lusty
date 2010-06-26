@@ -190,27 +190,27 @@ nmap <silent> <Leader>lj :LustyJuggler<CR>
 
 " Vim-to-ruby function calls.
 function! s:LustyJugglerStart()
-  ruby Lusty::profile() { $lusty_juggler.run }
+  ruby LustyJ::profile() { $lusty_juggler.run }
 endfunction
 
 function! s:LustyJugglerKeyPressed(code_arg)
-  ruby Lusty::profile() { $lusty_juggler.key_pressed }
+  ruby LustyJ::profile() { $lusty_juggler.key_pressed }
 endfunction
 
 function! s:LustyJugglerCancel()
-  ruby Lusty::profile() { $lusty_juggler.cleanup }
+  ruby LustyJ::profile() { $lusty_juggler.cleanup }
 endfunction
 
 function! s:LustyJugglePreviousRun()
-  ruby Lusty::profile() { $lj_buffer_stack.juggle_previous }
+  ruby LustyJ::profile() { $lj_buffer_stack.juggle_previous }
 endfunction
 
 " Setup the autocommands that handle buffer MRU ordering.
 augroup LustyJuggler
   autocmd!
-  autocmd BufEnter * ruby Lusty::profile() { $lj_buffer_stack.push }
-  autocmd BufDelete * ruby Lusty::profile() { $lj_buffer_stack.pop }
-  autocmd BufWipeout * ruby Lusty::profile() { $lj_buffer_stack.pop }
+  autocmd BufEnter * ruby LustyJ::profile() { $lj_buffer_stack.push }
+  autocmd BufDelete * ruby LustyJ::profile() { $lj_buffer_stack.pop }
+  autocmd BufWipeout * ruby LustyJ::profile() { $lj_buffer_stack.pop }
 augroup End
 
 ruby << EOF
@@ -227,8 +227,8 @@ end
 
 {{RUBY_CODE_INSERTION_POINT}}
 
-$lusty_juggler = Lusty::LustyJuggler.new
-$lj_buffer_stack = Lusty::BufferStack.new
+$lusty_juggler = LustyJ::LustyJuggler.new
+$lj_buffer_stack = LustyJ::BufferStack.new
 
 EOF
 

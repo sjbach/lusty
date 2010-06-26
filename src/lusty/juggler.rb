@@ -7,7 +7,7 @@
 # copyright holder be liable for any damages resulting from the use of this
 # software.
 
-module Lusty
+module LustyM
 class LustyJuggler
   private
     @@KEYS = { "a" => 1,

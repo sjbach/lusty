@@ -25,6 +25,7 @@ expect {
 }
 
 send "dir/def\r"
+sleep 1
 expect {
   "Press ENTER"  {exit 1}
   "Error"  {exit 1}
@@ -37,7 +38,16 @@ expect {
 send \033
 
 send ":LustyBufferExplorer\r"
+expect {
+  "Press ENTER"  {exit 1}
+  "Error"  {exit 1}
+  "Warning"  {exit 1}
+  timeout {exit 1}
+  ">>"
+}
+
 send "dir/abc\r"
+sleep 1
 expect {
   "Press ENTER"  {exit 1}
   "Error"  {exit 1}

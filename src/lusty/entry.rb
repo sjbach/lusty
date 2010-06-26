@@ -11,8 +11,10 @@ module Lusty
 
 # Abstract base class.
 class Entry
-  attr_accessor :label
-  def initialize(label)
+  attr_accessor :full_name, :short_name, :label
+  def initialize(full_name, short_name, label)
+    @full_name = full_name
+    @short_name = short_name
     @label = label
   end
 
@@ -61,7 +63,7 @@ class Entry
                             : base
                    end
 
-      entry.label = short_name
+      entry.short_name = short_name
     end
 
     buffer_entries
@@ -72,17 +74,16 @@ end
 class FilesystemEntry < Entry
   attr_accessor :current_score
   def initialize(label)
-    super(label)
+    super("::UNSET::", "::UNSET::", label)
     @current_score = 0.0
   end
 end
 
 # Used in BufferExplorer
 class BufferEntry < Entry
-  attr_accessor :full_name, :vim_buffer, :current_score
+  attr_accessor :vim_buffer, :current_score
   def initialize(vim_buffer)
-    super("::UNSET::")
-    @full_name = vim_buffer.name
+    super(vim_buffer.name, "::UNSET::", "::UNSET::")
     @vim_buffer = vim_buffer
     @current_score = 0.0
   end
@@ -90,10 +91,9 @@ end
 
 # Used in GrepExplorer
 class GrepEntry < Entry
-  attr_accessor :full_name, :vim_buffer, :line_number
+  attr_accessor :vim_buffer, :line_number
   def initialize(vim_buffer)
-    super("::UNSET::")
-    @full_name = vim_buffer.name
+    super(vim_buffer.name, "::UNSET::", "::UNSET::")
     @vim_buffer = vim_buffer
     @line_number = 0
   end

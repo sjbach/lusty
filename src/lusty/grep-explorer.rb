@@ -7,9 +7,7 @@
 # copyright holder be liable for any damages resulting from the use of this
 # software.
 
-# STEVE TODO:
-# - highlighted entry should not show match in file name
-# - should not store grep entries from initial launch (i.e. buffer list)
+# TODO:
 # - some way for user to indicate case-sensitive regex
 # - add slash highlighting back to file name?
 # - stop search when we've gone over the maximum viewable?
@@ -24,6 +22,8 @@ class GrepExplorer < Explorer
       @buffer_entries = []
       @matched_strings = []
 
+      # State from previous run, so you don't have to retype
+      # your search each time to get the previous entries.
       @previous_input = ''
       @previous_grep_entries = []
       @previous_matched_strings = []
@@ -35,6 +35,7 @@ class GrepExplorer < Explorer
 
       @prompt.set! @previous_input
       @buffer_entries = GrepEntry::compute_buffer_entries()
+
       @selected_index = @previous_selected_index
       super
     end
@@ -84,6 +85,19 @@ class GrepExplorer < Explorer
       end
     end
 
+    def highlight_selected_index
+      VIM::command 'syn clear LustySelected'
+
+      entry = @current_sorted_matches[@selected_index]
+      return if entry.nil?
+
+      match_string = "#{entry.short_name}:#{entry.line_number}:"
+      escaped = VIM::regex_escape(match_string)
+      VIM::command "syn match LustySelected \"^#{match_string}\" " \
+                                            'contains=NONE ' \
+                                            'nextgroup=LustyGrepContext'
+    end
+
     def current_abbreviation
       @prompt.input
     end
@@ -102,6 +116,9 @@ class GrepExplorer < Explorer
       if not grep_entries.empty?
         return grep_entries
       elsif abbrev == ''
+        @buffer_entries.each do |e|
+          e.label = e.short_name
+        end
         return @buffer_entries
       end
 
@@ -126,7 +143,7 @@ class GrepExplorer < Explorer
 
             grep_entry = entry.clone()
             grep_entry.line_number = i
-            grep_entry.label += ":#{i}:#{vim_buffer[i]}"
+            grep_entry.label = "#{grep_entry.short_name}:#{i}:#{vim_buffer[i]}"
             grep_entries << grep_entry
 
             # Keep track of all matched strings

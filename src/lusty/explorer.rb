@@ -101,7 +101,7 @@ class Explorer
       end
 
       on_refresh()
-      highlight_selected_index()
+      highlight_selected_index() if VIM::has_syntax?
       @display.print @current_sorted_matches.map { |x| x.label }
       @prompt.print
     end
@@ -115,14 +115,14 @@ class Explorer
     end
 
     def highlight_selected_index
-      return unless VIM::has_syntax?
+      # Note: overridden by GrepExplorer
+      VIM::command 'syn clear LustySelected'
 
       entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
 
       escaped = VIM::regex_escape(entry.label)
       label_match_string = Display.entry_syntaxify(escaped, false)
-      VIM::command 'syn clear LustySelected'
       VIM::command "syn match LustySelected \"#{label_match_string}\" " \
                                             'contains=LustyGrepMatch'
     end

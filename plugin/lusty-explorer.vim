@@ -566,8 +566,10 @@ module Lusty
 
 # Abstract base class.
 class Entry
-  attr_accessor :label
-  def initialize(label)
+  attr_accessor :full_name, :short_name, :label
+  def initialize(full_name, short_name, label)
+    @full_name = full_name
+    @short_name = short_name
     @label = label
   end
 
@@ -616,7 +618,7 @@ class Entry
                             : base
                    end
 
-      entry.label = short_name
+      entry.short_name = short_name
     end
 
     buffer_entries
@@ -627,17 +629,16 @@ end
 class FilesystemEntry < Entry
   attr_accessor :current_score
   def initialize(label)
-    super(label)
+    super("::UNSET::", "::UNSET::", label)
     @current_score = 0.0
   end
 end
 
 # Used in BufferExplorer
 class BufferEntry < Entry
-  attr_accessor :full_name, :vim_buffer, :current_score
+  attr_accessor :vim_buffer, :current_score
   def initialize(vim_buffer)
-    super("::UNSET::")
-    @full_name = vim_buffer.name
+    super(vim_buffer.name, "::UNSET::", "::UNSET::")
     @vim_buffer = vim_buffer
     @current_score = 0.0
   end
@@ -645,10 +646,9 @@ end
 
 # Used in GrepExplorer
 class GrepEntry < Entry
-  attr_accessor :full_name, :vim_buffer, :line_number
+  attr_accessor :vim_buffer, :line_number
   def initialize(vim_buffer)
-    super("::UNSET::")
-    @full_name = vim_buffer.name
+    super(vim_buffer.name, "::UNSET::", "::UNSET::")
     @vim_buffer = vim_buffer
     @line_number = 0
   end
@@ -751,7 +751,7 @@ class Explorer
       end
 
       on_refresh()
-      highlight_selected_index()
+      highlight_selected_index() if VIM::has_syntax?
       @display.print @current_sorted_matches.map { |x| x.label }
       @prompt.print
     end
@@ -765,14 +765,14 @@ class Explorer
     end
 
     def highlight_selected_index
-      return unless VIM::has_syntax?
+      # Note: overridden by GrepExplorer
+      VIM::command 'syn clear LustySelected'
 
       entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
 
       escaped = VIM::regex_escape(entry.label)
       label_match_string = Display.entry_syntaxify(escaped, false)
-      VIM::command 'syn clear LustySelected'
       VIM::command "syn match LustySelected \"#{label_match_string}\" " \
                                             'contains=LustyGrepMatch'
     end
@@ -818,6 +818,7 @@ class BufferExplorer < Explorer
         @buffer_entries = BufferEntry::compute_buffer_entries()
         @buffer_entries.each do |e|
           # Show modification indicator
+          e.label = e.short_name
           e.label << " [+]" if e.vim_buffer.modified?
           # Disabled: show buffer number next to name
           #e.label << " #{buffer.number.to_s}"
@@ -1158,9 +1159,7 @@ end
 end
 
 
-# STEVE TODO:
-# - highlighted entry should not show match in file name
-# - should not store grep entries from initial launch (i.e. buffer list)
+# TODO:
 # - some way for user to indicate case-sensitive regex
 # - add slash highlighting back to file name?
 # - stop search when we've gone over the maximum viewable?
@@ -1175,6 +1174,8 @@ class GrepExplorer < Explorer
       @buffer_entries = []
       @matched_strings = []
 
+      # State from previous run, so you don't have to retype
+      # your search each time to get the previous entries.
       @previous_input = ''
       @previous_grep_entries = []
       @previous_matched_strings = []
@@ -1186,6 +1187,7 @@ class GrepExplorer < Explorer
 
       @prompt.set! @previous_input
       @buffer_entries = GrepEntry::compute_buffer_entries()
+
       @selected_index = @previous_selected_index
       super
     end
@@ -1235,6 +1237,19 @@ class GrepExplorer < Explorer
       end
     end
 
+    def highlight_selected_index
+      VIM::command 'syn clear LustySelected'
+
+      entry = @current_sorted_matches[@selected_index]
+      return if entry.nil?
+
+      match_string = "#{entry.short_name}:#{entry.line_number}:"
+      escaped = VIM::regex_escape(match_string)
+      VIM::command "syn match LustySelected \"^#{match_string}\" " \
+                                            'contains=NONE ' \
+                                            'nextgroup=LustyGrepContext'
+    end
+
     def current_abbreviation
       @prompt.input
     end
@@ -1253,6 +1268,9 @@ class GrepExplorer < Explorer
       if not grep_entries.empty?
         return grep_entries
       elsif abbrev == ''
+        @buffer_entries.each do |e|
+          e.label = e.short_name
+        end
         return @buffer_entries
       end
 
@@ -1277,7 +1295,7 @@ class GrepExplorer < Explorer
 
             grep_entry = entry.clone()
             grep_entry.line_number = i
-            grep_entry.label += ":#{i}:#{vim_buffer[i]}"
+            grep_entry.label = "#{grep_entry.short_name}:#{i}:#{vim_buffer[i]}"
             grep_entries << grep_entry
 
             # Keep track of all matched strings

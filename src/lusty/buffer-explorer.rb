@@ -23,6 +23,7 @@ class BufferExplorer < Explorer
         @buffer_entries = BufferEntry::compute_buffer_entries()
         @buffer_entries.each do |e|
           # Show modification indicator
+          e.label = e.short_name
           e.label << " [+]" if e.vim_buffer.modified?
           # Disabled: show buffer number next to name
           #e.label << " #{buffer.number.to_s}"

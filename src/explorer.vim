@@ -16,8 +16,8 @@
 "               Matt Tolton, Björn Winckler, sowill, David Brown
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love
 "
-" Release Date: March 28, 2010
-"      Version: 2.3.0
+" Release Date: June 26, 2010
+"      Version: 3.0
 "
 "        Usage: To launch the explorers:
 "
@@ -43,7 +43,8 @@
 "                 >>
 "
 "               As you type, the list updates for possible matches using a
-"               fuzzy matching algorithm.  Special keys include:
+"               fuzzy matching algorithm (or regex matching, in the case of
+"               grep).  Special keys include:
 "
 "                 <Enter>  open the selected match
 "                 <Tab>    open the selected match

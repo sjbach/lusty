@@ -1,6 +1,3 @@
-- Better matches window layout algorithm.
-- Put code in its own namespace to play better with other Ruby plugins.
-- Don't error when run in read-only mode.  (Thanks to Ali Asad Lotia)
-- Don't error if a file is treated as a dir.
-- Don't error when a single-quote is typed.
+- New :LustyBufferGrep for searching through open buffers.
+- Filesystem explorer: fixed a directory recursion highlighting bug.
 

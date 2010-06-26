@@ -1160,12 +1160,9 @@ end
 
 # STEVE TODO:
 # - highlighted entry should not show match in file name
-# - highlighted entry doesn't highlight on second+ column
 # - should not store grep entries from initial launch (i.e. buffer list)
 # - some way for user to indicate case-sensitive regex
 # - add slash highlighting back to file name?
-# - TRUNCATED and NO ENTRIES do not highlight
-# - highlighting stopped working consistently
 # - stop search when we've gone over the maximum viewable?
 
 module Lusty
@@ -1199,25 +1196,16 @@ class GrepExplorer < Explorer
     end
 
     def set_syntax_matching
-      VIM::command 'syn clear LustyGrepEntry'
       VIM::command 'syn clear LustyGrepFileName'
       VIM::command 'syn clear LustyGrepLineNumber'
       VIM::command 'syn clear LustyGrepContext'
 
       # Base syntax matching -- others are set on refresh.
 
-      grep_entry = Display.entry_syntaxify('.\{-}', false)
       VIM::command \
-        "syn match LustyGrepEntry \"#{grep_entry}\" " \
-                                  'transparent ' \
-                                  'contains=LustyGrepFileName'
-
-      VIM::command \
-        'syn match LustyGrepFileName "' + Display::ENTRY_START_VIM_REGEX +
-                                          '\zs.\{-}\ze:\d\+:" ' \
-                                          'contained ' \
-                                          'contains=NONE ' \
-                                          'nextgroup=LustyGrepLineNumber'
+        'syn match LustyGrepFileName "^\zs.\{-}\ze:\d\+:" ' \
+                                     'contains=NONE ' \
+                                     'nextgroup=LustyGrepLineNumber'
 
       VIM::command \
         'syn match LustyGrepLineNumber ":\d\+:" ' \
@@ -1226,8 +1214,7 @@ class GrepExplorer < Explorer
                                        'nextgroup=LustyGrepContext'
 
       VIM::command \
-        'syn match LustyGrepContext "\zs.\{-}\ze' +
-                                    Display::ENTRY_END_VIM_REGEX + '" ' \
+        'syn match LustyGrepContext ".*" ' \
                                     'transparent ' \
                                     'contained ' \
                                     'contains=LustyGrepMatch'
@@ -1664,7 +1651,6 @@ class Display
         VIM::command 'highlight link LustyGrepLineNumber Directory'
         VIM::command 'highlight link LustyGrepFileName Comment'
         VIM::command 'highlight link LustyGrepContext None' # transparent
-        VIM::command 'highlight link LustyGrepEntry None' # transparent
         VIM::command 'highlight link LustyOpenedFile PreProc'
         VIM::command 'highlight link LustyFileWithSwap WarningMsg'
         VIM::command 'highlight link LustyNoEntries ErrorMsg'

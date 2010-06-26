@@ -102,7 +102,6 @@ class Display
         VIM::command 'highlight link LustyGrepLineNumber Directory'
         VIM::command 'highlight link LustyGrepFileName Comment'
         VIM::command 'highlight link LustyGrepContext None' # transparent
-        VIM::command 'highlight link LustyGrepEntry None' # transparent
         VIM::command 'highlight link LustyOpenedFile PreProc'
         VIM::command 'highlight link LustyFileWithSwap WarningMsg'
         VIM::command 'highlight link LustyNoEntries ErrorMsg'

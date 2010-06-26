@@ -143,7 +143,6 @@
 "   - set callback when pipe is ready for read and force refresh()
 " - uppercase character should make flex matching case-sensitive
 " - FilesystemExplorerRecursive
-" - restore MRU buffer ordering for initial BufferExplorer display?
 " - C-jhkl navigation to highlight a file?
 " - abbrev "a" will score e.g. "m-a" higher than e.g. "ad"
 

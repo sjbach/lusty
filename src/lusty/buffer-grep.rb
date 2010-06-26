@@ -10,7 +10,6 @@
 # TODO:
 # - some way for user to indicate case-sensitive regex
 # - add slash highlighting back to file name?
-# - stop search when we've gone over the maximum viewable?
 
 module Lusty
 class BufferGrep < Explorer
@@ -128,6 +127,8 @@ class BufferGrep < Explorer
         return []
       end
 
+      max_visible_entries = Display.max_height
+
       # Used to avoid duplicating match strings, which slows down refresh.
       highlight_hash = {}
 
@@ -137,19 +138,24 @@ class BufferGrep < Explorer
         vim_buffer = entry.vim_buffer
         line_count = vim_buffer.count
         (1..line_count). each do |i|
-          match = regex.match(vim_buffer[i])
+          line = vim_buffer[i]
+          match = regex.match(line)
           if match
             matched_str = match.to_s
 
             grep_entry = entry.clone()
             grep_entry.line_number = i
-            grep_entry.label = "#{grep_entry.short_name}:#{i}:#{vim_buffer[i]}"
+            grep_entry.label = "#{grep_entry.short_name}:#{i}:#{line}"
             grep_entries << grep_entry
 
             # Keep track of all matched strings
             unless highlight_hash[matched_str]
               @matched_strings << matched_str
               highlight_hash[matched_str] = true
+            end
+
+            if grep_entries.length > max_visible_entries
+              return grep_entries
             end
           end
         end

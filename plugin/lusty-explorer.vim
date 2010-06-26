@@ -1125,6 +1125,7 @@ class FilesystemExplorer < Explorer
       if File.directory?(path)
         # Recurse into the directory instead of opening it.
         @prompt.set!(path.to_s)
+        @selected_index = 0
       elsif entry.label.include?(File::SEPARATOR)
         # Don't open a fake file/buffer with "/" in its name.
         return

@@ -115,7 +115,7 @@ class Explorer
     end
 
     def highlight_selected_index
-      # Note: overridden by GrepExplorer
+      # Note: overridden by BufferGrep
       VIM::command 'syn clear LustySelected'
 
       entry = @current_sorted_matches[@selected_index]

@@ -89,7 +89,7 @@ class BufferEntry < Entry
   end
 end
 
-# Used in GrepExplorer
+# Used in BufferGrep
 class GrepEntry < Entry
   attr_accessor :vim_buffer, :line_number
   def initialize(vim_buffer)

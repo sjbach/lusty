@@ -4,7 +4,7 @@ expect {
   timeout {exit 1}
   "VIM - Vi IMproved"
 }
-send ":LustyGrepExplorer\r"
+send ":LustyBufferGrep\r"
 # Launching should not have caused a backtrace and "Press ENTER ..." message
 expect {
   "Press ENTER"  {exit 1}

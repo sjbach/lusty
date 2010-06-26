@@ -13,7 +13,7 @@
 # - stop search when we've gone over the maximum viewable?
 
 module Lusty
-class GrepExplorer < Explorer
+class BufferGrep < Explorer
   public
     def initialize
       super
@@ -42,7 +42,7 @@ class GrepExplorer < Explorer
 
   private
     def title
-      '[LustyExplorer-GrepBufferContents]'
+      '[LustyExplorer-BufferGrep]'
     end
 
     def set_syntax_matching

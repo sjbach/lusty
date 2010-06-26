@@ -25,12 +25,14 @@
 "                 <Leader>lr  - Opens the filesystem explorer from the parent
 "                               directory of the current file.
 "                 <Leader>lb  - Opens the buffer explorer.
+"                 <Leader>lg  - Opens the buffer grep.
 "
 "               You can also use the commands:
 "
 "                 ":LustyFilesystemExplorer"
 "                 ":LustyFilesystemExplorerFromHere"
 "                 ":LustyBufferExplorer"
+"                 ":LustyBufferGrep"
 "
 "               (Personally, I map these to ,f and ,r and ,b)
 "
@@ -65,13 +67,9 @@
 "                 <C-a>    open [a]ll files in the current list
 "                 <C-e>    create a new buffer with the given name and path
 "
-" Buffer Explorer:
-"  - The currently active buffer is highlighted.
-"  - Buffers are listed without path unless needed to differentiate buffers of
-"    the same name.
-"
 " Filesystem Explorer:
-"  - Directory contents are memoized.
+"
+"  - Directory contents are memoized.  (<C-r> to refresh.)
 "  - You can recurse into and out of directories by typing the directory name
 "    and a slash, e.g. "stuff/" or "../".
 "  - Variable expansion, e.g. "$D" -> "/long/dir/path/".
@@ -91,6 +89,27 @@
 "  Note that they can still be opened by being named explicitly.
 "
 "  See :help 'wildignore' for more information.
+"
+" Buffer Explorer:
+"
+"  - The currently active buffer is highlighted.
+"  - Buffers are listed without path unless needed to differentiate buffers of
+"    the same name.
+"
+" Buffer Grep:
+"
+"  - Searches through all currently open buffers.
+"  - Uses Ruby-style regexes instead of Vim style.  This means:
+"
+"    - \b instead of \< or \> for beginning/end of word.
+"    - (foo|bar) instead of \(foo\|bar\).
+"    - (foo|bar) instead of \(foo\|bar\).
+"    - {2,5} instead of \{2,5}
+"    - + instead of \+
+"    - Generally, fewer backslashes. :-)
+"
+"  - For now, searches are always case-insensitive.
+"  - Matches from the previous grep are remembered.  Clear with <C-u>.
 "
 "
 " Install Details:
@@ -113,6 +132,7 @@
 " like this (in .vimrc):
 "
 "   let g:LustyExplorerSuppressRubyWarning = 1
+"
 "
 " GetLatestVimScripts: 1890 1 :AutoInstall: lusty-explorer.vim
 "

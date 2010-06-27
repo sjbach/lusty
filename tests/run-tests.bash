@@ -1,18 +1,19 @@
 #!/bin/bash
 
+export DISPLAY=
 failures=
 
 for dir in */; do
   cd $dir
-  #rm -f success fail
   if ! expect -f expect; then
+    echo "fail: $dir"
     failures="$failures $dir"
   fi
   cd ..
-  #ls $dir/success >/dev/null
 done >/dev/null
 
 if [ "$failures" ]; then
+  echo
   echo "Failing tests: $failures" >&2
   exit 1
 fi

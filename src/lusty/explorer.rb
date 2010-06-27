@@ -85,7 +85,7 @@ class Explorer
         end
 
         if $LUSTY_PROFILING
-          outfile = File.new('rbprof.html', 'a')
+          outfile = File.new('lusty-explorer-rbprof.html', 'a')
           #RubyProf::CallTreePrinter.new(RubyProf.stop).print(outfile)
           RubyProf::GraphHtmlPrinter.new(RubyProf.stop).print(outfile)
         end

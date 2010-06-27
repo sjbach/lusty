@@ -19,10 +19,9 @@
 " Release Date: June 26, 2010
 "      Version: 3.0
 "
-"        Usage: To launch the explorers:
-"
+"        Usage:
 "                 <Leader>lf  - Opens the filesystem explorer.
-"                 <Leader>lr  - Opens the filesystem explorer from the parent
+"                 <Leader>lr  - Opens the filesystem explorer from the
 "                               directory of the current file.
 "                 <Leader>lb  - Opens the buffer explorer.
 "                 <Leader>lg  - Opens the buffer grep.
@@ -34,20 +33,20 @@
 "                 ":LustyBufferExplorer"
 "                 ":LustyBufferGrep"
 "
-"               (Personally, I map these to ,f and ,r and ,b)
+"               (Personally, I map these to ,f ,r ,b and ,g)
 "
-"               The interface is intuitive.  When one of the explorers is
-"               launched, a new window appears at bottom presenting a list of
-"               files/dirs or buffers, and in the status bar is a prompt:
+"               When launched, a new window appears at bottom presenting a
+"               table of files/dirs or buffers, and in the status bar a
+"               prompt:
 "
 "                 >>
 "
-"               As you type, the list updates for possible matches using a
+"               As you type, the table updates for possible matches using a
 "               fuzzy matching algorithm (or regex matching, in the case of
 "               grep).  Special keys include:
 "
-"                 <Enter>  open the selected match
-"                 <Tab>    open the selected match
+"                 <Enter>  open selected match
+"                 <Tab>    open selected match
 "                 <Esc>    cancel
 "                 <C-c>    cancel
 "                 <C-g>    cancel
@@ -56,17 +55,17 @@
 "                 <C-o>    open selected match in a new h[o]rizontal split
 "                 <C-v>    open selected match in a new [v]ertical split
 "
-"                 <C-n>    select the [n]ext match
-"                 <C-p>    select the [p]revious match
+"                 <C-n>    select [n]ext match
+"                 <C-p>    select [p]revious match
 "
-"                 <C-w>    ascend one directory at prompt
-"                 <C-u>    clear the prompt
+"                 <C-u>    clear prompt
 "
 "               Additional shortcuts for the filesystem explorer:
 "
+"                 <C-w>    ascend one directory at prompt
 "                 <C-r>    [r]efresh directory contents
-"                 <C-a>    open [a]ll files in the current list
-"                 <C-e>    create a new buffer with the given name and path
+"                 <C-a>    open [a]ll files in current table
+"                 <C-e>    create new buffer with the given name and path
 "
 " Filesystem Explorer:
 "
@@ -80,26 +79,25 @@
 "
 "       let g:LustyExplorerAlwaysShowDotFiles = 1
 "
-"  You can prevent certain files from appearing in the directory listings with
-"  the following variable:
+"  You can prevent certain files from appearing in the table with the
+"  following variable:
 "
 "    set wildignore=*.o,*.fasl,CVS
 "
-"  The above example will mask all object files, compiled lisp files, and
-"  files/directories named CVS from appearing in the filesystem explorer.
-"  Note that they can still be opened by being named explicitly.
+"  The above will mask all object files, compiled lisp files, and
+"  files/directories named CVS from appearing in the table.  Note that they
+"  can still be opened by being named explicitly.
 "
 "  See :help 'wildignore' for more information.
 "
 " Buffer Explorer:
 "
+"  - Buffers are sorted first by fuzzy match and then by most-recently used.
 "  - The currently active buffer is highlighted.
-"  - Buffers are listed without path unless needed to differentiate buffers of
-"    the same name.
 "
 " Buffer Grep:
 "
-"  - Searches through all currently open buffers.
+"  - Searches all currently open buffers.
 "  - Uses Ruby-style regexes instead of Vim style.  This means:
 "
 "    - \b instead of \< or \> for beginning/end of word.
@@ -109,13 +107,14 @@
 "    - Generally, fewer backslashes. :-)
 "
 "  - For now, searches are always case-insensitive.
-"  - Matches from the previous grep are remembered.  Clear with <C-u>.
+"  - Matches from the previous grep are remembered upon relaunch;  clear with
+"    <C-u>.
 "
 "
 " Install Details:
 "
-" Copy this file into your $HOME/.vim/plugin directory so that it will be
-" sourced on startup automatically.
+" Copy this file into $HOME/.vim/plugin directory so that it will be sourced
+" on startup automatically.
 "
 " Note! This plugin requires Vim be compiled with Ruby interpretation.  If you
 " don't know if your build of Vim has this functionality, you can check by
@@ -133,7 +132,6 @@
 "
 "   let g:LustyExplorerSuppressRubyWarning = 1
 "
-"
 " GetLatestVimScripts: 1890 1 :AutoInstall: lusty-explorer.vim
 "
 " TODO:
@@ -141,10 +139,10 @@
 "   current window is scrolled to the right, name truncation occurs.
 " - enable VimSwaps stuff
 "   - set callback when pipe is ready for read and force refresh()
-" - uppercase character should make flex matching case-sensitive
-" - FilesystemExplorerRecursive
+" - uppercase character should make matching case-sensitive
+" - FilesystemGrep
 " - C-jhkl navigation to highlight a file?
-" - abbrev "a" will score e.g. "m-a" higher than e.g. "ad"
+" - abbrev "a" should score e.g. "ad" higher than "m-a"
 
 " Exit quickly when already loaded.
 if exists("g:loaded_lustyexplorer")
@@ -176,7 +174,7 @@ endif
 " Check for Ruby functionality.
 if !has("ruby") || version < 700
   if !exists("g:LustyExplorerSuppressRubyWarning") ||
-     \ g:LustyExplorerSuppressRubyWarning == "0"
+      \ g:LustyExplorerSuppressRubyWarning == "0"
   if !exists("g:LustyJugglerSuppressRubyWarning") ||
       \ g:LustyJugglerSuppressRubyWarning == "0"
     echohl ErrorMsg

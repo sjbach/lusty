@@ -15,21 +15,20 @@
 " Release Date: June 2, 2010
 "      Version: 1.1.4
 "
-"        Usage: To launch the juggler:
-"
-"                 <Leader>lj
+"        Usage:
+"                 <Leader>lj  - Opens the buffer juggler.
 "
 "               You can also use this command:
 "
 "                 ":LustyJuggler"
 "
-"               (Personally, I map this to ,g)
+"               (Personally, I map this to ,j)
 "
-"               When the juggler launches, the command bar at bottom is
-"               replaced with a new bar showing the names of your currently
-"               opened buffers in most-recently-used order.
+"               When launched, the command bar at bottom is replaced with a
+"               new bar showing the names of currently-opened buffers in
+"               most-recently-used order.
 "
-"               The buffer names are mapped to these keys:
+"               The buffers are mapped to these keys:
 "
 "                   1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th
 "                   ----------------------------------------
@@ -44,7 +43,7 @@
 "               or press "<ENTER>".  Alternatively, press one of the other
 "               mapped keys to highlight another buffer.
 "
-"               To display the key before the name of the buffer, add one of
+"               To display the key with the name of the buffer, add one of
 "               the following lines to your .vimrc:
 "
 "                 let g:LustyJugglerShowKeys = 'a'   (for alpha characters)
@@ -59,17 +58,17 @@
 "
 "                 ":LustyJugglePrevious"
 "               
-"               This is similar to the :b# command, but accounts for the
-"               common situation where your previously used buffer (#) has
+"               This is similar to the ":b#" command, but accounts for the
+"               common situation where the previously used buffer (#) has
 "               been killed and is thus inaccessible.  In that case, it will
-"               instead switch to the buffer used previous to the killed
-"               buffer (and on down the line).
+"               instead switch to the buffer used before that one (and on down
+"               the line if that buffer has been killed too).
 "               
 "
 " Install Details:
 "
-" Copy this file into your $HOME/.vim/plugin directory so that it will be
-" sourced on startup automatically.
+" Copy this file into $HOME/.vim/plugin directory so that it will be sourced
+" on startup automatically.
 "
 " Note! This plugin requires Vim be compiled with Ruby interpretation.  If you
 " don't know if your build of Vim has this functionality, you can check by

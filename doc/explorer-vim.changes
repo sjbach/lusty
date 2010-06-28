@@ -1,3 +1,3 @@
-- New :LustyBufferGrep for searching through open buffers.
-- Filesystem explorer: fixed a directory recursion highlighting bug.
+- Buffer grep: performance improvement.
+- Buffer explorer: secondary sort by MRU.
 

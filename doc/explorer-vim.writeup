@@ -20,11 +20,11 @@ Instructions:
       :LustyBufferExplorer
       :LustyBufferGrep
 
-When one of the explorers is launched, a new window appears at bottom presenting a list of files/dirs or buffers, and in the status bar is a prompt:
+When one of the explorers is launched, a new window appears at bottom presenting a table of files/dirs or buffers, and in the status bar is a prompt:
 
       >>
 
-As you type a name, the list updates using a fuzzy matching algorithm (or regex matching in the case of grep).  Press enter to open the selected match, <C-n>/<C-p> to select the next/previous match, or press <ESC> or <Ctrl-c> to cancel.
+As you type a name, the table updates using a fuzzy matching algorithm (or regex matching in the case of grep).  Press enter to open the selected match, <C-n>/<C-p> to select the next/previous match, or press <ESC> or <Ctrl-c> to cancel.
 
 See the "Usage:" section of the script for other tricks and features.
 

@@ -16,8 +16,8 @@
 "               Matt Tolton, Björn Winckler, sowill, David Brown
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love
 "
-" Release Date: June 26, 2010
-"      Version: 3.0
+" Release Date: June 28, 2010
+"      Version: 3.1
 "
 "        Usage:
 "                 <Leader>lf  - Opens the filesystem explorer.

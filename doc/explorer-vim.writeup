@@ -10,15 +10,15 @@ A short video someone made:
 
 Instructions:
 
+      :LustyFilesystemExplorer
+      :LustyFilesystemExplorerFromHere
+      :LustyBufferExplorer
+      :LustyBufferGrep (for searching through all open buffers)
+
       <Leader>lf  - Opens filesystem explorer.
       <Leader>lr  - Opens filesystem explorer at the directory of the current file.
       <Leader>lb  - Opens buffer explorer.
       <Leader>lg  - Opens buffer grep.
-
-      :LustyFilesystemExplorer
-      :LustyFilesystemExplorerFromHere
-      :LustyBufferExplorer
-      :LustyBufferGrep
 
 When one of the explorers is launched, a new window appears at bottom presenting a table of files/dirs or buffers, and in the status bar is a prompt:
 

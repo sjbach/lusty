@@ -24,7 +24,8 @@
 "                 <Leader>lr  - Opens the filesystem explorer from the
 "                               directory of the current file.
 "                 <Leader>lb  - Opens the buffer explorer.
-"                 <Leader>lg  - Opens the buffer grep.
+"                 <Leader>lg  - Opens the buffer grep, for searching through
+"                               all loaded buffers
 "
 "               You can also use the commands:
 "
@@ -97,7 +98,7 @@
 "
 " Buffer Grep:
 "
-"  - Searches all currently open buffers.
+"  - Searches all loaded buffers.
 "  - Uses Ruby-style regexes instead of Vim style.  This means:
 "
 "    - \b instead of \< or \> for beginning/end of word.

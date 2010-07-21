@@ -14,10 +14,10 @@
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
 "               Matt Tolton, Björn Winckler, sowill, David Brown
-"               Brett DiFrischia, Ali Asad Lotia, Kenneth Love
+"               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel
 "
 " Release Date: June 28, 2010
-"      Version: 3.1
+"      Version: 3.1.1
 "
 "        Usage:
 "                 <Leader>lf  - Opens the filesystem explorer.

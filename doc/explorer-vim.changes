@@ -1,3 +1,1 @@
-- Buffer grep: performance improvement.
-- Buffer explorer: secondary sort by MRU.
-
+Don't throw an error when looking up special non-file buffers.

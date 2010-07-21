@@ -306,7 +306,7 @@ module VIM
         return obj if obj.number == n
       end
 
-      LustyJ::assert(false, "couldn't find buffer #{n}")
+      return nil
     end
   end
 

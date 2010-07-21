@@ -16,7 +16,7 @@
 "               Matt Tolton, Björn Winckler, sowill, David Brown
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel
 "
-" Release Date: June 28, 2010
+" Release Date: July 21, 2010
 "      Version: 3.1.1
 "
 "        Usage:

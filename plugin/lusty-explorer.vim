@@ -406,7 +406,7 @@ module VIM
         return obj if obj.number == n
       end
 
-      LustyE::assert(false, "couldn't find buffer #{n}")
+      return nil
     end
   end
 
@@ -613,6 +613,7 @@ class Entry
 
     $le_buffer_stack.numbers.each do |n|
       o = VIM::Buffer.obj_for_bufnr(n)
+      next if o.nil?
       buffer_entries << self.new(o, n)
     end
 

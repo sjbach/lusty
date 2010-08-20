@@ -25,6 +25,8 @@ class SavedSettings
     @report = VIM::evaluate("&report")
     @sidescroll = VIM::evaluate("&sidescroll")
     @sidescrolloff = VIM::evaluate("&sidescrolloff")
+    @windowcount = VIM::Window.count
+    @windowheights = Array.new(@windowcount){|i| VIM::Window[i].height}
   end
 
   def restore
@@ -57,6 +59,7 @@ class SavedSettings
     VIM::command "set report=#{@report}"
     VIM::command "set sidescroll=#{@sidescroll}"
     VIM::command "set sidescrolloff=#{@sidescrolloff}"
+    Array.new(@windowcount){|i| VIM::Window[i].height = @windowheights[i]}
   end
 end
 end

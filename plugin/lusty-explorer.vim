@@ -1592,6 +1592,8 @@ class SavedSettings
     @report = VIM::evaluate("&report")
     @sidescroll = VIM::evaluate("&sidescroll")
     @sidescrolloff = VIM::evaluate("&sidescrolloff")
+
+    VIM::command "let s:win_size_restore = winrestcmd()"
   end
 
   def restore
@@ -1624,6 +1626,8 @@ class SavedSettings
     VIM::command "set report=#{@report}"
     VIM::command "set sidescroll=#{@sidescroll}"
     VIM::command "set sidescrolloff=#{@sidescrolloff}"
+
+    VIM::command "exe s:win_size_restore"
   end
 end
 end

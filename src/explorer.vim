@@ -14,7 +14,8 @@
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
 "               Matt Tolton, Björn Winckler, sowill, David Brown
-"               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel
+"               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel,
+"               robquant
 "
 " Release Date: July 21, 2010
 "      Version: 3.1.1

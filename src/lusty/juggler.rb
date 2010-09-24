@@ -58,21 +58,23 @@ class LustyJuggler
       VIM::set_option 'noshowcmd'
       VIM::set_option 'noshowmode'
 
+      @key_mappings_map = {}
+
       # Selection keys.
       @@KEYS.keys.each do |c|
-        VIM::command "noremap <silent> #{c} :call <SID>LustyJugglerKeyPressed('#{c}')<CR>"
+        map_key(c, ":call <SID>LustyJugglerKeyPressed('#{c}')<CR>")
       end
       # Can't use '<CR>' as an argument to :call func for some reason.
-      VIM::command "noremap <silent> <CR>  :call <SID>LustyJugglerKeyPressed('ENTER')<CR>"
-      #VIM::command "noremap <silent> <Tab>  :call <SID>LustyJugglerKeyPressed('TAB')<CR>"
+      map_key("<CR>", ":call <SID>LustyJugglerKeyPressed('ENTER')<CR>")
+      map_key("<Tab>", ":call <SID>LustyJugglerKeyPressed('TAB')<CR>")
 
       # Cancel keys.
-      VIM::command "noremap <silent> q     :call <SID>LustyJugglerCancel()<CR>"
-      VIM::command "noremap <silent> <Esc> :call <SID>LustyJugglerCancel()<CR>"
-      VIM::command "noremap <silent> <C-c> :call <SID>LustyJugglerCancel()<CR>"
-      VIM::command "noremap <silent> <BS>  :call <SID>LustyJugglerCancel()<CR>"
-      VIM::command "noremap <silent> <Del> :call <SID>LustyJugglerCancel()<CR>"
-      VIM::command "noremap <silent> <C-h> :call <SID>LustyJugglerCancel()<CR>"
+      map_key("q", ":call <SID>LustyJugglerCancel()<CR>")
+      map_key("<Esc>", ":call <SID>LustyJugglerCancel()<CR>")
+      map_key("<C-c>", ":call <SID>LustyJugglerCancel()<CR>")
+      map_key("<BS>", ":call <SID>LustyJugglerCancel()<CR>")
+      map_key("<Del>", ":call <SID>LustyJugglerCancel()<CR>")
+      map_key("<C-h>", ":call <SID>LustyJugglerCancel()<CR>")
 
       print_buffer_list()
     end
@@ -101,17 +103,17 @@ class LustyJuggler
       VIM::set_option "showmode" if @showmode
 
       @@KEYS.keys.each do |c|
-        VIM::command "unmap <silent> #{c}"
+        unmap_key(c)
       end
-      VIM::command "unmap <silent> <CR>"
-      #VIM::command "unmap <silent> <Tab>"
+      unmap_key("<CR>")
+      unmap_key("<Tab>")
 
-      VIM::command "unmap <silent> q"
-      VIM::command "unmap <silent> <Esc>"
-      VIM::command "unmap <silent> <C-c>"
-      VIM::command "unmap <silent> <BS>"
-      VIM::command "unmap <silent> <Del>"
-      VIM::command "unmap <silent> <C-h>"
+      unmap_key("q")
+      unmap_key("<Esc>")
+      unmap_key("<C-c>")
+      unmap_key("<BS>")
+      unmap_key("<Del>")
+      unmap_key("<C-h>")
 
       @running = false
       VIM::message ''
@@ -137,6 +139,23 @@ class LustyJuggler
     def choose(i)
       buf = $lj_buffer_stack.num_at_pos(i)
       VIM::command "b #{buf}"
+    end
+
+    def map_key(key, action)
+      VIM::command "let s:maparg_holder = maparg('#{key}')"
+      if VIM::evaluate_bool("s:maparg_holder != ''")
+        @key_mappings_map[key] = VIM::evaluate('s:maparg_holder')
+      end
+      VIM::command "noremap <silent> #{key} #{action}"
+    end
+
+    def unmap_key(key)
+      old_action = @key_mappings_map[key]
+      if old_action
+        VIM::command "noremap <silent> #{key} #{old_action}"
+      else
+        VIM::command "unmap <silent> #{key}"
+      end
     end
 end
 end

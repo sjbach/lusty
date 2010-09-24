@@ -212,6 +212,9 @@ augroup LustyJuggler
   autocmd BufWipeout * ruby LustyJ::profile() { $lj_buffer_stack.pop }
 augroup End
 
+" Used to work around a flaw in Vim's ruby bindings.
+let s:maparg_holder = 0
+
 ruby << EOF
 
 require 'pathname'

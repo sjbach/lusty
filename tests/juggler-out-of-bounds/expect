@@ -1,4 +1,4 @@
-spawn vim -N --noplugin -u ../vimrc
+spawn $env(VIM) -N --noplugin -u ../vimrc
 set timeout 3
 expect {
   timeout {exit 1}

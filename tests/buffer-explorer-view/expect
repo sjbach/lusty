@@ -1,4 +1,4 @@
-spawn view -N --noplugin -u ../vimrc
+spawn $env(VIEW) -N --noplugin -u ../vimrc
 set timeout 3
 expect {
   timeout {exit 1}

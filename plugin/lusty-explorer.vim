@@ -134,6 +134,16 @@
 "
 "   let g:LustyExplorerSuppressRubyWarning = 1
 "
+"
+" Contributing:
+"
+" Patches and suggestions welcome.  Note: lusty-explorer.vim is a generated
+" file; if you'd like to submit a patch, check out the Github development
+" repository:
+"
+"    http://github.com/sjbach/lusty
+"
+"
 " GetLatestVimScripts: 1890 1 :AutoInstall: lusty-explorer.vim
 "
 " TODO:

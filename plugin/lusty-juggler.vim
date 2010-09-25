@@ -86,6 +86,16 @@
 "
 "   let g:LustyJugglerSuppressRubyWarning = 1
 "
+"
+" Contributing:
+"
+" Patches and suggestions welcome.  Note: lusty-juggler.vim is a generated
+" file; if you'd like to submit a patch, check out the Github development
+" repository:
+"
+"    http://github.com/sjbach/lusty
+"
+"
 " GetLatestVimScripts: 2050 1 :AutoInstall: lusty-juggler.vim
 "
 " TODO:

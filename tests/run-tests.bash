@@ -1,9 +1,42 @@
 #!/bin/bash
 
+case "$1" in
+  -h|--help)
+    echo '[VIM=path/to/vim] ./run-tests.bash [test-dir]'
+    exit 0
+    ;;
+  ?*)
+    if [ -d "$1" ]; then
+      test_dirs="$1"
+    else
+      echo "Error: $1 unknown"
+      exit 1
+    fi
+esac
+
+if [ ! "$VIM" ]; then
+  export VIM=`which vim`
+fi
+
+export VIEW=${VIM%/*}/view
+
 export DISPLAY=
+
+vim_version=$($VIM --version | head -n1)
+ruby_version=$($VIM --version | grep -- '-lruby' | \
+  sed 's/.*-lruby\([^ ]*\).*/\1/')
+
+echo "Testing against:"
+echo "  $vim_version"
+echo "  Ruby: $ruby_version"
+
 failures=
 
-for dir in */; do
+if [ ! "$test_dirs" ]; then
+  test_dirs=*/
+fi
+
+for dir in $test_dirs; do
   cd $dir
   if ! expect -f expect; then
     echo "fail: $dir"

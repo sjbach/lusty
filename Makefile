@@ -12,7 +12,7 @@ EXPLORER_VIM_FILE = src/explorer.vim
 # Order matters.
 EXPLORER_RUBY_FILES = src/vim.rb \
                       src/lusty.rb \
-                      src/liquid-metal.rb \
+                      src/mercury.rb \
                       src/lusty/entry.rb \
                       src/lusty/explorer.rb \
                       src/lusty/buffer-explorer.rb \
@@ -38,6 +38,17 @@ JUGGLER_RUBY_FILES = src/vim.rb \
 
 all: plugin/lusty-explorer.vim plugin/lusty-juggler.vim
 
+UNAME := $(shell uname)
+
+# OS X's sed doesn't have \< or \b for word boundaries.
+ifeq ($(UNAME), Darwin)
+LEFT_BOUND = [[:<:]]
+RIGHT_BOUND = [[:>:]]
+else
+LEFT_BOUND = \<
+RIGHT_BOUND = \>
+endif
+
 # Concatenate the Ruby files, removing redundant copyrights, and insert
 # the results into the vimscript files.  Change LustyM module references to
 # LustyE or LustyJ, so that using out-of-sync versions of lusty-explorer and
@@ -47,7 +58,8 @@ plugin/lusty-explorer.vim: $(EXPLORER_VIM_FILE) $(EXPLORER_RUBY_FILES)
 	for file in $(EXPLORER_RUBY_FILES); do \
 	  cat $$file | sed '1,/^$$/d' ;\
 	  echo ; \
-	done | sed 's/\<LustyM\>/LustyE/g' > ruby-content.tmp
+	done | sed 's/$(LEFT_BOUND)LustyM$(RIGHT_BOUND)/LustyE/g' > \
+	ruby-content.tmp
 	( sed '/{{RUBY_CODE_INSERTION_POINT}}/,$$d' $(EXPLORER_VIM_FILE) ; \
 	  cat ruby-content.tmp ; \
 	  sed '1,/{{RUBY_CODE_INSERTION_POINT}}/d' $(EXPLORER_VIM_FILE) ) > \
@@ -58,7 +70,8 @@ plugin/lusty-juggler.vim: $(JUGGLER_VIM_FILE) $(JUGGLER_RUBY_FILES)
 	for file in $(JUGGLER_RUBY_FILES); do \
 	  cat $$file | sed '1,/^$$/d' ;\
 	  echo ; \
-	done | sed 's/\<LustyM\>/LustyJ/g' > ruby-content.tmp
+	done | sed 's/$(LEFT_BOUND)LustyM$(RIGHT_BOUND)/LustyJ/g' > \
+	ruby-content.tmp
 	( sed '/{{RUBY_CODE_INSERTION_POINT}}/,$$d' $(JUGGLER_VIM_FILE) ; \
 	  cat ruby-content.tmp ; \
 	  sed '1,/{{RUBY_CODE_INSERTION_POINT}}/d' $(JUGGLER_VIM_FILE) ) > \

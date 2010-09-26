@@ -144,7 +144,6 @@
 " - uppercase character should make matching case-sensitive
 " - FilesystemGrep
 " - C-jhkl navigation to highlight a file?
-" - abbrev "a" should score e.g. "ad" higher than "m-a"
 
 " Exit quickly when already loaded.
 if exists("g:loaded_lustyexplorer")

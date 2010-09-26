@@ -196,7 +196,7 @@ class FilesystemExplorer < Explorer
       else
         matches = \
           unsorted.select { |x|
-            x.current_score = LiquidMetal.score(x.label, abbrev)
+            x.current_score = Mercury.score(x.label, abbrev)
             x.current_score != 0.0
           }
 

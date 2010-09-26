@@ -82,7 +82,7 @@ class BufferExplorer < Explorer
       else
         matching_entries = \
           @buffer_entries.select { |x|
-            x.current_score = LiquidMetal.score(x.short_name, abbrev)
+            x.current_score = Mercury.score(x.short_name, abbrev)
             x.current_score != 0.0
           }
 

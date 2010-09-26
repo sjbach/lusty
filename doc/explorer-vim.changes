@@ -1,1 +1,2 @@
 Don't throw an error when looking up special non-file buffers.
+New and improved fuzzy matching algorithm.

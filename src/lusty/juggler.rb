@@ -58,7 +58,7 @@ class LustyJuggler
       VIM::set_option 'noshowcmd'
       VIM::set_option 'noshowmode'
 
-      @key_mappings_map = {}
+      @key_mappings_map = Hash.new { |hash, k| hash[k] = [] }
 
       # Selection keys.
       @@KEYS.keys.each do |c|
@@ -142,19 +142,37 @@ class LustyJuggler
     end
 
     def map_key(key, action)
-      VIM::command "let s:maparg_holder = maparg('#{key}')"
-      if VIM::evaluate_bool("s:maparg_holder != ''")
-        @key_mappings_map[key] = VIM::evaluate('s:maparg_holder')
+      ['n','v','o','i','c','l'].each do |mode|
+        VIM::command "let s:maparg_holder = maparg('#{key}', '#{mode}')"
+        if VIM::evaluate_bool("s:maparg_holder != ''")
+          @key_mappings_map[key] << [mode, VIM::evaluate('s:maparg_holder')]
+        end
+        VIM::command "#{mode}noremap <silent> #{key} #{action}"
       end
-      VIM::command "noremap <silent> #{key} #{action}"
     end
 
     def unmap_key(key)
-      old_action = @key_mappings_map[key]
-      if old_action
-        VIM::command "noremap <silent> #{key} #{old_action}"
-      else
-        VIM::command "unmap <silent> #{key}"
+      modes_with_mappings_for_key = \
+        { 'n' => false,
+          'v' => false,
+          'o' => false,
+          'i' => false,
+          'c' => false,
+          'l' => false }
+
+      if @key_mappings_map.has_key?(key)
+        @key_mappings_map[key].each do |a|
+          mode = a[0]
+          action = a[1]
+          VIM::command "#{mode}noremap <silent> #{key} #{action}"
+          modes_with_mappings_for_key[mode] = true
+        end
+      end
+
+      modes_with_mappings_for_key.each_pair do |mode, had_mapping|
+        unless had_mapping
+          VIM::command "#{mode}unmap <silent> #{key}"
+        end
       end
     end
 end

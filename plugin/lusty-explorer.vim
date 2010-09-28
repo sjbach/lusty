@@ -154,7 +154,6 @@
 " - uppercase character should make matching case-sensitive
 " - FilesystemGrep
 " - C-jhkl navigation to highlight a file?
-" - abbrev "a" should score e.g. "ad" higher than "m-a"
 
 " Exit quickly when already loaded.
 if exists("g:loaded_lustyexplorer")
@@ -573,7 +572,7 @@ class Mercury
     def initialize(string, abbrev)
       @string = string
       @lower_string = string.downcase()
-      @abbrev = abbrev
+      @abbrev = abbrev.downcase()
       @level = 0
       @branches = 0
     end

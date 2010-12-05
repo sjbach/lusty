@@ -52,6 +52,22 @@
 "               To cancel the juggler, press any of "q", "<ESC>", "<C-c",
 "               "<BS>", "<Del>", or "<C-h>".
 "
+"               LustyJuggler can act very much like the <A-Tab> window 
+"               switching, to enable this mode add the following line
+"               to your .vimrc:
+"
+"                 let g:LustyJugglerAltTabMode=1
+"
+"               If you now map for example "<A-s>" to call LustyJuggler using
+"
+"                 noremap <silent> <A-s> :LustyJuggler<CR>
+"
+"               pressing "<A-s>" will open the LustyJuggler, with the previous
+"               buffer highlighted. Pressing "<A-s>" again will cycle through
+"               the buffers and pressing "<Enter>" selects the buffer.
+"               For to be more concrete, "<A-s><Enter>" will open the 
+"               previous buffer, "<A-s><A-s><Enter>" will open the buffer used 
+"               before the previous buffer, and so on.
 "
 "        Bonus: This plugin also includes the following command, which will
 "               immediately switch to your previously used buffer:
@@ -487,13 +503,19 @@ class LustyJuggler
     end
 
     def run
-      return if @running
-
       if $lj_buffer_stack.length <= 1
         VIM::pretty_msg("PreProc", "No other buffers")
         return
       end
 
+      # If already running, highlight next buffer
+      if @running and altTabModeActive?
+        @last_pressed = (@last_pressed % $lj_buffer_stack.length) + 1;
+        print_buffer_list(@last_pressed)
+        return
+      end
+
+      return if @running
       @running = true
 
       # Need to zero the timeout length or pressing 'g' will hang.
@@ -524,7 +546,8 @@ class LustyJuggler
       map_key("<Del>", ":call <SID>LustyJugglerCancel()<CR>")
       map_key("<C-h>", ":call <SID>LustyJugglerCancel()<CR>")
 
-      print_buffer_list()
+      @last_pressed = 2 if altTabModeActive?
+      print_buffer_list(@last_pressed)
     end
 
     def key_pressed()
@@ -532,12 +555,12 @@ class LustyJuggler
 
       if @last_pressed.nil? and c == 'ENTER'
         cleanup()
-      elsif @last_pressed and (c == @last_pressed or c == 'ENTER')
-        choose(@@KEYS[@last_pressed])
+      elsif @last_pressed and (@@KEYS[c] == @last_pressed or c == 'ENTER')
+        choose(@last_pressed)
         cleanup()
       else
-        print_buffer_list(@@KEYS[c])
-        @last_pressed = c
+        @last_pressed = @@KEYS[c]
+        print_buffer_list(@last_pressed)
       end
     end
 
@@ -582,6 +605,11 @@ class LustyJuggler
         end
 
       @name_bar.print
+    end
+
+    def altTabModeActive?
+       return ( VIM::exists?("g:LustyJugglerAltTabMode") and 
+                VIM::evaluate("g:LustyJugglerAltTabMode").to_i != 0 )
     end
 
     def choose(i)

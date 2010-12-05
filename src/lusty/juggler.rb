@@ -45,7 +45,7 @@ class LustyJuggler
       end
 
       # If already running, highlight next buffer
-      if @running and altTabModeActive?
+      if @running and LustyJuggler::alt_tab_mode_active?
         @last_pressed = (@last_pressed % $lj_buffer_stack.length) + 1;
         print_buffer_list(@last_pressed)
         return
@@ -82,7 +82,7 @@ class LustyJuggler
       map_key("<Del>", ":call <SID>LustyJugglerCancel()<CR>")
       map_key("<C-h>", ":call <SID>LustyJugglerCancel()<CR>")
 
-      @last_pressed = 2 if altTabModeActive?
+      @last_pressed = 2 if LustyJuggler::alt_tab_mode_active?
       print_buffer_list(@last_pressed)
     end
 
@@ -128,6 +128,11 @@ class LustyJuggler
     end
 
   private
+    def self.alt_tab_mode_active?
+       return (VIM::exists?("g:LustyJugglerAltTabMode") and
+               VIM::evaluate("g:LustyJugglerAltTabMode").to_i != 0)
+    end
+
     def print_buffer_list(highlighted_entry = nil)
       # If the user pressed a key higher than the number of open buffers,
       # highlight the highest (see also BufferStack.num_at_pos()).
@@ -141,11 +146,6 @@ class LustyJuggler
         end
 
       @name_bar.print
-    end
-
-    def altTabModeActive?
-       return ( VIM::exists?("g:LustyJugglerAltTabMode") and 
-                VIM::evaluate("g:LustyJugglerAltTabMode").to_i != 0 )
     end
 
     def choose(i)

@@ -103,7 +103,7 @@ class Explorer
       on_refresh()
       highlight_selected_index() if VIM::has_syntax?
       @display.print @current_sorted_matches.map { |x| x.label }
-      @prompt.print
+      @prompt.print Display.max_width
     end
 
     def create_explorer_window

@@ -847,7 +847,7 @@ class Explorer
       on_refresh()
       highlight_selected_index() if VIM::has_syntax?
       @display.print @current_sorted_matches.map { |x| x.label }
-      @prompt.print
+      @prompt.print Display.max_width
     end
 
     def create_explorer_window
@@ -1469,9 +1469,16 @@ class Prompt
       @input = ""
     end
 
-    def print
+    def print( max_width = 0 )
+      display = @input
+      # we need some extra characters
+      max_width -= 5
+      if ( max_width > 0 && display.length > max_width )
+        display = "..."+display[ (display.length - max_width + 3 ) .. -1] 
+      end
+
       VIM::pretty_msg("Comment", @@PROMPT,
-                      "None", VIM::single_quote_escape(@input),
+                      "None", VIM::single_quote_escape(display),
                       "Underlined", " ")
     end
 

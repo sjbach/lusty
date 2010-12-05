@@ -15,7 +15,7 @@
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
 "               Matt Tolton, Björn Winckler, sowill, David Brown
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel,
-"               robquant, lilydjwg
+"               robquant, lilydjwg, Martin Wache
 "
 " Release Date: July 21, 2010
 "      Version: 3.1.1

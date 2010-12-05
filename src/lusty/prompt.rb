@@ -23,16 +23,16 @@ class Prompt
       @input = ""
     end
 
-    def print( max_width = 0 )
-      display = @input
-      # we need some extra characters
+    def print(max_width = 0)
+      text = @input
+      # may need some extra characters for "..." and spacing
       max_width -= 5
-      if ( max_width > 0 && display.length > max_width )
-        display = "..."+display[ (display.length - max_width + 3 ) .. -1] 
+      if max_width > 0 && text.length > max_width
+        text = "..." + text[(text.length - max_width + 3 ) .. -1]
       end
 
       VIM::pretty_msg("Comment", @@PROMPT,
-                      "None", VIM::single_quote_escape(display),
+                      "None", VIM::single_quote_escape(text),
                       "Underlined", " ")
     end
 

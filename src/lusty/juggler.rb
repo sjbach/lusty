@@ -39,13 +39,19 @@ class LustyJuggler
     end
 
     def run
-      return if @running
-
       if $lj_buffer_stack.length <= 1
         VIM::pretty_msg("PreProc", "No other buffers")
         return
       end
 
+      # If already running, highlight next buffer
+      if @running and altTabModeActive?
+        @last_pressed = (@last_pressed % $lj_buffer_stack.length) + 1;
+        print_buffer_list(@last_pressed)
+        return
+      end
+
+      return if @running
       @running = true
 
       # Need to zero the timeout length or pressing 'g' will hang.
@@ -76,7 +82,8 @@ class LustyJuggler
       map_key("<Del>", ":call <SID>LustyJugglerCancel()<CR>")
       map_key("<C-h>", ":call <SID>LustyJugglerCancel()<CR>")
 
-      print_buffer_list()
+      @last_pressed = 2 if altTabModeActive?
+      print_buffer_list(@last_pressed)
     end
 
     def key_pressed()
@@ -84,12 +91,12 @@ class LustyJuggler
 
       if @last_pressed.nil? and c == 'ENTER'
         cleanup()
-      elsif @last_pressed and (c == @last_pressed or c == 'ENTER')
-        choose(@@KEYS[@last_pressed])
+      elsif @last_pressed and (@@KEYS[c] == @last_pressed or c == 'ENTER')
+        choose(@last_pressed)
         cleanup()
       else
-        print_buffer_list(@@KEYS[c])
-        @last_pressed = c
+        @last_pressed = @@KEYS[c]
+        print_buffer_list(@last_pressed)
       end
     end
 
@@ -134,6 +141,11 @@ class LustyJuggler
         end
 
       @name_bar.print
+    end
+
+    def altTabModeActive?
+       return ( VIM::exists?("g:LustyJugglerAltTabMode") and 
+                VIM::evaluate("g:LustyJugglerAltTabMode").to_i != 0 )
     end
 
     def choose(i)

@@ -345,7 +345,7 @@ if VIM::exists?("*strwidth")
   module VIM
     def self.strwidth(s)
       # strwidth() is defined in Vim 7.3.
-      evaluate("strwidth('#{s}')").to_i
+      evaluate("strwidth('#{single_quote_escape(s)}')").to_i
     end
   end
 else

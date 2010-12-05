@@ -15,7 +15,7 @@
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
 "               Matt Tolton, Björn Winckler, sowill, David Brown
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel,
-"               robquant
+"               robquant, lilydjwg
 "
 " Release Date: July 21, 2010
 "      Version: 3.1.1
@@ -154,7 +154,6 @@
 " - uppercase character should make matching case-sensitive
 " - FilesystemGrep
 " - C-jhkl navigation to highlight a file?
-" - abbrev "a" should score e.g. "ad" higher than "m-a"
 
 " Exit quickly when already loaded.
 if exists("g:loaded_lustyexplorer")
@@ -436,6 +435,22 @@ module VIM
     end
 
     command 'echohl None'
+  end
+end
+
+# Hack for wide CJK characters.
+if VIM::exists?("*strwidth")
+  module VIM
+    def self.strwidth(s)
+      # strwidth() is defined in Vim 7.3.
+      evaluate("strwidth('#{s}')").to_i
+    end
+  end
+else
+  module VIM
+    def self.strwidth(s)
+      s.length
+    end
   end
 end
 
@@ -1852,7 +1867,7 @@ class Display
 
           if col_index < col_count - 1
             # Add spacer to the width of the column
-            rows[i] << (" " * (column_width - string.length))
+            rows[i] << (" " * (column_width - VIM::strwidth(string)))
             rows[i] << @@COLUMN_SEPARATOR
           end
         end
@@ -1929,7 +1944,8 @@ class Display
       column_widths = []
       total_width = 0
       strings.each_slice(optimal_row_count) do |column|
-        column_width = column.max { |a, b| a.length <=> b.length }.length
+        longest = column.max { |a, b| VIM::strwidth(a) <=> VIM::strwidth(b) }
+        column_width = VIM::strwidth(longest)
         total_width += column_width
 
         break if total_width > max_width

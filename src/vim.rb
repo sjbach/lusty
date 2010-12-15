@@ -82,6 +82,10 @@ module VIM
       VIM::nonzero? VIM::evaluate("getbufvar(#{number()}, '&modified')")
     end
 
+    def listed?
+      VIM::nonzero? VIM::evaluate("getbufvar(#{number()}, '&buflisted')")
+    end
+
     def self.obj_for_bufnr(n)
       # There's gotta be a better way to do this...
       (0..VIM::Buffer.count-1).each do |i|

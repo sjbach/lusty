@@ -15,7 +15,7 @@
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
 "               Matt Tolton, Björn Winckler, sowill, David Brown
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel,
-"               robquant, lilydjwg, Martin Wache
+"               robquant, lilydjwg, Martin Wache, Johannes Holzfuß
 "
 " Release Date: July 21, 2010
 "      Version: 3.1.1
@@ -410,6 +410,10 @@ module VIM
       VIM::nonzero? VIM::evaluate("getbufvar(#{number()}, '&modified')")
     end
 
+    def listed?
+      VIM::nonzero? VIM::evaluate("getbufvar(#{number()}, '&buflisted')")
+    end
+
     def self.obj_for_bufnr(n)
       # There's gotta be a better way to do this...
       (0..VIM::Buffer.count-1).each do |i|
@@ -675,12 +679,13 @@ class Entry
     @label = label
   end
 
+  # NOTE: very similar to BufferStack::shorten_paths()
   def self.compute_buffer_entries()
     buffer_entries = []
 
     $le_buffer_stack.numbers.each do |n|
       o = VIM::Buffer.obj_for_bufnr(n)
-      next if o.nil?
+      next if (o.nil? or not o.listed?)
       buffer_entries << self.new(o, n)
     end
 
@@ -2265,8 +2270,11 @@ class BufferStack
 
   private
     def cull!
-      # Remove empty buffers.
-      @stack.delete_if { |x| not VIM::evaluate_bool("bufexists(#{x})") }
+      # Remove empty and unlisted buffers.
+      @stack.delete_if { |x|
+        not (VIM::evaluate_bool("bufexists(#{x})") and
+             VIM::evaluate_bool("getbufvar(#{x}, '&buflisted')"))
+      }
     end
 
     # NOTE: very similar to Entry::compute_buffer_entries()

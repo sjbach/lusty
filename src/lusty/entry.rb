@@ -18,12 +18,13 @@ class Entry
     @label = label
   end
 
+  # NOTE: very similar to BufferStack::shorten_paths()
   def self.compute_buffer_entries()
     buffer_entries = []
 
     $le_buffer_stack.numbers.each do |n|
       o = VIM::Buffer.obj_for_bufnr(n)
-      next if o.nil?
+      next if (o.nil? or not o.listed?)
       buffer_entries << self.new(o, n)
     end
 

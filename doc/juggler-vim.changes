@@ -1,3 +1,3 @@
-- don't error if ENTER is pressed before selection
-- avoid a "Press ENTER to continue" message.  (Thanks to Bartosz Leper)
-- don't error when the QuickFix buffer is open.  (Thanks to Marco Barberis)
+- Don't show unlisted buffers. (Thanks to Johannes Holzfuß)
+- New Alt-Tab mode to emulate window manager switching.  See g:LustyJugglerAltTabMode in documentation. (Thanks to Martin Wache)
+- Save and restore keymappings. (Thanks to Vincent Driessen)

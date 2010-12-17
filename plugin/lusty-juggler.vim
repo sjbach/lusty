@@ -13,8 +13,8 @@
 " Contributors: Juan Frias, Bartosz Leper, Marco Barberis, Vincent Driessen,
 "               Martin Wache, Johannes Holzfuß
 "
-" Release Date: June 2, 2010
-"      Version: 1.1.4
+" Release Date: December 16, 2010
+"      Version: 1.2
 "
 "        Usage:
 "                 <Leader>lj  - Opens the buffer juggler.

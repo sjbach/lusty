@@ -17,8 +17,8 @@
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel,
 "               robquant, lilydjwg, Martin Wache, Johannes Holzfuß
 "
-" Release Date: July 21, 2010
-"      Version: 3.1.1
+" Release Date: December 16, 2010
+"      Version: 4.0
 "
 "        Usage:
 "                 <Leader>lf  - Opens the filesystem explorer.

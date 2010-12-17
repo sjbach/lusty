@@ -1,2 +1,5 @@
-Don't throw an error when looking up special non-file buffers.
-New and improved fuzzy matching algorithm.
+- New and improved fuzzy matching algorithm: Mercury. (Matt Tolton)
+- Buffer Explorer: don't show unlisted buffers. (Thanks to Johannes Holzfuß)
+- Align multi-byte CJK characters correctly in filenames. (Thanks to lilydjwg)
+- Truncate prompt if longer than window width to avoid "press any key" message. (Thanks to Martin Wache)
+- Save/restore window config better. (Thanks to robquant)

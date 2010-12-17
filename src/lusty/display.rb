@@ -144,6 +144,8 @@ class Display
       VIM::command "#{map} <C-w>    :call <SID>#{prefix}KeyPressed(23)<CR>"
       VIM::command "#{map} <C-n>    :call <SID>#{prefix}KeyPressed(14)<CR>"
       VIM::command "#{map} <C-p>    :call <SID>#{prefix}KeyPressed(16)<CR>"
+      VIM::command "#{map} <C-f>    :call <SID>#{prefix}KeyPressed(6)<CR>"
+      VIM::command "#{map} <C-b>    :call <SID>#{prefix}KeyPressed(2)<CR>"
       VIM::command "#{map} <C-o>    :call <SID>#{prefix}KeyPressed(15)<CR>"
       VIM::command "#{map} <C-t>    :call <SID>#{prefix}KeyPressed(20)<CR>"
       VIM::command "#{map} <C-v>    :call <SID>#{prefix}KeyPressed(22)<CR>"
@@ -185,6 +187,7 @@ class Display
       end
 
       print_rows(rows, truncated)
+      row_count
     end
 
     def close

@@ -59,6 +59,8 @@
 "
 "                 <C-n>    select [n]ext match
 "                 <C-p>    select [p]revious match
+"                 <C-f>    select [f]orward one column
+"                 <C-b>    select [b]ack one column
 "
 "                 <C-u>    clear prompt
 "

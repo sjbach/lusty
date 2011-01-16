@@ -74,13 +74,13 @@
 "               immediately switch to your previously used buffer:
 "
 "                 ":LustyJugglePrevious"
-"               
+"
 "               This is similar to the ":b#" command, but accounts for the
 "               common situation where the previously used buffer (#) has
 "               been killed and is thus inaccessible.  In that case, it will
 "               instead switch to the buffer used before that one (and on down
 "               the line if that buffer has been killed too).
-"               
+"
 "
 " Install Details:
 "
@@ -155,7 +155,7 @@ if !has("ruby")
   if !exists("g:LustyExplorerSuppressRubyWarning") ||
       \ g:LustyExplorerSuppressRubyWarning == "0"
   if !exists("g:LustyJugglerSuppressRubyWarning") ||
-      \ g:LustyJugglerSuppressRubyWarning == "0" 
+      \ g:LustyJugglerSuppressRubyWarning == "0"
     echohl ErrorMsg
     echon "Sorry, LustyJuggler requires ruby.  "
     echon "Here are some tips for adding it:\n"
@@ -560,6 +560,7 @@ class LustyJuggler
       map_key("<Tab>", ":call <SID>LustyJugglerKeyPressed('TAB')<CR>")
 
       # Cancel keys.
+      map_key("i", ":call <SID>LustyJugglerCancel()<CR>")
       map_key("q", ":call <SID>LustyJugglerCancel()<CR>")
       map_key("<Esc>", ":call <SID>LustyJugglerCancel()<CR>")
       map_key("<C-c>", ":call <SID>LustyJugglerCancel()<CR>")
@@ -599,7 +600,7 @@ class LustyJuggler
       end
       unmap_key("<CR>")
       unmap_key("<Tab>")
-
+      unmap_key("i")
       unmap_key("q")
       unmap_key("<Esc>")
       unmap_key("<C-c>")
@@ -739,7 +740,7 @@ class BufferItem < BarItem
         slash_color = @@SLASH_COLOR
       end
 
-      pieces = @str.split(File::SEPARATOR, -1) 
+      pieces = @str.split(File::SEPARATOR, -1)
 
       @array = []
       @array << dir_color

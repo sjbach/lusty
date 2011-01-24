@@ -11,7 +11,7 @@
 "  Description: Dynamic Buffer Switcher Vim Plugin
 "   Maintainer: Stephen Bach <this-file@sjbach.com>
 " Contributors: Juan Frias, Bartosz Leper, Marco Barberis, Vincent Driessen,
-"               Martin Wache, Johannes Holzfuß
+"               Martin Wache, Johannes Holzfuß, Adam Rutkowski
 "
 " Release Date: December 16, 2010
 "      Version: 1.2
@@ -600,6 +600,7 @@ class LustyJuggler
       end
       unmap_key("<CR>")
       unmap_key("<Tab>")
+
       unmap_key("i")
       unmap_key("q")
       unmap_key("<Esc>")

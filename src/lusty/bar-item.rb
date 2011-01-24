@@ -70,7 +70,7 @@ class BufferItem < BarItem
         slash_color = @@SLASH_COLOR
       end
 
-      pieces = @str.split(File::SEPARATOR, -1) 
+      pieces = @str.split(File::SEPARATOR, -1)
 
       @array = []
       @array << dir_color

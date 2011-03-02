@@ -1080,24 +1080,6 @@ class FilesystemExplorer < Explorer
       run()
     end
 
-    def run_from_here
-      return if @running
-      start_path = if $curbuf.name.nil?
-                     VIM::getcwd()
-                   else
-                     VIM::evaluate("expand('%:p:h')")
-                   end
-
-      @prompt.set!(start_path + File::SEPARATOR)
-      run()
-    end
-
-    def run_from_wd
-      return if @running
-      @prompt.set!(VIM::getcwd() + File::SEPARATOR)
-      run()
-    end
-
     def key_pressed()
       i = VIM::evaluate("a:code_arg").to_i
 

@@ -244,8 +244,8 @@ let g:loaded_lustyexplorer = "yep"
 
 " Commands.
 command LustyBufferExplorer :call <SID>LustyBufferExplorerStart()
-command LustyFilesystemExplorer :call <SID>LustyFilesystemExplorerStart()
-command LustyFilesystemExplorerFromHere :call <SID>LustyFilesystemExplorerFromHereStart()
+command -nargs=? LustyFilesystemExplorer :call <SID>LustyFilesystemExplorerStart("<args>")
+command LustyFilesystemExplorerFromHere :call <SID>LustyFilesystemExplorerStart(expand("%:p:h"))
 command LustyBufferGrep :call <SID>LustyBufferGrepStart()
 
 " Deprecated command names.
@@ -271,12 +271,8 @@ nmap <silent> <Leader>lb :LustyBufferExplorer<CR>
 nmap <silent> <Leader>lg :LustyBufferGrep<CR>
 
 " Vim-to-ruby function calls.
-function! s:LustyFilesystemExplorerStart()
-  ruby LustyE::profile() { $lusty_filesystem_explorer.run_from_wd }
-endfunction
-
-function! s:LustyFilesystemExplorerFromHereStart()
-  ruby LustyE::profile() { $lusty_filesystem_explorer.run_from_here }
+function! s:LustyFilesystemExplorerStart(path)
+  exec "ruby LustyE::profile() { $lusty_filesystem_explorer.run_from_path('".a:path."') }"
 endfunction
 
 function! s:LustyBufferExplorerStart()
@@ -1073,6 +1069,15 @@ class FilesystemExplorer < Explorer
       @vim_swaps = VimSwaps.new
       @selected_index = 0
       super
+    end
+
+    def run_from_path(path)
+      return if @running
+      if path.empty?
+        path = VIM::getcwd()
+      end
+      @prompt.set!(path + File::SEPARATOR)
+      run()
     end
 
     def run_from_here

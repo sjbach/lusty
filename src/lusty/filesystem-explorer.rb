@@ -25,6 +25,15 @@ class FilesystemExplorer < Explorer
       super
     end
 
+    def run_from_path(path)
+      return if @running
+      if path.empty?
+        path = VIM::getcwd()
+      end
+      @prompt.set!(path + File::SEPARATOR)
+      run()
+    end
+
     def run_from_here
       return if @running
       start_path = if $curbuf.name.nil?

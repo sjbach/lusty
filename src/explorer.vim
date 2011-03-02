@@ -244,8 +244,8 @@ let g:loaded_lustyexplorer = "yep"
 
 " Commands.
 command LustyBufferExplorer :call <SID>LustyBufferExplorerStart()
-command LustyFilesystemExplorer :call <SID>LustyFilesystemExplorerStart()
-command LustyFilesystemExplorerFromHere :call <SID>LustyFilesystemExplorerFromHereStart()
+command -nargs=? LustyFilesystemExplorer :call <SID>LustyFilesystemExplorerStart("<args>")
+command LustyFilesystemExplorerFromHere :call <SID>LustyFilesystemExplorerStart(expand("%:p:h"))
 command LustyBufferGrep :call <SID>LustyBufferGrepStart()
 
 " Deprecated command names.
@@ -271,12 +271,8 @@ nmap <silent> <Leader>lb :LustyBufferExplorer<CR>
 nmap <silent> <Leader>lg :LustyBufferGrep<CR>
 
 " Vim-to-ruby function calls.
-function! s:LustyFilesystemExplorerStart()
-  ruby LustyE::profile() { $lusty_filesystem_explorer.run_from_wd }
-endfunction
-
-function! s:LustyFilesystemExplorerFromHereStart()
-  ruby LustyE::profile() { $lusty_filesystem_explorer.run_from_here }
+function! s:LustyFilesystemExplorerStart(path)
+  exec "ruby LustyE::profile() { $lusty_filesystem_explorer.run_from_path('".a:path."') }"
 endfunction
 
 function! s:LustyBufferExplorerStart()

@@ -1819,6 +1819,8 @@ class Display
         VIM::command 'highlight link LustyFileWithSwap WarningMsg'
         VIM::command 'highlight link LustyNoEntries ErrorMsg'
         VIM::command 'highlight link LustyTruncated Visual'
+
+        VIM::evaluate 'clearmatches()'
       end
 
       #

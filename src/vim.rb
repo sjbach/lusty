@@ -42,6 +42,11 @@ module VIM
     nonzero? evaluate('has("syntax")')
   end
 
+  def self.has_ext_maparg?
+    # The 'dict' parameter to mapargs() was introduced in Vim 7.3.32
+    nonzero? evaluate('v:version > 703 || (v:version == 703 && has("patch32"))')
+  end
+
   def self.columns
     evaluate("&columns").to_i
   end

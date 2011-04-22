@@ -116,7 +116,6 @@
 " GetLatestVimScripts: 2050 1 :AutoInstall: lusty-juggler.vim
 "
 " TODO:
-" - save and restore mappings
 " - Add TAB recognition back.
 " - Add option to open buffer immediately when mapping is pressed (but not
 "   release the juggler until the confirmation press).
@@ -240,7 +239,11 @@ augroup LustyJuggler
 augroup End
 
 " Used to work around a flaw in Vim's ruby bindings.
-let s:maparg_holder = 0
+if v:version > 703 || (v:version == 703 && has("patch32"))
+  let s:maparg_holder = { }
+else
+  let s:maparg_holder = 0
+endif
 
 ruby << EOF
 

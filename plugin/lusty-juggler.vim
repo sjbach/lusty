@@ -116,7 +116,6 @@
 " GetLatestVimScripts: 2050 1 :AutoInstall: lusty-juggler.vim
 "
 " TODO:
-" - save and restore mappings
 " - Add TAB recognition back.
 " - Add option to open buffer immediately when mapping is pressed (but not
 "   release the juggler until the confirmation press).
@@ -240,7 +239,11 @@ augroup LustyJuggler
 augroup End
 
 " Used to work around a flaw in Vim's ruby bindings.
-let s:maparg_holder = 0
+if v:version > 703 || (v:version == 703 && has("patch32"))
+  let s:maparg_holder = { }
+else
+  let s:maparg_holder = 0
+endif
 
 ruby << EOF
 
@@ -287,6 +290,11 @@ module VIM
 
   def self.has_syntax?
     nonzero? evaluate('has("syntax")')
+  end
+
+  def self.has_ext_maparg?
+    # The 'dict' parameter to mapargs() was introduced in Vim 7.3.32
+    nonzero? evaluate('v:version > 703 || (v:version == 703 && has("patch32"))')
   end
 
   def self.columns
@@ -642,10 +650,23 @@ class LustyJuggler
 
     def map_key(key, action)
       ['n','v','o','i','c','l'].each do |mode|
-        VIM::command "let s:maparg_holder = maparg('#{key}', '#{mode}')"
-        if VIM::evaluate_bool("s:maparg_holder != ''")
-          @key_mappings_map[key] << [mode, VIM::evaluate('s:maparg_holder')]
+        if VIM::has_ext_maparg?
+          VIM::command "let s:maparg_holder = maparg('#{key}', '#{mode}', 0, 1)"
+          if VIM::evaluate_bool "!empty(s:maparg_holder)"
+            nore    = VIM::evaluate_bool("s:maparg_holder['noremap']") ? 'nore'      : ''
+            silent  = VIM::evaluate_bool("s:maparg_holder['silent']")  ? ' <silent>' : ''
+            expr    = VIM::evaluate_bool("s:maparg_holder['expr']")    ? ' <expr>'   : ''
+            buffer  = VIM::evaluate_bool("s:maparg_holder['buffer']")  ? ' <buffer>' : ''
+            rhs     = VIM::evaluate      "s:maparg_holder['rhs']"
+            restore_cmd = "#{mode}#{nore}map#{silent}#{expr}#{buffer} #{key} #{rhs}"
+          end
+        else
+          VIM::command "let s:maparg_holder = maparg('#{key}', '#{mode}')"
+          if VIM::evaluate_bool("s:maparg_holder != ''")
+            restore_cmd = "#{mode}noremap <silent> #{key} #{VIM::evaluate('s:maparg_holder')}"
+          end
         end
+        @key_mappings_map[key] << [ mode, restore_cmd ] if restore_cmd
         VIM::command "#{mode}noremap <silent> #{key} #{action}"
       end
     end
@@ -661,9 +682,8 @@ class LustyJuggler
 
       if @key_mappings_map.has_key?(key)
         @key_mappings_map[key].each do |a|
-          mode = a[0]
-          action = a[1]
-          VIM::command "#{mode}noremap <silent> #{key} #{action}"
+          mode, restore_cmd = *a
+          VIM::command restore_cmd
           modes_with_mappings_for_key[mode] = true
         end
       end

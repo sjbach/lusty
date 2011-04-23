@@ -27,6 +27,7 @@ ruby_version=$($VIM --version | grep -- '-lruby' | \
   sed 's/.*-lruby\([^ ]*\).*/\1/')
 
 echo "Testing against:"
+echo "  === $VIM ==="
 echo "  $vim_version"
 echo "  Ruby: $ruby_version"
 

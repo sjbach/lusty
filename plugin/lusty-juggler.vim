@@ -239,11 +239,8 @@ augroup LustyJuggler
 augroup End
 
 " Used to work around a flaw in Vim's ruby bindings.
-if v:version > 703 || (v:version == 703 && has("patch32"))
-  let s:maparg_holder = { }
-else
-  let s:maparg_holder = 0
-endif
+let s:maparg_holder = 0
+let s:maparg_dict_holder = { }
 
 ruby << EOF
 
@@ -650,23 +647,21 @@ class LustyJuggler
 
     def map_key(key, action)
       ['n','v','o','i','c','l'].each do |mode|
-        if VIM::has_ext_maparg?
-          VIM::command "let s:maparg_holder = maparg('#{key}', '#{mode}', 0, 1)"
-          if VIM::evaluate_bool "!empty(s:maparg_holder)"
-            nore    = VIM::evaluate_bool("s:maparg_holder['noremap']") ? 'nore'      : ''
-            silent  = VIM::evaluate_bool("s:maparg_holder['silent']")  ? ' <silent>' : ''
-            expr    = VIM::evaluate_bool("s:maparg_holder['expr']")    ? ' <expr>'   : ''
-            buffer  = VIM::evaluate_bool("s:maparg_holder['buffer']")  ? ' <buffer>' : ''
-            rhs     = VIM::evaluate      "s:maparg_holder['rhs']"
-            restore_cmd = "#{mode}#{nore}map#{silent}#{expr}#{buffer} #{key} #{rhs}"
+        VIM::command "let s:maparg_holder = maparg('#{key}', '#{mode}')"
+        if VIM::evaluate_bool("s:maparg_holder != ''")
+          orig_rhs = VIM::evaluate("s:maparg_holder")
+          if VIM::has_ext_maparg?
+            VIM::command "let s:maparg_dict_holder = maparg('#{key}', '#{mode}', 0, 1)"
+            nore    = VIM::evaluate_bool("s:maparg_dict_holder['noremap']") ? 'nore'      : ''
+            silent  = VIM::evaluate_bool("s:maparg_dict_holder['silent']")  ? ' <silent>' : ''
+            expr    = VIM::evaluate_bool("s:maparg_dict_holder['expr']")    ? ' <expr>'   : ''
+            buffer  = VIM::evaluate_bool("s:maparg_dict_holder['buffer']")  ? ' <buffer>' : ''
+            restore_cmd = "#{mode}#{nore}map#{silent}#{expr}#{buffer} #{key} #{orig_rhs}"
+          else
+            restore_cmd = "#{mode}noremap <silent> #{key} #{orig_rhs}"
           end
-        else
-          VIM::command "let s:maparg_holder = maparg('#{key}', '#{mode}')"
-          if VIM::evaluate_bool("s:maparg_holder != ''")
-            restore_cmd = "#{mode}noremap <silent> #{key} #{VIM::evaluate('s:maparg_holder')}"
-          end
+          @key_mappings_map[key] << [ mode, restore_cmd ]
         end
-        @key_mappings_map[key] << [ mode, restore_cmd ] if restore_cmd
         VIM::command "#{mode}noremap <silent> #{key} #{action}"
       end
     end

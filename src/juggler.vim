@@ -239,11 +239,8 @@ augroup LustyJuggler
 augroup End
 
 " Used to work around a flaw in Vim's ruby bindings.
-if v:version > 703 || (v:version == 703 && has("patch32"))
-  let s:maparg_holder = { }
-else
-  let s:maparg_holder = 0
-endif
+let s:maparg_holder = 0
+let s:maparg_dict_holder = { }
 
 ruby << EOF
 

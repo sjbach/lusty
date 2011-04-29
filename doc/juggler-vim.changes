@@ -1,3 +1,2 @@
-- Don't show unlisted buffers. (Thanks to Johannes Holzfuß)
-- New Alt-Tab mode to emulate window manager switching.  See g:LustyJugglerAltTabMode in documentation. (Thanks to Martin Wache)
-- Save and restore keymappings. (Thanks to Vincent Driessen)
+- 'i' now cancels the juggler rather than putting Vim in an uncertain state. (Thanks to Adam Rutkowski)
+- Improve restoring of keymappings for Vim versions >= 7.3.32.  This allows LustyJuggler to be used effectively with e.g. YankRing and SuperTab. (Thanks to Carlo Teubner)

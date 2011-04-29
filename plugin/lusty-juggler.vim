@@ -13,8 +13,8 @@
 " Contributors: Juan Frias, Bartosz Leper, Marco Barberis, Vincent Driessen,
 "               Martin Wache, Johannes Holzfuß, Adam Rutkowski, Carlo Teubner
 "
-" Release Date: December 16, 2010
-"      Version: 1.2
+" Release Date: April 29, 2011
+"      Version: 1.3
 "
 "        Usage:
 "                 <Leader>lj  - Opens the buffer juggler.
@@ -322,7 +322,7 @@ module VIM
 
   def self.filename_escape(s)
     # Escape slashes, open square braces, spaces, sharps, double quotes and
-    # percent sign.
+    # percent signs.
     s.gsub(/\\/, '\\\\\\').gsub(/[\[ #"%]/, '\\\\\0')
   end
 

@@ -77,7 +77,6 @@ class LustyJuggler
       # Split opener keys
       map_key("v", ":call <SID>LustyJugglerKeyPressed('v')<CR>")
       map_key("b", ":call <SID>LustyJugglerKeyPressed('b')<CR>")
-      map_key("<Tab>", ":call <SID>LustyJugglerKeyPressed('TAB')<CR>")
 
       # Cancel keys.
       map_key("i", ":call <SID>LustyJugglerCancel()<CR>")

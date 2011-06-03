@@ -565,6 +565,10 @@ class LustyJuggler
       map_key("<CR>", ":call <SID>LustyJugglerKeyPressed('ENTER')<CR>")
       map_key("<Tab>", ":call <SID>LustyJugglerKeyPressed('TAB')<CR>")
 
+      # Split opener keys
+      map_key("v", ":call <SID>LustyJugglerKeyPressed('v')<CR>")
+      map_key("b", ":call <SID>LustyJugglerKeyPressed('b')<CR>")
+
       # Cancel keys.
       map_key("i", ":call <SID>LustyJugglerCancel()<CR>")
       map_key("q", ":call <SID>LustyJugglerCancel()<CR>")
@@ -586,6 +590,9 @@ class LustyJuggler
       elsif @last_pressed and (@@KEYS[c] == @last_pressed or c == 'ENTER')
         choose(@last_pressed)
         cleanup()
+      elsif @last_pressed and %w(v b).include?(c)
+        c=='v' ? vsplit(@last_pressed) : hsplit(@last_pressed)
+        cleanup()
       else
         @last_pressed = @@KEYS[c]
         print_buffer_list(@last_pressed)
@@ -606,6 +613,9 @@ class LustyJuggler
       end
       unmap_key("<CR>")
       unmap_key("<Tab>")
+
+      unmap_key("v")
+      unmap_key("b")
 
       unmap_key("i")
       unmap_key("q")
@@ -644,6 +654,16 @@ class LustyJuggler
     def choose(i)
       buf = $lj_buffer_stack.num_at_pos(i)
       VIM::command "b #{buf}"
+    end
+    
+    def vsplit(i)
+      buf = $lj_buffer_stack.num_at_pos(i)
+      VIM::command "vert sb #{buf}"
+    end
+    
+    def hsplit(i)
+      buf = $lj_buffer_stack.num_at_pos(i)
+      VIM::command "sb #{buf}"
     end
 
     def map_key(key, action)

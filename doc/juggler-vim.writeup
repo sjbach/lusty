@@ -42,4 +42,4 @@ Copy the script into your $HOME/.vim/plugin directory so that it will be sourced
 
 NOTE: This plugin requires Vim be compiled with Ruby interpretation.  If you do not currently have this functionality, see the "Install Details:" section of the script for directions on adding it.  It's not too tough.
 
-Note: prior to Vim 7.3.32, LustyJuggler can interact poorly with plugins such as YankRing or SuperTab that remap common normal mode keys such as "d" (for dd, dw, etc.)
+Also: prior to Vim 7.3.32, LustyJuggler can interact poorly with plugins such as YankRing or SuperTab that remap common normal mode keys such as "d" (for dd, dw, etc.)

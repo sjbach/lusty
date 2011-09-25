@@ -30,7 +30,9 @@ class FilesystemExplorer < Explorer
       if path.empty?
         path = VIM::getcwd()
       end
-      path = path.force_encoding VIM::evaluate('&enc')
+      if path.respond_to?(:force_encoding)
+        path = path.force_encoding(VIM::evaluate('&enc'))
+      end
       @prompt.set!(path + File::SEPARATOR)
       run()
     end

@@ -1864,6 +1864,7 @@ class Display
       VIM::command "#{map} <S-CR>   :call <SID>#{prefix}KeyPressed(10)<CR>"
       VIM::command "#{map} <C-a>    :call <SID>#{prefix}KeyPressed(1)<CR>"
 
+      VIM::command "#{map} <Esc>    :call <SID>#{prefix}Cancel()<CR>"
       VIM::command "#{map} <C-c>    :call <SID>#{prefix}Cancel()<CR>"
       VIM::command "#{map} <C-g>    :call <SID>#{prefix}Cancel()<CR>"
 
@@ -1878,10 +1879,6 @@ class Display
       VIM::command "#{map} <C-e>    :call <SID>#{prefix}KeyPressed(5)<CR>"
       VIM::command "#{map} <C-r>    :call <SID>#{prefix}KeyPressed(18)<CR>"
       VIM::command "#{map} <C-u>    :call <SID>#{prefix}KeyPressed(21)<CR>"
-      VIM::command "#{map} <Left>   :call <SID>#{prefix}KeyPressed(2)<CR>"
-      VIM::command "#{map} <Right>  :call <SID>#{prefix}KeyPressed(6)<CR>"
-      VIM::command "#{map} <Up>     :call <SID>#{prefix}KeyPressed(16)<CR>"
-      VIM::command "#{map} <Down>   :call <SID>#{prefix}KeyPressed(14)<CR>"
     end
 
     def print(strings)

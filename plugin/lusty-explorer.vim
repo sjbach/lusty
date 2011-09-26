@@ -74,7 +74,7 @@
 "
 " Filesystem Explorer:
 "
-"  - Directory contents are memoized.  (<C-r> to refresh.)
+"  - Directory contents are memorized.  (<C-r> to refresh.)
 "  - You can recurse into and out of directories by typing the directory name
 "    and a slash, e.g. "stuff/" or "../".
 "  - Variable expansion, e.g. "$D" -> "/long/dir/path/".

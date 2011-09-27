@@ -698,7 +698,7 @@ class LustyJuggler
         @key_mappings_map[key].each do |a|
           mode, restore_cmd = *a
           # for mappings that have on the rhs \|, the \ is somehow stripped
-          restore_cmd.gsub("|", "\|")
+          restore_cmd.gsub!("|", "\\|")
           VIM::command restore_cmd
         end
       end

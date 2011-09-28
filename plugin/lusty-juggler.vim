@@ -634,6 +634,8 @@ class LustyJuggler
       unmap_key("<BS>")
       unmap_key("<Del>")
       unmap_key("<C-h>")
+      unmap_key("<Esc>OC")
+      unmap_key("<Esc>OD")
 
       @running = false
       VIM::message ''

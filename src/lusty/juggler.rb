@@ -188,7 +188,8 @@ class LustyJuggler
             buffer  = VIM::evaluate_bool("s:maparg_dict_holder['buffer']")  ? ' <buffer>' : ''
             restore_cmd = "#{mode}#{nore}map#{silent}#{expr}#{buffer} #{key} #{orig_rhs}"
           else
-            restore_cmd = "#{mode}noremap <silent> #{key} #{orig_rhs}"
+            nore = LustyJ::starts_with?(orig_rhs, '<Plug>') ? '' : 'nore'
+            restore_cmd = "#{mode}#{nore}map <silent> #{key} #{orig_rhs}"
           end
           @key_mappings_map[key] << [ mode, restore_cmd ]
         end
@@ -197,25 +198,15 @@ class LustyJuggler
     end
 
     def unmap_key(key)
-      modes_with_mappings_for_key = \
-        { 'n' => false,
-          'v' => false,
-          'o' => false,
-          'i' => false,
-          'c' => false,
-          'l' => false }
+      #first, unmap lusty_juggler's maps
+      ['n','v','o','i','c','l'].each do |mode|
+        VIM::command "#{mode}unmap <silent> #{key}"
+      end
 
       if @key_mappings_map.has_key?(key)
         @key_mappings_map[key].each do |a|
           mode, restore_cmd = *a
           VIM::command restore_cmd
-          modes_with_mappings_for_key[mode] = true
-        end
-      end
-
-      modes_with_mappings_for_key.each_pair do |mode, had_mapping|
-        unless had_mapping
-          VIM::command "#{mode}unmap <silent> #{key}"
         end
       end
     end

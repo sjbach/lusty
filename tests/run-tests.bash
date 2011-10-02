@@ -39,9 +39,12 @@ fi
 
 for dir in $test_dirs; do
   cd $dir
-  if ! expect -f expect; then
-    echo "fail: $dir"
-    failures="$failures $dir"
+  if ! [ -f precondition.vim ] || \
+    $VIM -X -N --noplugin -u precondition.vim >/dev/null 2>&1 ; then
+    if ! expect -f expect; then
+      echo "fail: $dir"
+      failures="$failures $dir"
+    fi
   fi
   cd ..
 done >/dev/null

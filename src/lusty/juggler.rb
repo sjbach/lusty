@@ -188,7 +188,7 @@ class LustyJuggler
             buffer  = VIM::evaluate_bool("s:maparg_dict_holder['buffer']")  ? ' <buffer>' : ''
             restore_cmd = "#{mode}#{nore}map#{silent}#{expr}#{buffer} #{key} #{orig_rhs}"
           else
-            nore = LustyJ::starts_with?(orig_rhs, '<Plug>') ? '' : 'nore'
+            nore = LustyM::starts_with?(orig_rhs, '<Plug>') ? '' : 'nore'
             restore_cmd = "#{mode}#{nore}map <silent> #{key} #{orig_rhs}"
           end
           @key_mappings_map[key] << [ mode, restore_cmd ]

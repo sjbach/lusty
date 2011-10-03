@@ -598,10 +598,12 @@ class LustyJuggler
         c=='v' ? vsplit(@last_pressed) : hsplit(@last_pressed)
         cleanup()
       elsif c == 'Left'
-        @last_pressed = (@last_pressed - 1) < 1? 1 : (@last_pressed - 1)
+        @last_pressed = (@last_pressed.nil?) ? 0 : (@last_pressed)
+        @last_pressed = (@last_pressed - 1) < 1 ? $lj_buffer_stack.length : (@last_pressed - 1)
         print_buffer_list(@last_pressed)
       elsif c == 'Right'
-        @last_pressed = (@last_pressed + 1) > 10? 10 : (@last_pressed + 1)
+        @last_pressed = (@last_pressed.nil?) ? 0 : (@last_pressed)
+        @last_pressed = (@last_pressed + 1) > $lj_buffer_stack.length ? 1 : (@last_pressed + 1)
         print_buffer_list(@last_pressed)
       else
         @last_pressed = @@KEYS[c]

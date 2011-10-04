@@ -194,7 +194,7 @@ class LustyJuggler
     end
 
     def map_key(key, action)
-      ['n','v','o','i','c','l'].each do |mode|
+      ['n','s','x','o','i','c','l'].each do |mode|
         VIM::command "let s:maparg_holder = maparg('#{key}', '#{mode}')"
         if VIM::evaluate_bool("s:maparg_holder != ''")
           orig_rhs = VIM::evaluate("s:maparg_holder")
@@ -217,7 +217,7 @@ class LustyJuggler
 
     def unmap_key(key)
       #first, unmap lusty_juggler's maps
-      ['n','v','o','i','c','l'].each do |mode|
+      ['n','s','x','o','i','c','l'].each do |mode|
         VIM::command "#{mode}unmap <silent> #{key}"
       end
 

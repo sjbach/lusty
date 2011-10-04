@@ -81,6 +81,8 @@ class LustyJuggler
       # Left and Right keys
       map_key("<Esc>OD", ":call <SID>LustyJugglerKeyPressed('Left')<CR>")
       map_key("<Esc>OC", ":call <SID>LustyJugglerKeyPressed('Right')<CR>")
+      map_key("<Left>",  ":call <SID>LustyJugglerKeyPressed('Left')<CR>")
+      map_key("<Right>", ":call <SID>LustyJugglerKeyPressed('Right')<CR>")
 
       # Cancel keys.
       map_key("i", ":call <SID>LustyJugglerCancel()<CR>")
@@ -147,6 +149,8 @@ class LustyJuggler
       unmap_key("<C-h>")
       unmap_key("<Esc>OC")
       unmap_key("<Esc>OD")
+      unmap_key("<Left>")
+      unmap_key("<Right>")
 
       @running = false
       VIM::message ''

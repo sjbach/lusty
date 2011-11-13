@@ -11,7 +11,8 @@
 "  Description: Dynamic Buffer Switcher Vim Plugin
 "   Maintainer: Stephen Bach <this-file@sjbach.com>
 " Contributors: Juan Frias, Bartosz Leper, Marco Barberis, Vincent Driessen,
-"               Martin Wache, Johannes Holzfuß, Adam Rutkowski, Carlo Teubner
+"               Martin Wache, Johannes Holzfuß, Adam Rutkowski, Carlo Teubner,
+"               lilydjwg, Leonid Shevtsov, Giuseppe Rota
 "
 " Release Date: April 29, 2011
 "      Version: 1.3

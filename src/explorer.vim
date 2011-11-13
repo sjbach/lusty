@@ -16,7 +16,7 @@
 "               Matt Tolton, Björn Winckler, sowill, David Brown
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel,
 "               robquant, lilydjwg, Martin Wache, Johannes Holzfuß
-"               Donald Curtis, Jan Zwiener
+"               Donald Curtis, Jan Zwiener, Giuseppe Rota, Toby O'Connell
 "
 " Release Date: April 29, 2011
 "      Version: 4.1

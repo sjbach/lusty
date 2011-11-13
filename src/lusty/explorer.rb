@@ -53,46 +53,52 @@ class Explorer
           @prompt.up_one_dir!
           @selected_index = 0
         when 14               # C-n (select next)
-          @selected_index = if @current_sorted_matches.size.zero?
-                              0
-                            else
-            (@selected_index + 1) % @current_sorted_matches.size
-                            end
+          @selected_index = \
+            if @current_sorted_matches.size.zero?
+              0
+            else
+              (@selected_index + 1) % @current_sorted_matches.size
+            end
           refresh_mode = :no_recompute
         when 16               # C-p (select previous)
-          @selected_index = if @current_sorted_matches.size.zero?
-                              0
-                            else
-            (@selected_index - 1) % @current_sorted_matches.size
-                            end
+          @selected_index = \
+            if @current_sorted_matches.size.zero?
+              0
+            else
+              (@selected_index - 1) % @current_sorted_matches.size
+            end
           refresh_mode = :no_recompute
         when 6                # C-f (select right)
-          @selected_index = if @row_count.nil? || @row_count.zero?
-                              0
-                            else
-          columns = (@current_sorted_matches.size.to_f / @row_count.to_f).ceil
-          cur_column = @selected_index / @row_count
-          cur_row = @selected_index % @row_count
-          new_column = (cur_column + 1) % columns
-          if (new_column + 1) * (cur_row + 1) > @current_sorted_matches.size
-            new_column = 0
-          end
-                              new_column * @row_count + cur_row
-                            end
+          @selected_index = \
+            if @row_count.nil? || @row_count.zero?
+              0
+            else
+              columns = \
+                (@current_sorted_matches.size.to_f / @row_count.to_f).ceil
+              cur_column = @selected_index / @row_count
+              cur_row = @selected_index % @row_count
+              new_column = (cur_column + 1) % columns
+              if (new_column + 1) * (cur_row + 1) > @current_sorted_matches.size
+                new_column = 0
+              end
+              new_column * @row_count + cur_row
+            end
           refresh_mode = :no_recompute
         when 2                # C-b (select left)
-          @selected_index = if @row_count.nil? || @row_count.zero?
-                              0
-                            else
-          columns = (@current_sorted_matches.size.to_f / @row_count.to_f).ceil
-          cur_column = @selected_index / @row_count
-          cur_row = @selected_index % @row_count
-          new_column = (cur_column - 1) % columns
-          if (new_column + 1) * (cur_row + 1) > @current_sorted_matches.size
-            new_column = columns - 2
-          end
-                              new_column * @row_count + cur_row
-                            end
+          @selected_index = \
+            if @row_count.nil? || @row_count.zero?
+              0
+            else
+              columns = \
+                (@current_sorted_matches.size.to_f / @row_count.to_f).ceil
+              cur_column = @selected_index / @row_count
+              cur_row = @selected_index % @row_count
+              new_column = (cur_column - 1) % columns
+              if (new_column + 1) * (cur_row + 1) > @current_sorted_matches.size
+                new_column = columns - 2
+              end
+              new_column * @row_count + cur_row
+            end
           refresh_mode = :no_recompute
         when 15               # C-o choose in new horizontal split
           choose(:new_split)

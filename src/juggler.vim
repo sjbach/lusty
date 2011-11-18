@@ -212,7 +212,13 @@ endfunction
 
 
 " Default mappings.
-nmap <silent> <Leader>lj :LustyJuggler<CR>
+if !exists("g:LustyJugglerDefaultMappings")
+  let g:LustyJugglerDefaultMappings = 1
+endif
+
+if g:LustyJugglerDefaultMappings == 1
+  nmap <silent> <Leader>lj :LustyJuggler<CR>
+endif
 
 " Vim-to-ruby function calls.
 function! s:LustyJugglerStart()

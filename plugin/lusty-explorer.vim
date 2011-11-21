@@ -16,7 +16,8 @@
 "               Matt Tolton, Björn Winckler, sowill, David Brown
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel,
 "               robquant, lilydjwg, Martin Wache, Johannes Holzfuß
-"               Donald Curtis, Jan Zwiener, Giuseppe Rota, Toby O'Connell
+"               Donald Curtis, Jan Zwiener, Giuseppe Rota, Toby O'Connell,
+"               Göran Gustafsson
 "
 " Release Date: April 29, 2011
 "      Version: 4.1
@@ -266,10 +267,16 @@ endfunction
 
 
 " Default mappings.
-nmap <silent> <Leader>lf :LustyFilesystemExplorer<CR>
-nmap <silent> <Leader>lr :LustyFilesystemExplorerFromHere<CR>
-nmap <silent> <Leader>lb :LustyBufferExplorer<CR>
-nmap <silent> <Leader>lg :LustyBufferGrep<CR>
+if !exists("g:LustyFilesystemExplorerDefaultMappings")
+  let g:LustyFilesystemExplorerDefaultMappings = 1
+endif
+
+if g:LustyFilesystemExplorerDefaultMappings == 1
+  nmap <silent> <Leader>lf :LustyFilesystemExplorer<CR>
+  nmap <silent> <Leader>lr :LustyFilesystemExplorerFromHere<CR>
+  nmap <silent> <Leader>lb :LustyBufferExplorer<CR>
+  nmap <silent> <Leader>lg :LustyBufferGrep<CR>
+endif
 
 " Vim-to-ruby function calls.
 function! s:LustyFilesystemExplorerStart(path)

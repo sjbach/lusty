@@ -12,7 +12,7 @@
 "   Maintainer: Stephen Bach <this-file@sjbach.com>
 " Contributors: Juan Frias, Bartosz Leper, Marco Barberis, Vincent Driessen,
 "               Martin Wache, Johannes Holzfuß, Adam Rutkowski, Carlo Teubner,
-"               lilydjwg, Leonid Shevtsov, Giuseppe Rota
+"               lilydjwg, Leonid Shevtsov, Giuseppe Rota, Göran Gustafsson
 "
 " Release Date: April 29, 2011
 "      Version: 1.3
@@ -212,7 +212,13 @@ endfunction
 
 
 " Default mappings.
-nmap <silent> <Leader>lj :LustyJuggler<CR>
+if !exists("g:LustyJugglerDefaultMappings")
+  let g:LustyJugglerDefaultMappings = 1
+endif
+
+if g:LustyJugglerDefaultMappings == 1
+  nmap <silent> <Leader>lj :LustyJuggler<CR>
+endif
 
 " Vim-to-ruby function calls.
 function! s:LustyJugglerStart()

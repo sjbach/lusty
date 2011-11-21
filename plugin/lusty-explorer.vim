@@ -267,13 +267,13 @@ endfunction
 
 
 " Default mappings.
-if !exists("g:LustyFilesystemExplorerDefaultMappings")
-  let g:LustyFilesystemExplorerDefaultMappings = 1
+if !exists("g:LustyExplorerDefaultMappings")
+  let g:LustyExplorerDefaultMappings = 1
 endif
 
-if g:LustyFilesystemExplorerDefaultMappings == 1
-  nmap <silent> <Leader>lf :LustyFilesystemExplorer<CR>
-  nmap <silent> <Leader>lr :LustyFilesystemExplorerFromHere<CR>
+if g:LustyExplorerDefaultMappings == 1
+  nmap <silent> <Leader>lf :LustyExplorer<CR>
+  nmap <silent> <Leader>lr :LustyExplorerFromHere<CR>
   nmap <silent> <Leader>lb :LustyBufferExplorer<CR>
   nmap <silent> <Leader>lg :LustyBufferGrep<CR>
 endif

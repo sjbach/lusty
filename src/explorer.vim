@@ -272,8 +272,8 @@ if !exists("g:LustyExplorerDefaultMappings")
 endif
 
 if g:LustyExplorerDefaultMappings == 1
-  nmap <silent> <Leader>lf :LustyExplorer<CR>
-  nmap <silent> <Leader>lr :LustyExplorerFromHere<CR>
+  nmap <silent> <Leader>lf :LustyFilesystemExplorer<CR>
+  nmap <silent> <Leader>lr :LustyFilesystemExplorerFromHere<CR>
   nmap <silent> <Leader>lb :LustyBufferExplorer<CR>
   nmap <silent> <Leader>lg :LustyBufferGrep<CR>
 endif

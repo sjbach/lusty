@@ -1,12 +1,13 @@
 LustyExplorer is a fast and responsive way to manage files and buffers in Vim.  It includes a filesystem explorer, a buffer switcher, and a buffer grep for searching through and switching between files and buffers quickly, all through a mostly common interface.
 
-A short video someone made:
+Short demo videos folks have made:
 
       http://www.youtube.com/watch?v=dLMKVYqdarY
+      http://www.youtube.com/watch?v=39A-VoPnsI0
 
-      Some old stuff (pre v2.0 - we now use fuzzy matching instead of tab completion):
-      http://viewglob.sourceforge.net/lusty-explorer-animated.gif
-      http://viewglob.sourceforge.net/lusty-explorer-annotated.png
+      Older stuff (pre v2.0 - we now use fuzzy matching instead of tab completion):
+      http://sjbach.com/lusty-explorer-animated.gif
+      http://sjbach.com/lusty-explorer-annotated.png
 
 Instructions:
 
@@ -36,3 +37,6 @@ install details
 Copy the script into your $HOME/.vim/plugin directory so that it will be sourced on startup.
 
 NOTE: This plugin requires Vim be compiled with Ruby interpretation.  If you do not currently have this functionality, see the "Install Details:" section of the script for directions to add it.
+
+If adding Ruby is an issue for you, you may want to try LycosaExplorer, a Python port of this plugin: vimscript #3659
+

@@ -19,8 +19,8 @@
 "               Donald Curtis, Jan Zwiener, Giuseppe Rota, Toby O'Connell,
 "               Göran Gustafsson
 "
-" Release Date: April 29, 2011
-"      Version: 4.1
+" Release Date: November 25, 2011
+"      Version: 4.2
 "
 "        Usage:
 "                 <Leader>lf  - Opens the filesystem explorer.

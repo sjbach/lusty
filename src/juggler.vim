@@ -14,8 +14,8 @@
 "               Martin Wache, Johannes Holzfuß, Adam Rutkowski, Carlo Teubner,
 "               lilydjwg, Leonid Shevtsov, Giuseppe Rota, Göran Gustafsson
 "
-" Release Date: April 29, 2011
-"      Version: 1.3
+" Release Date: November 25, 2011
+"      Version: 1.4
 "
 "        Usage:
 "                 <Leader>lj  - Opens the buffer juggler.

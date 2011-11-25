@@ -24,7 +24,9 @@
 "
 "                 ":LustyJuggler"
 "
-"               (Personally, I map this to ,j)
+"               To suppress the default mapping, set this option:
+"
+"                 let g:LustyJugglerDefaultMappings = 0
 "
 "               When launched, the command bar at bottom is replaced with a
 "               new bar showing the names of currently-opened buffers in
@@ -43,7 +45,8 @@
 "
 "               If you want to switch to that buffer, press "f" or "4" again
 "               or press "<ENTER>".  Alternatively, press one of the other
-"               mapped keys to highlight another buffer.
+"               mapped keys to highlight another buffer.  To open the buffer
+"               in a new split, press "b" for horizontal or "v" for vertical.
 "
 "               To display the key with the name of the buffer, add one of
 "               the following lines to your .vimrc:

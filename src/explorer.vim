@@ -37,7 +37,9 @@
 "                 ":LustyBufferExplorer"
 "                 ":LustyBufferGrep"
 "
-"               (Personally, I map these to ,f ,r ,b and ,g)
+"               To suppress the default mappings, set this option:
+"
+"                 let g:LustyExplorerDefaultMappings = 0
 "
 "               When launched, a new window appears at bottom presenting a
 "               table of files/dirs or buffers, and in the status bar a

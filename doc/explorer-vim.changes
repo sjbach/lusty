@@ -1,4 +1,4 @@
-- Add Ctrl-B and Ctrl-F mappings to move to the next/previous column. (Thanks to lilydjwg)
-- Allow exploring starting at arbitrary paths - :LustyFilesystemExplorer now accepts a path argument. (Thanks to Donald Curtis)
-- Prevent unwanted highlighting in the display buffer. (Thanks to Jan Zwiener)
-- Fix opening files with '%' in their names. (Thanks to lilydjwg)
+- Fixed an "incompatible character encodings" error. (lilydjwg)
+- Added arrow key navigation. (Giuseppe Rota)
+- Fixed a divide-by-zero error. (Toby O'Connell)
+- Added g:LustyExplorerDefaultMappings configuration. (Göran Gustafsson)

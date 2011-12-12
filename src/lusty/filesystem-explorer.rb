@@ -152,17 +152,22 @@ class FilesystemExplorer < Explorer
           view_str << File::SEPARATOR
         end
 
-        Dir.foreach(view_str) do |name|
-          next if name == "."   # Skip pwd
-          next if name == ".." and LustyM::option_set?("AlwaysShowDotFiles")
+        begin
+          Dir.foreach(view_str) do |name|
+            next if name == "."   # Skip pwd
+            next if name == ".." and LustyM::option_set?("AlwaysShowDotFiles")
 
-          # Hide masked files.
-          next if FileMasks.masked?(name)
+            # Hide masked files.
+            next if FileMasks.masked?(name)
 
-          if FileTest.directory?(view_str + name)
-            name << File::SEPARATOR
+            if FileTest.directory?(view_str + name)
+              name << File::SEPARATOR
+            end
+            entries << FilesystemEntry.new(name)
           end
-          entries << FilesystemEntry.new(name)
+        rescue Errno::EACCES
+          # TODO: show "-- PERMISSION DENIED --"
+          return []
         end
         @memoized_dir_contents[view] = entries
       end
@@ -207,7 +212,7 @@ class FilesystemExplorer < Explorer
     def open_entry(entry, open_mode)
       path = view_path() + entry.label
 
-      if File.directory?(path)
+      if File.directory?(path.to_s)
         # Recurse into the directory instead of opening it.
         @prompt.set!(path.to_s)
         @selected_index = 0
@@ -222,8 +227,12 @@ class FilesystemExplorer < Explorer
 
     def load_file(path_str, open_mode)
       LustyM::assert($curwin == @calling_window)
-      # Escape for Vim and remove leading ./ for files in pwd.
-      filename_escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
+      # Escape slashes, open square braces, spaces, sharps, double
+      # quotes and percent signs, and remove leading ./ for files in
+      # pwd.
+      single_quote_escaped = VIM::single_quote_escape(path_str)
+      filename_escaped = VIM::evaluate("fnameescape('#{single_quote_escaped}')").sub(/^\.\//,"")
+      # Escape single quotes again since we just left ruby for Vim
       single_quote_escaped = VIM::single_quote_escape(filename_escaped)
       sanitized = VIM::evaluate "fnamemodify('#{single_quote_escaped}', ':.')"
       cmd = case open_mode

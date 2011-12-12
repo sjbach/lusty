@@ -212,7 +212,7 @@ class FilesystemExplorer < Explorer
     def open_entry(entry, open_mode)
       path = view_path() + entry.label
 
-      if File.directory?(path)
+      if File.directory?(path.to_s)
         # Recurse into the directory instead of opening it.
         @prompt.set!(path.to_s)
         @selected_index = 0

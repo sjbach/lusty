@@ -222,8 +222,12 @@ class FilesystemExplorer < Explorer
 
     def load_file(path_str, open_mode)
       LustyM::assert($curwin == @calling_window)
-      # Escape for Vim and remove leading ./ for files in pwd.
-      filename_escaped = VIM::filename_escape(path_str).sub(/^\.\//,"")
+      # Escape slashes, open square braces, spaces, sharps, double
+      # quotes and percent signs, and remove leading ./ for files in
+      # pwd.
+      single_quote_escaped = VIM::single_quote_escape(path_str)
+      filename_escaped = VIM::evaluate("fnameescape('#{single_quote_escaped}')").sub(/^\.\//,"")
+      # Escape single quotes again since we just left ruby for Vim
       single_quote_escaped = VIM::single_quote_escape(filename_escaped)
       sanitized = VIM::evaluate "fnamemodify('#{single_quote_escaped}', ':.')"
       cmd = case open_mode

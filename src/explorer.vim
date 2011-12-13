@@ -282,8 +282,9 @@ endif
 
 " Vim-to-ruby function calls.
 function! s:LustyFilesystemExplorerStart(path)
-  ruby a_path = VIM::evaluate("a:path")
-  ruby LustyE::profile() { $lusty_filesystem_explorer.run_from_path(a_path) }
+  ruby LustyE::profile() {
+       \  $lusty_filesystem_explorer.run_from_path(VIM::evaluate("a:path"))
+       \}
 endfunction
 
 function! s:LustyBufferExplorerStart()

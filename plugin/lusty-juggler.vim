@@ -330,12 +330,6 @@ module VIM
     s.gsub("'", "''")
   end
 
-  def self.filename_escape(s)
-    # Escape slashes, open square braces, spaces, sharps, double quotes and
-    # percent signs.
-    s.gsub(/\\/, '\\\\\\').gsub(/[\[ #"%]/, '\\\\\0')
-  end
-
   def self.regex_escape(s)
     s.gsub(/[\]\[.~"^$\\*]/,'\\\\\0')
   end
@@ -389,6 +383,27 @@ else
   module VIM
     def self.strwidth(s)
       s.length
+    end
+  end
+end
+
+if VIM::exists?("*fnameescape")
+  module VIM
+    def self.filename_escape(s)
+      # Escape slashes, open square braces, spaces, sharps, double
+      # quotes and percent signs, and remove leading ./ for files in
+      # pwd.
+      single_quote_escaped = single_quote_escape(s)
+      evaluate("fnameescape('#{single_quote_escaped}')").sub(/^\.\//,"")
+    end
+  end
+else
+  module VIM
+    def self.filename_escape(s)
+      # Escape slashes, open square braces, spaces, sharps, double
+      # quotes and percent signs, and remove leading ./ for files in
+      # pwd.
+      s.gsub(/\\/, '\\\\\\').gsub(/[\[ #"%]/, '\\\\\0').sub(/^\.\//,"")
     end
   end
 end

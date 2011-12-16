@@ -966,16 +966,18 @@ class Explorer
     end
 
     def remove_buffer()
-      entry = @current_sorted_matches[@selected_index]
-      return if entry.nil?
+      if self.class.to_s.sub(/.*::/,'') == "BufferExplorer"
+        entry = @current_sorted_matches[@selected_index]
+        return if entry.nil?
 
-      cleanup()
-      LustyE::assert($curwin == @calling_window)
+        cleanup()
+        LustyE::assert($curwin == @calling_window)
 
-      number = entry.vim_buffer.number
-      LustyE::assert(number)
+        number = entry.vim_buffer.number
+        LustyE::assert(number)
 
-      VIM::command "bdelete #{number}"
+        VIM::command "bdelete #{number}"
+      end
     end
 
     def choose(open_mode)

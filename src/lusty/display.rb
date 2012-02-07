@@ -60,6 +60,7 @@ class Display
       VIM::command "setlocal noswapfile"
       VIM::command "setlocal nowrap"
       VIM::command "setlocal nonumber"
+      VIM::command "setlocal norelativenumber"
       VIM::command "setlocal foldcolumn=0"
       VIM::command "setlocal nocursorline"
       VIM::command "setlocal nospell"

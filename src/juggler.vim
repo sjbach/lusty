@@ -32,7 +32,8 @@
 "               new bar showing the names of currently-opened buffers in
 "               most-recently-used order.
 "
-"               The buffers are mapped to these keys:
+"               By default, LustyJuggler follows the QWERTY layout, and
+"               buffers are mapped to these keys:
 "
 "                   1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th
 "                   ----------------------------------------
@@ -56,6 +57,19 @@
 "
 "               To cancel the juggler, press any of "q", "<ESC>", "<C-c",
 "               "<BS>", "<Del>", or "<C-h>".
+"
+"               LustyJuggler also supports the Dvorak keyboard layout. To
+"               enable this feature, place the following in your .vimrc:
+"
+"                 let g:LustyJugglerKeyboardLayout = "dvorak"
+"
+"               With the layout set to "dvorak", the buffer mapping is as
+"               follows:
+"
+"                   1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th
+"                   ----------------------------------------
+"                   a   o   e   u   i   d   h   t   n   s
+"                   1   2   3   4   5   6   7   8   9   0
 "
 "               LustyJuggler can act very much like <A-Tab> window switching.
 "               To enable this mode, add the following line to your .vimrc:
@@ -266,7 +280,11 @@ end
 
 {{RUBY_CODE_INSERTION_POINT}}
 
-$lusty_juggler = LustyJ::LustyJuggler.new
+if VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "dvorak"')
+  $lusty_juggler = LustyJ::LustyJugglerDvorak.new
+else
+  $lusty_juggler = LustyJ::LustyJuggler.new
+end
 $lj_buffer_stack = LustyJ::BufferStack.new
 
 EOF

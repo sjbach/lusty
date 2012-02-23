@@ -11,8 +11,9 @@
 module LustyM
 class NameBar
   public
-    def initialize
+    def initialize(letters)
       @selected_buffer = nil
+      @LETTERS = letters
     end
 
     attr_writer :selected_buffer
@@ -30,9 +31,6 @@ class NameBar
       NameBar.do_pretty_print(clipped)
     end
 
-  private
-    @@LETTERS = ["a", "s", "d", "f", "g", "h", "j", "k", "l", ";"]
-
 
     def create_items
       names = $lj_buffer_stack.names(10)
@@ -41,7 +39,7 @@ class NameBar
         key = if VIM::exists?("g:LustyJugglerShowKeys")
                 case VIM::evaluate("g:LustyJugglerShowKeys").to_s
                 when /[[:alpha:]]/
-                  @@LETTERS[array.size / 2] + ":"
+                  @LETTERS[array.size / 2] + ":"
                 when /[[:digit:]]/
                   "#{((array.size / 2) + 1) % 10}:"
                 else
@@ -179,5 +177,4 @@ class NameBar
 end
 
 end
-
 

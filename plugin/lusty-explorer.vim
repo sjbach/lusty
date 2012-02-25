@@ -1841,6 +1841,10 @@ class Display
       VIM::command "setlocal textwidth=0"
       VIM::command "setlocal noreadonly"
 
+      if VIM::exists? '&relativenumber'
+        VIM::command "setlocal norelativenumber"
+      end
+
       # Non-buffer-local (Vim is annoying).
       # (Update SavedSettings if adding to below.)
       VIM::set_option "timeoutlen=0"

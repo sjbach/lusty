@@ -60,13 +60,16 @@ class Display
       VIM::command "setlocal noswapfile"
       VIM::command "setlocal nowrap"
       VIM::command "setlocal nonumber"
-      VIM::command "setlocal norelativenumber"
       VIM::command "setlocal foldcolumn=0"
       VIM::command "setlocal nocursorline"
       VIM::command "setlocal nospell"
       VIM::command "setlocal nobuflisted"
       VIM::command "setlocal textwidth=0"
       VIM::command "setlocal noreadonly"
+
+      if VIM::exists? '&relativenumber'
+        VIM::command "setlocal norelativenumber"
+      end
 
       # Non-buffer-local (Vim is annoying).
       # (Update SavedSettings if adding to below.)

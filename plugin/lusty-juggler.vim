@@ -12,7 +12,8 @@
 "   Maintainer: Stephen Bach <this-file@sjbach.com>
 " Contributors: Juan Frias, Bartosz Leper, Marco Barberis, Vincent Driessen,
 "               Martin Wache, Johannes Holzfuß, Adam Rutkowski, Carlo Teubner,
-"               lilydjwg, Leonid Shevtsov, Giuseppe Rota, Göran Gustafsson
+"               lilydjwg, Leonid Shevtsov, Giuseppe Rota, Göran Gustafsson,
+"               Chris Lasher
 "
 " Release Date: November 25, 2011
 "      Version: 1.4

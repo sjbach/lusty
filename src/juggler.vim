@@ -1,4 +1,4 @@
-"    Copyright: Copyright (C) 2008-2011 Stephen Bach
+"    Copyright: Copyright (C) 2008-2012 Stephen Bach
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
 "               notice is copied with it. Like anything else that's free,
@@ -15,8 +15,8 @@
 "               lilydjwg, Leonid Shevtsov, Giuseppe Rota, Göran Gustafsson,
 "               Chris Lasher
 "
-" Release Date: November 25, 2011
-"      Version: 1.4
+" Release Date: February 24, 2012
+"      Version: 1.5
 "
 "        Usage:
 "                 <Leader>lj  - Opens the buffer juggler.

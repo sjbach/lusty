@@ -1,4 +1,3 @@
-- Fixed an "incompatible character encodings" error. (lilydjwg)
-- Added arrow key navigation. (Giuseppe Rota)
-- Fixed a divide-by-zero error. (Toby O'Connell)
-- Added g:LustyExplorerDefaultMappings configuration. (Göran Gustafsson)
+- Fixed some quoting bugs when invoking :LustyFilesystemExplorerStart. (Joel D. Elkins)
+- Handle directory security restrictions in Windows more gracefully. (Joel D. Elkins)
+- Hide "relativenumber" display in the explorer. (Göran Gustafsson)

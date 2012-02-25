@@ -1,4 +1,1 @@
-- Open buffers in a new window split: "b" for horizontal, "v" for vertical. (Leonid Shevtsov)
-- Added arrow key navigation. (Giuseppe Rota)
-- Further fixes to saving/restoring key bindings. (Giuseppe Rota)
-- Added g:LustyJugglerDefaultMappings configuration. (Göran Gustafsson)
+- Add support for Dvorak keyboard layout.  Enable it with 'let g:LustyJugglerKeyboardLayout = "dvorak"'. (Chris Lasher)

@@ -1,1 +1,1 @@
-- Add support for Dvorak keyboard layout.  Enable it with 'let g:LustyJugglerKeyboardLayout = "dvorak"'. (Chris Lasher)
+Fixed "Missing quote" error message introduced in v1.5. (Guy Haskin Fernald)

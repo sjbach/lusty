@@ -628,8 +628,8 @@ class LustyJuggler
       @key_mappings_map = Hash.new { |hash, k| hash[k] = [] }
 
       # Selection keys.
-      @KEYPRESS_MAPPINGS.keys.each do |c|
-        map_key(c, ":call <SID>LustyJugglerKeyPressed('#{c}')<CR>")
+      @KEYPRESS_MAPPINGS.each_pair do |c, v|
+        map_key(c, ":call <SID>LustyJugglerKeyPressed('#{v}')<CR>")
       end
 
       # Cancel keys.

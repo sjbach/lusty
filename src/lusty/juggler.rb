@@ -38,7 +38,8 @@ class LustyJuggler
         "7" => 7,
         "8" => 8,
         "9" => 9,
-        "0" => 10
+        "0" => 10,
+        "10" => 10
       }
       @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
       @KEYPRESS_KEYS = {

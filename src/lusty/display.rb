@@ -77,6 +77,7 @@ class Display
       VIM::set_option "noinsertmode"
       VIM::set_option "noshowcmd"
       VIM::set_option "nolist"
+      VIM::set_option "nohlsearch"
       VIM::set_option "report=9999"
       VIM::set_option "sidescroll=0"
       VIM::set_option "sidescrolloff=0"

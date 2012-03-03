@@ -1736,6 +1736,7 @@ class SavedSettings
     @insertmode = VIM::evaluate_bool("&insertmode")
     @showcmd = VIM::evaluate_bool("&showcmd")
     @list = VIM::evaluate_bool("&list")
+    @hlsearch = VIM::evaluate_bool("&hlsearch")
 
     @report = VIM::evaluate("&report")
     @sidescroll = VIM::evaluate("&sidescroll")
@@ -1769,6 +1770,12 @@ class SavedSettings
       VIM::set_option "list"
     else
       VIM::set_option "nolist"
+    end
+
+    if @hlsearch
+      VIM::set_option "hlsearch"
+    else
+      VIM::set_option "nohlsearch"
     end
 
     VIM::command "set report=#{@report}"
@@ -1851,6 +1858,7 @@ class Display
       VIM::set_option "noinsertmode"
       VIM::set_option "noshowcmd"
       VIM::set_option "nolist"
+      VIM::set_option "nohlsearch"
       VIM::set_option "report=9999"
       VIM::set_option "sidescroll=0"
       VIM::set_option "sidescrolloff=0"

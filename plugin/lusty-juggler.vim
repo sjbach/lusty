@@ -617,10 +617,10 @@ class LustyJuggler
       @running = true
 
       # Need to zero the timeout length or pressing 'g' will hang.
+      @timeoutlen = VIM::evaluate("&timeoutlen")
       @ruler = VIM::evaluate_bool("&ruler")
       @showcmd = VIM::evaluate_bool("&showcmd")
       @showmode = VIM::evaluate_bool("&showmode")
-      @timeoutlen = VIM::evaluate("&timeoutlen")
       VIM::set_option 'timeoutlen=0'
       VIM::set_option 'noruler'
       VIM::set_option 'noshowcmd'

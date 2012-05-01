@@ -59,10 +59,11 @@
 "               To cancel the juggler, press any of "q", "<ESC>", "<C-c",
 "               "<BS>", "<Del>", or "<C-h>".
 "
-"               LustyJuggler also supports the Dvorak keyboard layout. To
-"               enable this feature, place the following in your .vimrc:
+"               LustyJuggler also supports the Dvorak and Colemak keyboard layouts. To
+"               enable this feature, place the one of the following in your .vimrc:
 "
 "                 let g:LustyJugglerKeyboardLayout = "dvorak"
+"                 let g:LustyJugglerKeyboardLayout = "colemak"
 "
 "               With the layout set to "dvorak", the buffer mapping is as
 "               follows:
@@ -70,6 +71,14 @@
 "                   1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th
 "                   ----------------------------------------
 "                   a   o   e   u   i   d   h   t   n   s
+"                   1   2   3   4   5   6   7   8   9   0
+"
+"               With the layout set to "colemak", the buffer mapping is as
+"               follows:
+"
+"                   1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th
+"                   ----------------------------------------
+"                   a   r   s   t   d   h   n   e   i   o
 "                   1   2   3   4   5   6   7   8   9   0
 "
 "               LustyJuggler can act very much like <A-Tab> window switching.
@@ -283,7 +292,9 @@ end
 
 if VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "dvorak"')
   $lusty_juggler = LustyJ::LustyJugglerDvorak.new
-else
+elseif VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "colemak"')
+  $lusty_juggler = LustyJ::LustyJugglerColemak.new
+else 
   $lusty_juggler = LustyJ::LustyJuggler.new
 end
 $lj_buffer_stack = LustyJ::BufferStack.new

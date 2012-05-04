@@ -258,7 +258,7 @@ endfunction
 " Setup the autocommands that handle buffer MRU ordering.
 augroup LustyJuggler
   autocmd!
-  autocmd BufEnter * ruby LustyJ::profile() { $lj_buffer_stack.push }
+  autocmd BufAdd,BufEnter * ruby LustyJ::profile() { $lj_buffer_stack.push }
   autocmd BufDelete * ruby LustyJ::profile() { $lj_buffer_stack.pop }
   autocmd BufWipeout * ruby LustyJ::profile() { $lj_buffer_stack.pop }
 augroup End
@@ -1142,12 +1142,13 @@ class BufferStack
     end
 
     def push
-      @stack.delete $curbuf.number
-      @stack << $curbuf.number
+      buf_number = VIM::evaluate('expand("<abuf>")').to_i
+      @stack.delete buf_number
+      @stack << buf_number
     end
 
     def pop
-      number = VIM::evaluate('bufnr(expand("<afile>"))')
+      number = VIM::evaluate('bufnr(expand("<abuf>"))')
       @stack.delete number
     end
 

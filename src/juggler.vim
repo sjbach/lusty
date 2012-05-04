@@ -258,7 +258,7 @@ endfunction
 " Setup the autocommands that handle buffer MRU ordering.
 augroup LustyJuggler
   autocmd!
-  autocmd BufEnter * ruby LustyJ::profile() { $lj_buffer_stack.push }
+  autocmd BufAdd * ruby LustyJ::profile() { $lj_buffer_stack.push }
   autocmd BufDelete * ruby LustyJ::profile() { $lj_buffer_stack.pop }
   autocmd BufWipeout * ruby LustyJ::profile() { $lj_buffer_stack.pop }
 augroup End

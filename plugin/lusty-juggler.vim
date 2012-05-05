@@ -13,7 +13,7 @@
 " Contributors: Juan Frias, Bartosz Leper, Marco Barberis, Vincent Driessen,
 "               Martin Wache, Johannes Holzfuß, Adam Rutkowski, Carlo Teubner,
 "               lilydjwg, Leonid Shevtsov, Giuseppe Rota, Göran Gustafsson,
-"               Chris Lasher, Guy Haskin Fernald
+"               Chris Lasher, Guy Haskin Fernald, Thibault Duplessis
 "
 " Release Date: February 29, 2012
 "      Version: 1.5.1
@@ -59,10 +59,11 @@
 "               To cancel the juggler, press any of "q", "<ESC>", "<C-c",
 "               "<BS>", "<Del>", or "<C-h>".
 "
-"               LustyJuggler also supports the Dvorak keyboard layout. To
-"               enable this feature, place the following in your .vimrc:
+"               LustyJuggler also supports the Dvorak and Colemak keyboard layouts. To
+"               enable this feature, place the one of the following in your .vimrc:
 "
 "                 let g:LustyJugglerKeyboardLayout = "dvorak"
+"                 let g:LustyJugglerKeyboardLayout = "colemak"
 "
 "               With the layout set to "dvorak", the buffer mapping is as
 "               follows:
@@ -70,6 +71,14 @@
 "                   1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th
 "                   ----------------------------------------
 "                   a   o   e   u   i   d   h   t   n   s
+"                   1   2   3   4   5   6   7   8   9   0
+"
+"               With the layout set to "colemak", the buffer mapping is as
+"               follows:
+"
+"                   1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th
+"                   ----------------------------------------
+"                   a   r   s   t   d   h   n   e   i   o
 "                   1   2   3   4   5   6   7   8   9   0
 "
 "               LustyJuggler can act very much like <A-Tab> window switching.
@@ -788,6 +797,32 @@ class LustyJugglerDvorak < LustyJuggler
       @CANCEL_MAPPINGS.push("c")
     end
 end
+
+class LustyJugglerColemak < LustyJuggler
+  public
+    def initialize
+      super
+      alpha_buffer_keys = [
+        "a",
+        "r",
+        "s",
+        "t",
+        "d",
+        "h",
+        "n",
+        "e",
+        "i",
+        "o",
+      ]
+      @name_bar = NameBar.new(alpha_buffer_keys)
+      @ALPHA_BUFFER_KEYS = Hash.new
+      alpha_buffer_keys.each_with_index {|x, i| @ALPHA_BUFFER_KEYS[x] = i + 1}
+      @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
+      @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
+      @CANCEL_MAPPINGS.delete("i")
+      @CANCEL_MAPPINGS.push("c")
+    end
+end
 end
 
 # An item (delimiter/separator or buffer name) on the NameBar.
@@ -1198,7 +1233,9 @@ end
 
 if VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "dvorak"')
   $lusty_juggler = LustyJ::LustyJugglerDvorak.new
-else
+elseif VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "colemak"')
+  $lusty_juggler = LustyJ::LustyJugglerColemak.new
+else 
   $lusty_juggler = LustyJ::LustyJuggler.new
 end
 $lj_buffer_stack = LustyJ::BufferStack.new

@@ -292,7 +292,7 @@ end
 
 if VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "dvorak"')
   $lusty_juggler = LustyJ::LustyJugglerDvorak.new
-elseif VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "colemak"')
+elsif VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "colemak"')
   $lusty_juggler = LustyJ::LustyJugglerColemak.new
 else 
   $lusty_juggler = LustyJ::LustyJuggler.new

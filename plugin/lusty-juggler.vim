@@ -624,6 +624,15 @@ class LustyJuggler
       @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
       @CANCEL_MAPPINGS = [
         "i",
+        "I",
+        "A",
+        "c",
+        "C",
+        "o",
+        "O",
+        "S",
+        "r",
+        "R",
         "q",
         "<Esc>",
         "<C-c>",
@@ -817,8 +826,7 @@ class LustyJugglerDvorak < LustyJuggler
       alpha_buffer_keys.each_with_index {|x, i| @ALPHA_BUFFER_KEYS[x] = i + 1}
       @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
       @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
-      @CANCEL_MAPPINGS.delete("i")
-      @CANCEL_MAPPINGS.push("c")
+      ["i", "o"].each do |old_cancel_key| @CANCEL_MAPPINGS.delete(old_cancel_key) end
     end
 end
 
@@ -843,8 +851,7 @@ class LustyJugglerColemak < LustyJuggler
       alpha_buffer_keys.each_with_index {|x, i| @ALPHA_BUFFER_KEYS[x] = i + 1}
       @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
       @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
-      @CANCEL_MAPPINGS.delete("i")
-      @CANCEL_MAPPINGS.push("c")
+      ["r", "i", "o"].each do |old_cancel_key| @CANCEL_MAPPINGS.delete(old_cancel_key) end
     end
 end
 

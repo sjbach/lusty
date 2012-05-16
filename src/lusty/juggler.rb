@@ -283,4 +283,57 @@ class LustyJugglerColemak < LustyJuggler
       @CANCEL_MAPPINGS.push("c")
     end
 end
+
+class LustyJugglerBepo < LustyJuggler
+  public
+    def initialize
+      super
+      alpha_buffer_keys = [
+        "a",
+        "u",
+        "i",
+        "e",
+        ",",
+        "t",
+        "s",
+        "r",
+        "n",
+        "m",
+      ]
+      @name_bar = NameBar.new(alpha_buffer_keys)
+      @ALPHA_BUFFER_KEYS = Hash.new
+      alpha_buffer_keys.each_with_index {|x, i| @ALPHA_BUFFER_KEYS[x] = i + 1}
+      @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
+      @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
+      @CANCEL_MAPPINGS.delete("i")
+      @CANCEL_MAPPINGS.push("c")
+    end
+end
+
+class LustyJugglerAzerty < LustyJuggler
+  public
+    def initialize
+      super
+      alpha_buffer_keys = [
+        "q",
+        "s",
+        "d",
+        "f",
+        "g",
+        "j",
+        "k",
+        "l",
+        "m",
+        "ù",
+      ]
+      @name_bar = NameBar.new(alpha_buffer_keys)
+      @ALPHA_BUFFER_KEYS = Hash.new
+      alpha_buffer_keys.each_with_index {|x, i| @ALPHA_BUFFER_KEYS[x] = i + 1}
+      @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
+      @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
+      @CANCEL_MAPPINGS.delete("q")
+      @CANCEL_MAPPINGS.push("c")
+      @CANCEL_MAPPINGS.push("a")
+    end
+end
 end

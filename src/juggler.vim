@@ -13,7 +13,8 @@
 " Contributors: Juan Frias, Bartosz Leper, Marco Barberis, Vincent Driessen,
 "               Martin Wache, Johannes Holzfuß, Adam Rutkowski, Carlo Teubner,
 "               lilydjwg, Leonid Shevtsov, Giuseppe Rota, Göran Gustafsson,
-"               Chris Lasher, Guy Haskin Fernald, Thibault Duplessis
+"               Chris Lasher, Guy Haskin Fernald, Thibault Duplessis, Gabriel
+"               Pettier
 "
 " Release Date: February 29, 2012
 "      Version: 1.5.1
@@ -59,11 +60,14 @@
 "               To cancel the juggler, press any of "q", "<ESC>", "<C-c",
 "               "<BS>", "<Del>", or "<C-h>".
 "
-"               LustyJuggler also supports the Dvorak and Colemak keyboard layouts. To
-"               enable this feature, place the one of the following in your .vimrc:
+"               LustyJuggler also supports the Dvorak, Colemak, Bépo and aerty
+"               keyboard layouts. To enable this feature, place the one of the
+"               following in your .vimrc:
 "
 "                 let g:LustyJugglerKeyboardLayout = "dvorak"
 "                 let g:LustyJugglerKeyboardLayout = "colemak"
+"                 let g:LustyJugglerKeyboardLayout = "bépo"
+"                 let g:LustyJugglerKeyboardLayout = "azerty"
 "
 "               With the layout set to "dvorak", the buffer mapping is as
 "               follows:
@@ -79,6 +83,22 @@
 "                   1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th
 "                   ----------------------------------------
 "                   a   r   s   t   d   h   n   e   i   o
+"                   1   2   3   4   5   6   7   8   9   0
+"
+"               With the layout set to "bépo", the buffer mapping is as
+"               follows:
+"
+"                   1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th
+"                   ----------------------------------------
+"                   a   u   i   e   ,   t   s   r   n   m
+"                   1   2   3   4   5   6   7   8   9   0
+"
+"               With the layout set to "azerty", the buffer mapping is as
+"               follows:
+"
+"                   1st|2nd|3rd|4th|5th|6th|7th|8th|9th|10th
+"                   ----------------------------------------
+"                   q   s   d   f   g   j   k   l   m   ù
 "                   1   2   3   4   5   6   7   8   9   0
 "
 "               LustyJuggler can act very much like <A-Tab> window switching.
@@ -294,6 +314,10 @@ if VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJ
   $lusty_juggler = LustyJ::LustyJugglerDvorak.new
 elsif VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "colemak"')
   $lusty_juggler = LustyJ::LustyJugglerColemak.new
+elsif VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "bépo"')
+	$lusty_juggler = LustyJ::LustyJugglerBepo.new
+elsif VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "azerty"')
+	$lusty_juggler = LustyJ::LustyJugglerAzerty.new
 else 
   $lusty_juggler = LustyJ::LustyJuggler.new
 end

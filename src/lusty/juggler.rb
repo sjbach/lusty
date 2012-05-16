@@ -333,6 +333,7 @@ class LustyJugglerAzerty < LustyJuggler
       @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
       @CANCEL_MAPPINGS.delete("q")
       @CANCEL_MAPPINGS.push("c")
+      @CANCEL_MAPPINGS.push("a")
     end
 end
 end

@@ -62,12 +62,13 @@ class BufferStack
     end
 
     def push
-      @stack.delete $curbuf.number
-      @stack << $curbuf.number
+      buf_number = VIM::evaluate('expand("<abuf>")').to_i
+      @stack.delete buf_number
+      @stack << buf_number
     end
 
     def pop
-      number = VIM::evaluate('bufnr(expand("<afile>"))')
+      number = VIM::evaluate('bufnr(expand("<abuf>"))')
       @stack.delete number
     end
 

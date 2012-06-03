@@ -322,7 +322,7 @@ endfunction
 " Setup the autocommands that handle buffer MRU ordering.
 augroup LustyExplorer
   autocmd!
-  autocmd BufEnter * ruby LustyE::profile() { $le_buffer_stack.push }
+  autocmd BufAdd,BufEnter * ruby LustyE::profile() { $le_buffer_stack.push }
   autocmd BufDelete * ruby LustyE::profile() { $le_buffer_stack.pop }
   autocmd BufWipeout * ruby LustyE::profile() { $le_buffer_stack.pop }
 augroup End

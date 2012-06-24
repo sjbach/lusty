@@ -219,9 +219,18 @@ class Display
     end
 
     def self.max_height
+      # Compute the height of the display if it were grow to take up
+      # all available space, squishing every other Vim window to its
+      # minimal size.
+
       stored_height = $curwin.height
+
+      # Ask for the world...
       $curwin.height = VIM::MOST_POSITIVE_INTEGER
+      # ...Take what we can get.  Here, $curwin.height does not equal
+      # VIM::MOST_POSITIVE_INTEGER.
       highest_allowable = $curwin.height
+
       $curwin.height = stored_height
       highest_allowable
     end

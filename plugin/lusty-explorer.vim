@@ -2000,7 +2000,11 @@ class Display
     end
 
     def self.max_height
-      VIM::MOST_POSITIVE_INTEGER
+        VIM::command("let winstate = winrestcmd()") # save the current window state
+        VIM::command("resize") # the resize command defaults to the max height
+        highest_allowable = $curwin.height
+        VIM::command("exe winstate") # restore the window state
+        return highest_allowable
     end
 
     def self.max_width

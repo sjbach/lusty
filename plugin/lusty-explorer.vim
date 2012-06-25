@@ -1821,6 +1821,7 @@ class Display
     end
 
     def create(prefix)
+      VIM::command("let g:winstate = winrestcmd()") 
 
       # Make a window for the display and move there.
       # Start at size 1 to mitigate flashing effect when
@@ -2000,10 +2001,9 @@ class Display
     end
 
     def self.max_height
-        VIM::command("let winstate = winrestcmd()") # save the current window state
         VIM::command("resize") # the resize command defaults to the max height
         highest_allowable = $curwin.height
-        VIM::command("exe winstate") # restore the window state
+        VIM::command("exe g:winstate") # restore the window state
         return highest_allowable
     end
 
@@ -2071,7 +2071,9 @@ class Display
       unlock_and_clear()
 
       # Grow/shrink the window as needed
+      old_height = $curwin.height
       $curwin.height = rows.length + (truncated ? 1 : 0)
+      VIM::command("exe g:winstate") if $curwin.height < old_height
 
       # Print the rows.
       rows.each_index do |i|

@@ -2001,10 +2001,10 @@ class Display
     end
 
     def self.max_height
-        VIM::command("resize") # the resize command defaults to the max height
-        highest_allowable = $curwin.height
-        VIM::command("exe s:winstate") # restore the window state
-        return highest_allowable
+      VIM::command("resize") # the resize command defaults to the max height
+      highest_allowable = $curwin.height
+      VIM::command("exe s:winstate") # restore the window state
+      return highest_allowable
     end
 
     def self.max_width

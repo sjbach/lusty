@@ -2071,9 +2071,9 @@ class Display
       unlock_and_clear()
 
       # Grow/shrink the window as needed
-      old_height = $curwin.height
+#      old_height = $curwin.height
       $curwin.height = rows.length + (truncated ? 1 : 0)
-      VIM::command("exe g:winstate") if $curwin.height < old_height
+#      VIM::command("exe g:winstate") if $curwin.height < old_height
 
       # Print the rows.
       rows.each_index do |i|

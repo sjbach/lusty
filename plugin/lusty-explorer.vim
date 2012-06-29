@@ -17,7 +17,7 @@
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel,
 "               robquant, lilydjwg, Martin Wache, Johannes Holzfuß
 "               Donald Curtis, Jan Zwiener, Giuseppe Rota, Toby O'Connell,
-"               Göran Gustafsson, Joel Elkins
+"               Göran Gustafsson, Joel Elkins, Dominick LoBraico
 "
 " Release Date: February 24, 2012
 "      Version: 4.3
@@ -2071,9 +2071,7 @@ class Display
       unlock_and_clear()
 
       # Grow/shrink the window as needed
-      old_height = $curwin.height
       $curwin.height = rows.length + (truncated ? 1 : 0)
-      VIM::command("exe s:winstate") if $curwin.height < old_height
 
       # Print the rows.
       rows.each_index do |i|

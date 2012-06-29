@@ -17,7 +17,7 @@
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel,
 "               robquant, lilydjwg, Martin Wache, Johannes Holzfuß
 "               Donald Curtis, Jan Zwiener, Giuseppe Rota, Toby O'Connell,
-"               Göran Gustafsson, Joel Elkins
+"               Göran Gustafsson, Joel Elkins, Dominick LoBraico
 "
 " Release Date: February 24, 2012
 "      Version: 4.3

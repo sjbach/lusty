@@ -17,7 +17,7 @@
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel,
 "               robquant, lilydjwg, Martin Wache, Johannes Holzfuß
 "               Donald Curtis, Jan Zwiener, Giuseppe Rota, Toby O'Connell,
-"               Göran Gustafsson, Joel Elkins
+"               Göran Gustafsson, Joel Elkins, Dominick LoBraico
 "
 " Release Date: February 24, 2012
 "      Version: 4.3
@@ -1821,6 +1821,7 @@ class Display
     end
 
     def create(prefix)
+      VIM::command("let s:winstate = winrestcmd()")
 
       # Make a window for the display and move there.
       # Start at size 1 to mitigate flashing effect when
@@ -2000,10 +2001,16 @@ class Display
     end
 
     def self.max_height
-      stored_height = $curwin.height
-      $curwin.height = VIM::MOST_POSITIVE_INTEGER
+      # Compute the height of the display if it were grow to take up
+      # all available space, squishing every other Vim window to its
+      # minimal size.
+
+      # Ask for the world.  The resize command defaults to the max height.
+      VIM::command("resize")
+      # Remember what we got.
       highest_allowable = $curwin.height
-      $curwin.height = stored_height
+      # Restore the window state.
+      VIM::command("exe s:winstate")
       highest_allowable
     end
 

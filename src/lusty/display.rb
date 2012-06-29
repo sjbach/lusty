@@ -40,6 +40,7 @@ class Display
     end
 
     def create(prefix)
+      VIM::command("let s:winstate = winrestcmd()")
 
       # Make a window for the display and move there.
       # Start at size 1 to mitigate flashing effect when
@@ -223,15 +224,12 @@ class Display
       # all available space, squishing every other Vim window to its
       # minimal size.
 
-      stored_height = $curwin.height
-
-      # Ask for the world...
-      $curwin.height = VIM::MOST_POSITIVE_INTEGER
-      # ...Take what we can get.  Here, $curwin.height does not equal
-      # VIM::MOST_POSITIVE_INTEGER.
+      # Ask for the world.  The resize command defaults to the max height.
+      VIM::command("resize")
+      # Remember what we got.
       highest_allowable = $curwin.height
-
-      $curwin.height = stored_height
+      # Restore the window state.
+      VIM::command("exe s:winstate")
       highest_allowable
     end
 

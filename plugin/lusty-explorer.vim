@@ -9,7 +9,7 @@
 "
 " Name Of File: lusty-explorer.vim
 "  Description: Dynamic Filesystem and Buffer Explorer Vim Plugin
-"  Maintainers: Stephen Bach <this-file@sjbach.com>
+"  Maintainers: Stephen Bach <http://items.sjbach.com/about>
 "               Matt Tolton <matt-lusty-explorer@tolton.com>
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,

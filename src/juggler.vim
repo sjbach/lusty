@@ -9,7 +9,7 @@
 "
 " Name Of File: lusty-juggler.vim
 "  Description: Dynamic Buffer Switcher Vim Plugin
-"   Maintainer: Stephen Bach <this-file@sjbach.com>
+"   Maintainer: Stephen Bach <http://items.sjbach.com/about>
 " Contributors: Juan Frias, Bartosz Leper, Marco Barberis, Vincent Driessen,
 "               Martin Wache, Johannes Holzfuß, Adam Rutkowski, Carlo Teubner,
 "               lilydjwg, Leonid Shevtsov, Giuseppe Rota, Göran Gustafsson,

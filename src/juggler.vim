@@ -1,4 +1,4 @@
-"    Copyright: Copyright (C) 2008-2012 Stephen Bach
+"    Copyright: Copyright (C) 2008 Stephen Bach
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
 "               notice is copied with it. Like anything else that's free,

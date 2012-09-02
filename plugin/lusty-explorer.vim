@@ -494,7 +494,11 @@ end
 module LustyE
 
   unless const_defined? "MOST_POSITIVE_FIXNUM"
-    MOST_POSITIVE_FIXNUM = 2**(0.size * 8 -2) -1
+    # Per <https://github.com/sjbach/lusty/issues/80>, this computation causes
+    # an error in MacVim.  Since in usage the value doesn't matter too much
+    # as long as it's high, overriding.
+    #MOST_POSITIVE_FIXNUM = 2**(0.size * 8 -2) -1
+    MOST_POSITIVE_FIXNUM = 2**(16 - 1) - 2
   end
 
   def self.simplify_path(s)

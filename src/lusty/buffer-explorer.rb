@@ -34,7 +34,7 @@ class BufferExplorer < Explorer
       end
     end
 
-    def unload_selected_buffer
+    def delete
       entry = @current_sorted_matches[@selected_index]
       return if entry.nil?
       delete_buffer(entry)

@@ -110,7 +110,7 @@ class Explorer
         when 22               # C-v choose in new vertical split
           choose(:new_vsplit)
         when 4
-          unload_selected_buffer()
+          delete()
       end
 
       refresh(refresh_mode)

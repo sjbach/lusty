@@ -909,6 +909,8 @@ class Explorer
           @selected_index = 0
         when 22               # C-v choose in new vertical split
           choose(:new_vsplit)
+        when 4
+          delete()
       end
 
       refresh(refresh_mode)
@@ -1017,6 +1019,21 @@ class BufferExplorer < Explorer
         @selected_index = 0
         super
       end
+    end
+
+    def delete
+      entry = @current_sorted_matches[@selected_index]
+      return if entry.nil?
+      delete_buffer(entry)
+      refresh(:full)
+      run
+    end
+
+    def delete_buffer(entry)
+      cleanup
+      number = entry.vim_buffer.number
+      LustyE::assert(number)
+      VIM::command "silent bdelete! #{number}"
     end
 
   private
@@ -1170,6 +1187,8 @@ class FilesystemExplorer < Explorer
           @memoized_dir_contents.delete(view_path())
           load_file(@prompt.input, :current_tab)
         end
+      when 4      # <C-d> delete buffer
+        delete()
       when 18     # <C-r> refresh
         @memoized_dir_contents.delete(view_path())
         refresh(:full)
@@ -1178,6 +1197,20 @@ class FilesystemExplorer < Explorer
       end
     end
 
+    def delete
+      entry = @current_sorted_matches[@selected_index]
+      return if entry.nil?
+      delete_file(entry)
+      @memoized_dir_contents.delete(view_path())
+      refresh(:full)
+      run
+    end
+
+    def delete_file(entry)
+      cleanup
+      path = view_path() + entry.label
+      VIM::command "call delete('#{path.to_s}')"
+    end
   private
     def title
       '[LustyExplorer-Files]'
@@ -1945,6 +1978,8 @@ class Display
       VIM::command "#{map} <C-t>    :call <SID>#{prefix}KeyPressed(20)<CR>"
       VIM::command "#{map} <C-v>    :call <SID>#{prefix}KeyPressed(22)<CR>"
       VIM::command "#{map} <C-e>    :call <SID>#{prefix}KeyPressed(5)<CR>"
+      VIM::command "#{map} <C-d>    :call <SID>#{prefix}KeyPressed(4)<CR>"
+      VIM::command "#{map} <C-d>    :call <SID>#{prefix}KeyPressed(4)<CR>"
       VIM::command "#{map} <C-r>    :call <SID>#{prefix}KeyPressed(18)<CR>"
       VIM::command "#{map} <C-u>    :call <SID>#{prefix}KeyPressed(21)<CR>"
       VIM::command "#{map} <Esc>OD  :call <SID>#{prefix}KeyPressed(2)<CR>"

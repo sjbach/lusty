@@ -67,6 +67,8 @@ class FilesystemExplorer < Explorer
           @memoized_dir_contents.delete(view_path())
           load_file(@prompt.input, :current_tab)
         end
+      when 4      # <C-d> delete buffer
+        delete()
       when 18     # <C-r> refresh
         @memoized_dir_contents.delete(view_path())
         refresh(:full)

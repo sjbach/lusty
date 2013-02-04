@@ -153,7 +153,7 @@ class LustyJuggler
       end
 
       @running = false
-      VIM::message ''
+      VIM::message ' '
       VIM::command 'redraw'  # Prevents "Press ENTER to continue" message.
     end
 

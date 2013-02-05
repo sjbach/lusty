@@ -624,6 +624,8 @@ class LustyJuggler
       @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
       @CANCEL_MAPPINGS = [
         "i",
+        "I",
+        "A",
         "q",
         "<Esc>",
         "<C-c>",

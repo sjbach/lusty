@@ -820,6 +820,8 @@ class LustyJugglerDvorak < LustyJuggler
       @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
       @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
       @CANCEL_MAPPINGS.delete("i")
+      @CANCEL_MAPPINGS.delete("I")
+      @CANCEL_MAPPINGS.delete("A")
       @CANCEL_MAPPINGS.push("c")
     end
 end
@@ -846,6 +848,8 @@ class LustyJugglerColemak < LustyJuggler
       @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
       @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
       @CANCEL_MAPPINGS.delete("i")
+      @CANCEL_MAPPINGS.delete("I")
+      @CANCEL_MAPPINGS.delete("A")
       @CANCEL_MAPPINGS.push("c")
     end
 end
@@ -872,6 +876,8 @@ class LustyJugglerBepo < LustyJuggler
       @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
       @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
       @CANCEL_MAPPINGS.delete("i")
+      @CANCEL_MAPPINGS.delete("I")
+      @CANCEL_MAPPINGS.delete("A")
       @CANCEL_MAPPINGS.push("c")
     end
 end

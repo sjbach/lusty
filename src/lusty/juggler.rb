@@ -8,23 +8,11 @@
 # software.
 
 module LustyM
-class LustyJuggler
+class BaseLustyJuggler
   public
     def initialize
       @running = false
       @last_pressed = nil
-      alpha_buffer_keys = [
-        "a",
-        "s",
-        "d",
-        "f",
-        "g",
-        "h",
-        "j",
-        "k",
-        "l",
-        ";",
-      ]
       @name_bar = NameBar.new(alpha_buffer_keys)
       @ALPHA_BUFFER_KEYS = Hash.new
       alpha_buffer_keys.each_with_index {|x, i| @ALPHA_BUFFER_KEYS[x] = i + 1}
@@ -58,15 +46,10 @@ class LustyJuggler
         "<Right>" => "Right",
       }
       @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
-      @CANCEL_MAPPINGS = [
-        "i",
-        "q",
-        "<Esc>",
-        "<C-c>",
-        "<BS>",
-        "<Del>",
-        "<C-h>",
-      ]
+    end
+
+    def cancel_mappings
+      @cancel_mappings ||= (default_cancel_mappings - alpha_buffer_keys)
     end
 
     def run
@@ -103,7 +86,7 @@ class LustyJuggler
       end
 
       # Cancel keys.
-      @CANCEL_MAPPINGS.each do |c|
+      cancel_mappings.each do |c|
         map_key(c, ":call <SID>LustyJugglerCancel()<CR>")
       end
 
@@ -148,7 +131,7 @@ class LustyJuggler
       @KEYPRESS_MAPPINGS.keys.each do |c|
         unmap_key(c)
       end
-      @CANCEL_MAPPINGS.each do |c|
+      cancel_mappings.each do |c|
         unmap_key(c)
       end
 
@@ -230,65 +213,88 @@ class LustyJuggler
         end
       end
     end
-end
 
-class LustyJugglerDvorak < LustyJuggler
-  public
-    def initialize
-      super
-      alpha_buffer_keys = [
-        "a",
-        "o",
-        "e",
-        "u",
+    def default_cancel_mappings
+      [
         "i",
-        "d",
-        "h",
-        "t",
-        "n",
-        "s",
-      ]
-      @name_bar = NameBar.new(alpha_buffer_keys)
-      @ALPHA_BUFFER_KEYS = Hash.new
-      alpha_buffer_keys.each_with_index {|x, i| @ALPHA_BUFFER_KEYS[x] = i + 1}
-      @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
-      @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
-      @CANCEL_MAPPINGS.delete("i")
-      @CANCEL_MAPPINGS.push("c")
-    end
-end
-
-class LustyJugglerColemak < LustyJuggler
-  public
-    def initialize
-      super
-      alpha_buffer_keys = [
-        "a",
+        "I",
+        "A",
+        "c",
+        "C",
+        "o",
+        "O",
+        "S",
         "r",
-        "s",
-        "t",
-        "d",
-        "h",
-        "n",
-        "e",
-        "i",
-        "o",
+        "R",
+        "q",
+        "<Esc>",
+        "<C-c>",
+        "<BS>",
+        "<Del>",
+        "<C-h>"
       ]
-      @name_bar = NameBar.new(alpha_buffer_keys)
-      @ALPHA_BUFFER_KEYS = Hash.new
-      alpha_buffer_keys.each_with_index {|x, i| @ALPHA_BUFFER_KEYS[x] = i + 1}
-      @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
-      @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
-      @CANCEL_MAPPINGS.delete("i")
-      @CANCEL_MAPPINGS.push("c")
     end
-end
+  end
 
-class LustyJugglerBepo < LustyJuggler
-  public
-    def initialize
-      super
-      alpha_buffer_keys = [
+  class LustyJuggler < BaseLustyJuggler
+    private
+    def alpha_buffer_keys
+      [
+        "a",
+        "s",
+        "d",
+        "f",
+        "g",
+        "h",
+        "j",
+        "k",
+        "l",
+        ";",
+      ]
+    end
+
+  end
+
+  class LustyJugglerDvorak < LustyJuggler
+    private
+      def alpha_buffer_keys
+        [
+          "a",
+          "o",
+          "e",
+          "u",
+          "i",
+          "d",
+          "h",
+          "t",
+          "n",
+          "s"
+        ]
+      end
+  end
+
+  class LustyJugglerColemak < LustyJuggler
+    private
+      def alpha_buffer_keys
+        [
+          "a",
+          "r",
+          "s",
+          "t",
+          "d",
+          "h",
+          "n",
+          "e",
+          "i",
+          "o",
+        ]
+      end
+  end
+
+  class LustyJugglerBepo < LustyJuggler
+    private
+    def alpha_buffer_keys
+      [
         "a",
         "u",
         "i",
@@ -300,21 +306,13 @@ class LustyJugglerBepo < LustyJuggler
         "n",
         "m",
       ]
-      @name_bar = NameBar.new(alpha_buffer_keys)
-      @ALPHA_BUFFER_KEYS = Hash.new
-      alpha_buffer_keys.each_with_index {|x, i| @ALPHA_BUFFER_KEYS[x] = i + 1}
-      @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
-      @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
-      @CANCEL_MAPPINGS.delete("i")
-      @CANCEL_MAPPINGS.push("c")
     end
-end
+  end
 
-class LustyJugglerAzerty < LustyJuggler
-  public
-    def initialize
-      super
-      alpha_buffer_keys = [
+  class LustyJugglerAzerty < LustyJuggler
+    private
+    def alpha_buffer_keys
+      [
         "q",
         "s",
         "d",
@@ -326,14 +324,6 @@ class LustyJugglerAzerty < LustyJuggler
         "m",
         "ù",
       ]
-      @name_bar = NameBar.new(alpha_buffer_keys)
-      @ALPHA_BUFFER_KEYS = Hash.new
-      alpha_buffer_keys.each_with_index {|x, i| @ALPHA_BUFFER_KEYS[x] = i + 1}
-      @BUFFER_KEYS = @ALPHA_BUFFER_KEYS.merge(@NUMERIC_BUFFER_KEYS)
-      @KEYPRESS_MAPPINGS = @BUFFER_KEYS.merge(@KEYPRESS_KEYS)
-      @CANCEL_MAPPINGS.delete("q")
-      @CANCEL_MAPPINGS.push("c")
-      @CANCEL_MAPPINGS.push("a")
     end
-end
+    end
 end

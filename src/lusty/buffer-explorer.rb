@@ -36,7 +36,7 @@ class BufferExplorer < Explorer
 
   private
     def title
-      '[LustyExplorer-Buffers]'
+      'LustyExplorer--Buffers'
     end
 
     def set_syntax_matching

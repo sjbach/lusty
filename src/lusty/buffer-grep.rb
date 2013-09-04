@@ -41,7 +41,7 @@ class BufferGrep < Explorer
 
   private
     def title
-      '[LustyExplorer-BufferGrep]'
+      'LustyExplorer--BufferGrep'
     end
 
     def set_syntax_matching

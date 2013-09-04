@@ -1021,7 +1021,7 @@ class BufferExplorer < Explorer
 
   private
     def title
-      '[LustyExplorer-Buffers]'
+      'LustyExplorer--Buffers'
     end
 
     def set_syntax_matching
@@ -1180,7 +1180,7 @@ class FilesystemExplorer < Explorer
 
   private
     def title
-      '[LustyExplorer-Files]'
+      'LustyExplorer--Files'
     end
 
     def set_syntax_matching
@@ -1387,7 +1387,7 @@ class BufferGrep < Explorer
 
   private
     def title
-      '[LustyExplorer-BufferGrep]'
+      'LustyExplorer--BufferGrep'
     end
 
     def set_syntax_matching

@@ -77,7 +77,7 @@ class FilesystemExplorer < Explorer
 
   private
     def title
-      '[LustyExplorer-Files]'
+      'LustyExplorer--Files'
     end
 
     def set_syntax_matching

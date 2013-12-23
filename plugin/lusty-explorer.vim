@@ -1852,6 +1852,7 @@ class Display
       VIM::command "setlocal nobuflisted"
       VIM::command "setlocal textwidth=0"
       VIM::command "setlocal noreadonly"
+      VIM::command "setlocal colorcolumn=0"
 
       if VIM::exists? '&relativenumber'
         VIM::command "setlocal norelativenumber"

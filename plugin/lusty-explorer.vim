@@ -1847,6 +1847,7 @@ class Display
       VIM::command "setlocal nowrap"
       VIM::command "setlocal nonumber"
       VIM::command "setlocal foldcolumn=0"
+      VIM::command "setlocal colorcolumn=0"
       VIM::command "setlocal nocursorline"
       VIM::command "setlocal nospell"
       VIM::command "setlocal nobuflisted"

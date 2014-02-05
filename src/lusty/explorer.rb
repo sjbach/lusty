@@ -109,6 +109,8 @@ class Explorer
           @selected_index = 0
         when 22               # C-v choose in new vertical split
           choose(:new_vsplit)
+        when 4
+          delete()
       end
 
       refresh(refresh_mode)

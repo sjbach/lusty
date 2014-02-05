@@ -34,6 +34,21 @@ class BufferExplorer < Explorer
       end
     end
 
+    def delete
+      entry = @current_sorted_matches[@selected_index]
+      return if entry.nil?
+      delete_buffer(entry)
+      refresh(:full)
+      run
+    end
+
+    def delete_buffer(entry)
+      cleanup
+      number = entry.vim_buffer.number
+      LustyE::assert(number)
+      VIM::command "silent bdelete! #{number}"
+    end
+
   private
     def title
       'LustyExplorer--Buffers'

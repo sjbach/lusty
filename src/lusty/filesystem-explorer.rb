@@ -67,6 +67,8 @@ class FilesystemExplorer < Explorer
           @memoized_dir_contents.delete(view_path())
           load_file(@prompt.input, :current_tab)
         end
+      when 4      # <C-d> delete buffer
+        delete()
       when 18     # <C-r> refresh
         @memoized_dir_contents.delete(view_path())
         refresh(:full)
@@ -75,6 +77,20 @@ class FilesystemExplorer < Explorer
       end
     end
 
+    def delete
+      entry = @current_sorted_matches[@selected_index]
+      return if entry.nil?
+      delete_file(entry)
+      @memoized_dir_contents.delete(view_path())
+      refresh(:full)
+      run
+    end
+
+    def delete_file(entry)
+      cleanup
+      path = view_path() + entry.label
+      VIM::command "call delete('#{path.to_s}')"
+    end
   private
     def title
       'LustyExplorer--Files'

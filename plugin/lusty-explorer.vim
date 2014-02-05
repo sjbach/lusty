@@ -902,6 +902,8 @@ class Explorer
           refresh_mode = :no_recompute
         when 15               # C-o choose in new horizontal split
           choose(:new_split)
+        when 7               # C-d delete buffert in new horizontal split
+          delete()
         when 20               # C-t choose in new tab
           choose(:new_tab)
         when 21               # C-u clear prompt
@@ -965,6 +967,14 @@ class Explorer
       label_match_string = Display.entry_syntaxify(escaped, false)
       VIM::command "syn match LustySelected \"#{label_match_string}\" " \
                                             'contains=LustyGrepMatch'
+    end
+
+    def delete
+      entry = @current_sorted_matches[@selected_index]
+      return if entry.nil?
+      delete_buffer(entry)
+      refresh(:full)
+      run()
     end
 
     def choose(open_mode)
@@ -1080,6 +1090,13 @@ class BufferExplorer < Explorer
           end
         }
       end
+    end
+
+    def delete_buffer(entry)
+      cleanup()
+      number = entry.vim_buffer.number
+      LustyE::assert(number)
+      VIM::command "silent bdelete! #{number}"
     end
 
     def open_entry(entry, open_mode)
@@ -1946,6 +1963,7 @@ class Display
       VIM::command "#{map} <C-t>    :call <SID>#{prefix}KeyPressed(20)<CR>"
       VIM::command "#{map} <C-v>    :call <SID>#{prefix}KeyPressed(22)<CR>"
       VIM::command "#{map} <C-e>    :call <SID>#{prefix}KeyPressed(5)<CR>"
+      VIM::command "#{map} <C-d>    :call <SID>#{prefix}KeyPressed(7)<CR>"
       VIM::command "#{map} <C-r>    :call <SID>#{prefix}KeyPressed(18)<CR>"
       VIM::command "#{map} <C-u>    :call <SID>#{prefix}KeyPressed(21)<CR>"
       VIM::command "#{map} <Esc>OD  :call <SID>#{prefix}KeyPressed(2)<CR>"

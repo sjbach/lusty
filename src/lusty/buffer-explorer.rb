@@ -121,6 +121,14 @@ class BufferExplorer < Explorer
 
       VIM::command "silent #{cmd} #{number}"
     end
+
+    def unload_buffer(entry)
+      cleanup()
+      number = entry.vim_buffer.number
+      LustyE::assert(number)
+
+      VIM::command "silent bdelete! #{number}"
+    end
 end
 end
 

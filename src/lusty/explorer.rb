@@ -109,6 +109,8 @@ class Explorer
           @selected_index = 0
         when 22               # C-v choose in new vertical split
           choose(:new_vsplit)
+        when 4                # C-d unload selected buffer
+          unload_selected_buffer()
       end
 
       refresh(refresh_mode)
@@ -180,6 +182,15 @@ class Explorer
       @running = false
       VIM::message ""
       LustyM::assert(@calling_window == $curwin)
+    end
+
+    def unload_selected_buffer
+      entry = @current_sorted_matches[@selected_index]
+      return if entry.nil?
+
+      unload_buffer(entry)
+
+      run()
     end
 
     # Pure virtual methods

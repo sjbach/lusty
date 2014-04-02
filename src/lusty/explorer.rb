@@ -187,7 +187,6 @@ class Explorer
     # - on_refresh
     # - open_entry
     # - compute_sorted_matches
-
 end
 end
 

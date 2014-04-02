@@ -909,6 +909,9 @@ class Explorer
           @selected_index = 0
         when 22               # C-v choose in new vertical split
           choose(:new_vsplit)
+        when 4                # C-d unload selected buffer
+          unload_selected_buffer()
+          refresh_mode = :no_recompute
       end
 
       refresh(refresh_mode)
@@ -980,6 +983,23 @@ class Explorer
       @running = false
       VIM::message ""
       LustyE::assert(@calling_window == $curwin)
+    end
+
+    def unload_selected_buffer
+      entry = @current_sorted_matches[@selected_index]
+      return if entry.nil?
+
+      previous_selected_index = @selected_index
+
+      unload_buffer(entry)
+      run()
+
+      # restore position of selected item
+      if previous_selected_index >= @current_sorted_matches.size
+        @selected_index = previous_selected_index - 1
+      else
+        @selected_index = previous_selected_index
+      end
     end
 
     # Pure virtual methods
@@ -1105,6 +1125,14 @@ class BufferExplorer < Explorer
             end
 
       VIM::command "silent #{cmd} #{number}"
+    end
+
+    def unload_buffer(entry)
+      cleanup()
+      number = entry.vim_buffer.number
+      LustyE::assert(number)
+
+      VIM::command "silent bdelete! #{number}"
     end
 end
 end
@@ -1946,6 +1974,7 @@ class Display
       VIM::command "#{map} <C-t>    :call <SID>#{prefix}KeyPressed(20)<CR>"
       VIM::command "#{map} <C-v>    :call <SID>#{prefix}KeyPressed(22)<CR>"
       VIM::command "#{map} <C-e>    :call <SID>#{prefix}KeyPressed(5)<CR>"
+      VIM::command "#{map} <C-d>    :call <SID>#{prefix}KeyPressed(4)<CR>"
       VIM::command "#{map} <C-r>    :call <SID>#{prefix}KeyPressed(18)<CR>"
       VIM::command "#{map} <C-u>    :call <SID>#{prefix}KeyPressed(21)<CR>"
       VIM::command "#{map} <Esc>OD  :call <SID>#{prefix}KeyPressed(2)<CR>"

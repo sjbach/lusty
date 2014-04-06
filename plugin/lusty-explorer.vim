@@ -909,9 +909,6 @@ class Explorer
           @selected_index = 0
         when 22               # C-v choose in new vertical split
           choose(:new_vsplit)
-        when 4                # C-d unload selected buffer
-          unload_selected_buffer()
-          refresh_mode = :no_recompute
       end
 
       refresh(refresh_mode)
@@ -985,29 +982,11 @@ class Explorer
       LustyE::assert(@calling_window == $curwin)
     end
 
-    def unload_selected_buffer
-      entry = @current_sorted_matches[@selected_index]
-      return if entry.nil?
-
-      previous_selected_index = @selected_index
-
-      unload_buffer(entry)
-      run()
-
-      # restore position of selected item
-      if previous_selected_index >= @current_sorted_matches.size
-        @selected_index = previous_selected_index - 1
-      else
-        @selected_index = previous_selected_index
-      end
-    end
-
     # Pure virtual methods
     # - set_syntax_matching
     # - on_refresh
     # - open_entry
     # - compute_sorted_matches
-
 end
 end
 
@@ -1036,6 +1015,18 @@ class BufferExplorer < Explorer
 
         @selected_index = 0
         super
+      end
+    end
+
+    def key_pressed()
+      i = VIM::evaluate("a:code_arg").to_i
+
+      case i
+        when 4                # C-d unload selected buffer
+          unload_selected_buffer()
+          refresh(:no_recompute)
+        else
+          super
       end
     end
 
@@ -1125,6 +1116,23 @@ class BufferExplorer < Explorer
             end
 
       VIM::command "silent #{cmd} #{number}"
+    end
+
+    def unload_selected_buffer
+      entry = @current_sorted_matches[@selected_index]
+      return if entry.nil?
+
+      previous_selected_index = @selected_index
+
+      unload_buffer(entry)
+      run()
+
+      # restore position of selected item
+      if previous_selected_index >= @current_sorted_matches.size
+        @selected_index = previous_selected_index - 1
+      else
+        @selected_index = previous_selected_index
+      end
     end
 
     def unload_buffer(entry)

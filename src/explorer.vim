@@ -13,11 +13,12 @@
 "               Matt Tolton <matt-lusty-explorer@tolton.com>
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
-"               Matt Tolton, Björn Winckler, sowill, David Brown
+"               Matt Tolton, Björn Winckler, sowill, David Brown,
 "               Brett DiFrischia, Ali Asad Lotia, Kenneth Love, Ben Boeckel,
-"               robquant, lilydjwg, Martin Wache, Johannes Holzfuß
+"               robquant, lilydjwg, Martin Wache, Johannes Holzfuß,
 "               Donald Curtis, Jan Zwiener, Giuseppe Rota, Toby O'Connell,
-"               Göran Gustafsson, Joel Elkins, Dominick LoBraico
+"               Göran Gustafsson, Joel Elkins, Dominick LoBraico,
+"               Pavel Gabriel
 "
 " Release Date: February 24, 2012
 "      Version: 4.3

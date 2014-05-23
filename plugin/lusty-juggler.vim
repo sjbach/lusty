@@ -13,8 +13,8 @@
 " Contributors: Juan Frias, Bartosz Leper, Marco Barberis, Vincent Driessen,
 "               Martin Wache, Johannes Holzfuß, Adam Rutkowski, Carlo Teubner,
 "               lilydjwg, Leonid Shevtsov, Giuseppe Rota, Göran Gustafsson,
-"               Chris Lasher, Guy Haskin Fernald, Thibault Duplessis, Gabriel
-"               Pettier
+"               Chris Lasher, Guy Haskin Fernald, Thibault Duplessis,
+"               Gabriel Pettier, Ross Lagerwall
 "
 " Release Date: February 29, 2012
 "      Version: 1.5.1

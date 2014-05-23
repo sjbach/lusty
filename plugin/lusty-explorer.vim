@@ -18,7 +18,7 @@
 "               robquant, lilydjwg, Martin Wache, Johannes Holzfuß,
 "               Donald Curtis, Jan Zwiener, Giuseppe Rota, Toby O'Connell,
 "               Göran Gustafsson, Joel Elkins, Dominick LoBraico,
-"               Pavel Gabriel
+"               Pavel Gabriel, Ross Lagerwall
 "
 " Release Date: February 24, 2012
 "      Version: 4.3

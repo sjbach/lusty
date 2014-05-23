@@ -10,12 +10,15 @@ Installation:
 
 - Copy the the plugin/ and autoload/ directories to your ~/.vim.
 
-Submitting a patch:
+Advice for submitting a patch:
 
 - autoload/lustyexplorer.vim and autoload/lustyjuggler.vim are generated
-  files; modify src/ as well if you'd like to submit a patch.
+  files; modify src/ as well to make sure your changes aren't overwritten.
 
-- To test your changes for regressions:
+- "Build" by running `make` in the root of the repo.
+
+- To test your changes for regressions (requires `expect`; may only work in
+  Linux):
 
   $ cd tests/
   $ VIM=/path/to/vim ./run-tests.bash

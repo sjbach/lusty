@@ -3,6 +3,9 @@ set hidden
 set nobackup
 set noswapfile
 
+" Set this so that the autloads work.
+set runtimepath=$PWD/../../
+
 source ../../plugin/lusty-explorer.vim
 source ../../plugin/lusty-juggler.vim
 

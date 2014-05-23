@@ -8,6 +8,6 @@ repository:
 
   http://github.com/sjbach/lusty-emacs
 
-NOTE: lusty-explorer.vim and lusty-juggler.vim are generated files; modify
-src/ if you'd like to submit a patch.
+NOTE: autoload/lustyexplorer.vim and autoload/lustyjuggler.vim are generated
+files; modify src/ as well if you'd like to submit a patch.
 

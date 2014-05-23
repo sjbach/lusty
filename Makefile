@@ -51,8 +51,8 @@ endif
 
 # Concatenate the Ruby files, removing redundant copyrights, and insert
 # the results into the vimscript files.  Change LustyM module references to
-# LustyE or LustyJ, so that using out-of-sync versions of lusty-explorer and
-# lusty-juggler is less likely to cause monkey patching issues.
+# LustyE or LustyJ so that the use of out-of-sync versions of lusty-explorer
+# and lusty-juggler is less likely to cause monkey patching issues.
 
 autoload/lustyexplorer.vim: $(EXPLORER_VIM_FILE) $(EXPLORER_RUBY_FILES)
 	for file in $(EXPLORER_RUBY_FILES); do \

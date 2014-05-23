@@ -36,7 +36,7 @@ JUGGLER_RUBY_FILES = src/vim.rb \
 		     src/lusty/name-bar.rb \
 		     src/lusty/buffer-stack.rb
 
-all: plugin/lusty-explorer.vim plugin/lusty-juggler.vim
+all: autoload/lustyexplorer.vim autoload/lustyjuggler.vim
 
 UNAME := $(shell uname)
 
@@ -54,7 +54,7 @@ endif
 # LustyE or LustyJ, so that using out-of-sync versions of lusty-explorer and
 # lusty-juggler is less likely to cause monkey patching issues.
 
-plugin/lusty-explorer.vim: $(EXPLORER_VIM_FILE) $(EXPLORER_RUBY_FILES)
+autoload/lustyexplorer.vim: $(EXPLORER_VIM_FILE) $(EXPLORER_RUBY_FILES)
 	for file in $(EXPLORER_RUBY_FILES); do \
 	  cat $$file | sed '1,/^$$/d' ;\
 	  echo ; \
@@ -63,10 +63,10 @@ plugin/lusty-explorer.vim: $(EXPLORER_VIM_FILE) $(EXPLORER_RUBY_FILES)
 	( sed '/{{RUBY_CODE_INSERTION_POINT}}/,$$d' $(EXPLORER_VIM_FILE) ; \
 	  cat ruby-content.tmp ; \
 	  sed '1,/{{RUBY_CODE_INSERTION_POINT}}/d' $(EXPLORER_VIM_FILE) ) > \
-	plugin/lusty-explorer.vim
+	$@
 	rm -f ruby-content.tmp
 
-plugin/lusty-juggler.vim: $(JUGGLER_VIM_FILE) $(JUGGLER_RUBY_FILES)
+autoload/lustyjuggler.vim: $(JUGGLER_VIM_FILE) $(JUGGLER_RUBY_FILES)
 	for file in $(JUGGLER_RUBY_FILES); do \
 	  cat $$file | sed '1,/^$$/d' ;\
 	  echo ; \
@@ -75,9 +75,9 @@ plugin/lusty-juggler.vim: $(JUGGLER_VIM_FILE) $(JUGGLER_RUBY_FILES)
 	( sed '/{{RUBY_CODE_INSERTION_POINT}}/,$$d' $(JUGGLER_VIM_FILE) ; \
 	  cat ruby-content.tmp ; \
 	  sed '1,/{{RUBY_CODE_INSERTION_POINT}}/d' $(JUGGLER_VIM_FILE) ) > \
-	plugin/lusty-juggler.vim
+	$@
 	rm -f ruby-content.tmp
 clean:
-	rm -f ruby-content.tmp plugin/lusty-explorer.vim \
-              plugin/lusty-juggler.vim
+	rm -f ruby-content.tmp autoload/lustyexplorer.vim \
+              autoload/lustyjuggler.vim
 

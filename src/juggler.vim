@@ -49,6 +49,8 @@ elsif VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:Lus
 	$lusty_juggler = LustyJ::LustyJugglerBepo.new
 elsif VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "azerty"')
 	$lusty_juggler = LustyJ::LustyJugglerAzerty.new
+elsif VIM::exists?('g:LustyJugglerKeyboardLayout') and VIM::evaluate_bool('g:LustyJugglerKeyboardLayout == "neo2"')
+	$lusty_juggler = LustyJ::LustyJugglerNeo2.new
 else 
   $lusty_juggler = LustyJ::LustyJuggler.new
 end

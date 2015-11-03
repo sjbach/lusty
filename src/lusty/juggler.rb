@@ -332,5 +332,23 @@ class BaseLustyJuggler
         "ù",
       ]
     end
+  end
+
+  class LustyJugglerNeo2 < LustyJuggler
+    private
+    def alpha_buffer_keys
+      [
+        "u",
+        "i",
+        "a",
+        "e",
+        "o",
+        "s",
+        "n",
+        "r",
+        "t",
+        "d",
+      ]
     end
+  end
 end

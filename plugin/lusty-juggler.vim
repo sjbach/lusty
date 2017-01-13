@@ -9,7 +9,7 @@
 "
 " Name Of File: lusty-juggler.vim
 "  Description: Dynamic Buffer Switcher Vim Plugin
-"   Maintainer: Stephen Bach <http://items.sjbach.com/about>
+"   Maintainer: Stephen Bach
 " Contributors: Juan Frias, Bartosz Leper, Marco Barberis, Vincent Driessen,
 "               Martin Wache, Johannes Holzfuß, Adam Rutkowski, Carlo Teubner,
 "               lilydjwg, Leonid Shevtsov, Giuseppe Rota, Göran Gustafsson,
@@ -154,11 +154,13 @@
 "
 " Contributing:
 "
-" Patches and suggestions welcome.  Note: lusty-juggler.vim is a generated
-" file; if you'd like to submit a patch, check out the Github development
-" repository:
+" Patches and suggestions welcome.  If you'd like to submit a patch, check out
+" the Github repository:
 "
-"    http://github.com/sjbach/lusty
+"    https://github.com/sjbach/lusty
+"
+"    (Note: autoload/lustyjuggler.vim is a generated file.  Patch the files
+"    under src/ and then run `make` to recreate autoload/lustyjuggler.vim.)
 "
 "
 " GetLatestVimScripts: 2050 1 :AutoInstall: lusty-juggler.vim

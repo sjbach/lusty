@@ -9,7 +9,7 @@
 "
 " Name Of File: lusty-explorer.vim
 "  Description: Dynamic Filesystem and Buffer Explorer Vim Plugin
-"  Maintainers: Stephen Bach <http://items.sjbach.com/about>
+"  Maintainers: Stephen Bach
 "               Matt Tolton <matt-lusty-explorer@tolton.com>
 " Contributors: Raimon Grau, Sergey Popov, Yuichi Tateno, Bernhard Walle,
 "               Rajendra Badapanda, cho45, Simo Salminen, Sami Samhuri,
@@ -144,11 +144,13 @@
 "
 " Contributing:
 "
-" Patches and suggestions welcome.  Note: lusty-explorer.vim is a generated
-" file; if you'd like to submit a patch, check out the Github development
-" repository:
+" Patches and suggestions welcome.  If you'd like to submit a patch, check out
+" the Github repository:
 "
-"    http://github.com/sjbach/lusty
+"    https://github.com/sjbach/lusty
+"
+"    (Note: autoload/lustyexplorer.vim is a generated file.  Patch the files
+"    under src/ and then run `make` to recreate autoload/lustyexplorer.vim.)
 "
 "
 " GetLatestVimScripts: 1890 1 :AutoInstall: lusty-explorer.vim

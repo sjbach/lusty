@@ -19,6 +19,9 @@ module LustyM
   end
 
   def self.simplify_path(s)
+    if s.start_with?('scp://')
+      return s
+    end
     s = s.gsub(/\/+/, '/')  # Remove redundant '/' characters
     begin
       if s[0] == ?~

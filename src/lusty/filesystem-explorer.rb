@@ -137,6 +137,11 @@ class FilesystemExplorer < Explorer
 
       unless @memoized_dir_contents.has_key?(view)
 
+        view_str = view.to_s
+        if view_str.start_with?("scp://")
+          return all_remote_files(view)
+        end
+
         if not view.directory?
           return []
         elsif not view.readable?
@@ -146,7 +151,6 @@ class FilesystemExplorer < Explorer
 
         # Generate an array of the files
         entries = []
-        view_str = view.to_s
         unless LustyM::ends_with?(view_str, File::SEPARATOR)
           # Don't double-up on '/' -- makes Cygwin sad.
           view_str << File::SEPARATOR
@@ -184,6 +188,31 @@ class FilesystemExplorer < Explorer
       end
     end
 
+    def all_remote_files(view)
+      view_str = view.to_s
+      host, path = view_str['scp://'.length .. -1].split('/', 2)
+      option = if LustyM::option_set?("AlwaysShowDotFiles") or \
+         current_abbreviation()[0] == ?.
+                'a'
+               else
+                 ''
+               end
+
+      files = `ssh #{host} ls -1pL#{option} -- #{path}`.split("\n")
+
+      entries = []
+      files.each do |name|
+        next if name == "."   # Skip pwd
+        next if name == ".." and LustyM::option_set?("AlwaysShowDotFiles")
+
+        # Hide masked files.
+        next if FileMasks.masked?(name)
+        entries << FilesystemEntry.new(name)
+      end
+      @memoized_dir_contents[view] = entries
+      return entries
+    end
+
     def compute_sorted_matches
       abbrev = current_abbreviation()
 
@@ -212,7 +241,7 @@ class FilesystemExplorer < Explorer
     def open_entry(entry, open_mode)
       path = view_path() + entry.label
 
-      if File.directory?(path.to_s)
+      if File.directory?(path.to_s) or (path.to_s.start_with?("scp://") and entry.label.end_with?('/'))
         # Recurse into the directory instead of opening it.
         @prompt.set!(path.to_s)
         @selected_index = 0

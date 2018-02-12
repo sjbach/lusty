@@ -177,8 +177,10 @@ class BaseLustyJuggler
     end
 
     def needs_script?(mode, key)
-        VIM::command "redir => s:needs_script | #{mode}map #{key} | redir END"
-        mapping = VIM::evaluate("s:needs_script").split
+        LustyJ::assert(!key.include?("'"),
+                       "Unexpected attempt to remap single-quote character")
+        VIM::command "silent :call s:LustyJugglerMapRedirectHack('#{mode}', '#{key}')"
+        mapping = VIM::evaluate("s:map_redirect_hack_output").split
         return ((mapping.length > 2) and (mapping[2] == '&'))
     end
 

@@ -26,6 +26,26 @@ augroup End
 " Used to work around a flaw in Vim's ruby bindings.
 let s:maparg_holder = 0
 let s:maparg_dict_holder = { }
+let s:map_redirect_hack_output = ''
+function! s:LustyJugglerMapRedirectHack(map_mode, key)
+  if a:map_mode == 'n'
+    redir => s:map_redirect_hack_output | nmap a:key | redir END
+  elseif a:map_mode == 's'
+    redir => s:map_redirect_hack_output | smap a:key | redir END
+  elseif a:map_mode == 'x'
+    redir => s:map_redirect_hack_output | xmap a:key | redir END
+  elseif a:map_mode == 'o'
+    redir => s:map_redirect_hack_output | omap a:key | redir END
+  elseif a:map_mode == 'i'
+    redir => s:map_redirect_hack_output | imap a:key | redir END
+  elseif a:map_mode == 'c'
+    redir => s:map_redirect_hack_output | cmap a:key | redir END
+  elseif a:map_mode == 'l'
+    redir => s:map_redirect_hack_output | lmap a:key | redir END
+  else
+    throw 'bad map mode'
+  endif
+endfunction
 
 ruby << EOF
 
@@ -477,8 +497,10 @@ class BaseLustyJuggler
     end
 
     def needs_script?(mode, key)
-        VIM::command "redir => s:needs_script | #{mode}map #{key} | redir END"
-        mapping = VIM::evaluate("s:needs_script").split
+        LustyJ::assert(!key.include?("'"),
+                       "Unexpected attempt to remap single-quote character")
+        VIM::command "silent :call s:LustyJugglerMapRedirectHack('#{mode}', '#{key}')"
+        mapping = VIM::evaluate("s:map_redirect_hack_output").split
         return ((mapping.length > 2) and (mapping[2] == '&'))
     end
 

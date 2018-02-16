@@ -31,7 +31,9 @@ class FilesystemExplorer < Explorer
         path = VIM::getcwd()
       end
       if path.respond_to?(:force_encoding)
-        path = path.force_encoding(VIM::evaluate('&enc'))
+        encoding = VIM::evaluate('&enc')
+        encoding = 'ISO-8859-1' if encoding == 'latin1'
+        path = path.force_encoding(encoding)
       end
       @prompt.set!(path + File::SEPARATOR)
       run()

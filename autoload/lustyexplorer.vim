@@ -2198,7 +2198,14 @@ class BufferStack
       basename_to_prefix = {}
       common_base.each do |k, names|
         if names.length > 1
-          basename_to_prefix[k] = LustyE::longest_common_prefix(names)
+          if names.any? { |name| !name.include?(File::SEPARATOR) }
+            # One of the files is in the working directory, i.e. its path is
+            # its basename, so we know we can't shorten any of the names in
+            # this group.
+            basename_to_prefix[k] = ''
+          else
+            basename_to_prefix[k] = LustyJ::longest_common_prefix(names)
+          end
         end
       end
 

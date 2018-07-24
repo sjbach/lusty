@@ -3,8 +3,10 @@ These are a set of plugins for Vim.  You can download released versions here:
   lusty-explorer.vim: http://www.vim.org/scripts/script.php?script_id=1890
   lusty-juggler.vim:  http://www.vim.org/scripts/script.php?script_id=2050
 
-(These are certainly well tested, but they can be quite old.  You're probably
-fine to use current HEAD of this repository.)
+  These are certainly well tested, but they can be quite old.  It's probably
+  safe for you to use the current HEAD of the dev repository:
+
+    https://github.com/sjbach/lusty
 
 Installation:
 
@@ -24,8 +26,8 @@ Advice for submitting a patch:
   $ VIM=/path/to/vim ./run-tests.bash
 
 
-Note: the Emacs version of this plugin used to be here, too, but now it has
-its own repository:
+Note: the Emacs version of this plugin used to be included here, but now it
+has its own repository:
 
   http://github.com/sjbach/lusty-emacs
 

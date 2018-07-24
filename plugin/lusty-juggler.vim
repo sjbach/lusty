@@ -16,8 +16,8 @@
 "               Chris Lasher, Guy Haskin Fernald, Thibault Duplessis,
 "               Gabriel Pettier, Ross Lagerwall, John Szakmeister
 "
-" Release Date: February 29, 2012
-"      Version: 1.5.1
+" Release Date: July 24, 2018
+"      Version: 1.6
 "
 "        Usage:
 "                 <Leader>lj  - Opens the buffer juggler.

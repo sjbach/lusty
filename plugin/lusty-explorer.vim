@@ -20,8 +20,8 @@
 "               Göran Gustafsson, Joel Elkins, Dominick LoBraico,
 "               Pavel Gabriel, Ross Lagerwall
 "
-" Release Date: February 24, 2012
-"      Version: 4.3
+" Release Date: July 24, 2018
+"      Version: 5.0
 "
 "        Usage:
 "                 <Leader>lf  - Opens the filesystem explorer.
